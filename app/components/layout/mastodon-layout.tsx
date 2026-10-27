@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useScrollDirection } from "~/hooks/useScrollDirection";
+import { ClockCalendar } from "./clock-calendar";
 import { MobileBottomNav } from "./mobile-bottom-nav";
 import { MobileNavDrawer } from "./mobile-nav-drawer";
 import { SidebarNav } from "./sidebar-nav";
@@ -27,7 +28,7 @@ export function MastodonLayout({
   const showAuthenticatedLayout = isAuthenticated && !isLoading;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       {/* Mobile Header */}
       {showAuthenticatedLayout && (
         <header
@@ -48,7 +49,7 @@ export function MastodonLayout({
       <div
         className={
           showAuthenticatedLayout
-            ? "md:grid md:grid-cols-[76px_1fr] lg:grid-cols-[260px_1fr] md:gap-5 max-w-[1000px] mx-auto md:px-5"
+            ? "md:grid md:grid-cols-[76px_1fr] lg:grid-cols-[260px_1fr] xl:grid-cols-[260px_1fr_230px] md:gap-5 max-w-[1000px] xl:max-w-[1270px] mx-auto md:px-5"
             : ""
         }
       >
@@ -79,12 +80,19 @@ export function MastodonLayout({
         <main
           className={
             showAuthenticatedLayout
-              ? "min-w-0 min-h-screen pb-24 md:pb-0 md:min-h-[calc(100vh-3rem)] md:my-6 md:framed"
-              : "min-h-screen"
+              ? "min-w-0 min-h-screen pb-24 md:pb-0 md:min-h-[calc(100vh-3rem)] md:my-6 bg-background md:framed"
+              : "min-h-screen bg-background"
           }
         >
           {children}
         </main>
+
+        {/* Wide screens: clock and calendar on the right */}
+        {showAuthenticatedLayout && (
+          <aside className="hidden xl:block sticky top-6 self-start my-6">
+            <ClockCalendar />
+          </aside>
+        )}
       </div>
 
       {/* Mobile Bottom Navigation */}

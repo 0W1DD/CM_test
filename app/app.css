@@ -413,6 +413,47 @@ body,
   background-image: none;
 }
 
+/* Background photo behind the windows: a snowy forest at sunset. A fixed
+   layer rather than background-attachment: fixed, which mobile Safari
+   ignores. A wash of the ground colour keeps it calm behind the frames. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(
+      color-mix(in srgb, var(--ground) 18%, transparent),
+      color-mix(in srgb, var(--ground) 18%, transparent)
+    ),
+    url("/bg-forest.jpg") center top / cover no-repeat,
+    var(--ground);
+  pointer-events: none;
+}
+
+/* Scrollbars: thin, square, in the frame colour. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--frame) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--frame);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-color);
+  background-clip: content-box;
+}
+
 /* No blur anywhere: every surface is solid. */
 * {
   backdrop-filter: none !important;

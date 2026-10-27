@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Coins, Package, ShoppingBag, Sparkles } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -16,7 +17,7 @@ export function meta() {
   ];
 }
 
-function ItemCard({
+function ItemRow({
   item,
   balance,
   onBuy,
@@ -28,47 +29,66 @@ function ItemCard({
   pending: boolean;
 }) {
   const canAfford = balance >= item.priceAmount;
+  const [open, setOpen] = useState(false);
+  // Long descriptions fold to two lines so the list stays scannable.
+  const long =
+    (item.description?.length ?? 0) > 90 ||
+    (item.description?.split("\n").length ?? 0) > 2;
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-4 flex flex-col h-full gap-3">
-        <div className="flex items-start gap-2">
-          <Package className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-          <div className="min-w-0 flex-1">
+    <li className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:gap-5">
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <Package className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground" />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <h3 className="font-semibold break-words">{item.name}</h3>
-            {item.description && (
-              <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line break-words">
-                {item.description}
-              </p>
+            {item.consumable && (
+              <Badge variant="outline" className="text-xs">
+                소모품
+              </Badge>
+            )}
+            {item.isUnique && (
+              <Badge variant="outline" className="text-xs">
+                유니크
+              </Badge>
             )}
           </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-1">
-          {item.consumable && (
-            <Badge variant="outline" className="text-xs">
-              소모품
-            </Badge>
+          {item.description && (
+            <>
+              <p
+                className={`mt-1 text-sm text-muted-foreground whitespace-pre-line break-words ${
+                  long && !open ? "line-clamp-2" : ""
+                }`}
+              >
+                {item.description}
+              </p>
+              {long && (
+                <button
+                  type="button"
+                  onClick={() => setOpen((v) => !v)}
+                  className="mt-1 text-xs font-medium text-primary hover:underline"
+                >
+                  {open ? "접기" : "설명 더보기"}
+                </button>
+              )}
+            </>
           )}
-          {item.isUnique && (
-            <Badge variant="outline" className="text-xs">
-              유니크
-            </Badge>
-          )}
         </div>
-        <div className="flex items-center justify-between gap-2 mt-auto pt-2 border-t">
-          <span className="text-sm font-medium tabular-nums">
-            {item.priceAmount.toLocaleString("ko-KR")} {item.currencyName}
-          </span>
-          <Button
-            size="sm"
-            disabled={!canAfford || pending}
-            onClick={() => onBuy(item)}
-          >
-            {!canAfford ? "잔액 부족" : pending ? "구매 중..." : "구매"}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+      <div className="flex flex-shrink-0 items-center justify-between gap-3 pl-8 sm:justify-end sm:pl-0">
+        <span className="whitespace-nowrap text-sm font-semibold tabular-nums">
+          {item.priceAmount.toLocaleString("ko-KR")} {item.currencyName}
+        </span>
+        <Button
+          size="sm"
+          className="min-w-[4.5rem]"
+          disabled={!canAfford || pending}
+          onClick={() => onBuy(item)}
+        >
+          {!canAfford ? "잔액 부족" : pending ? "구매 중..." : "구매"}
+        </Button>
+      </div>
+    </li>
   );
 }
 
@@ -127,9 +147,9 @@ export default function ShopPage() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-6">
         <Skeleton className="h-32 w-full mb-6" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="space-y-2">
           {[0, 1, 2].map((k) => (
-            <Skeleton key={k} className="h-40 w-full" />
+            <Skeleton key={k} className="h-16 w-full" />
           ))}
         </div>
       </div>
@@ -204,9 +224,9 @@ export default function ShopPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <ul className="framed divide-y divide-border">
             {data.items.map((item) => (
-              <ItemCard
+              <ItemRow
                 key={item.id}
                 item={item}
                 balance={balanceForItem(item)}
@@ -214,7 +234,7 @@ export default function ShopPage() {
                 pending={buy.isPending}
               />
             ))}
-          </div>
+          </ul>
         )}
       </section>
 
