@@ -426,7 +426,7 @@ body::before {
       color-mix(in srgb, var(--ground) 18%, transparent),
       color-mix(in srgb, var(--ground) 18%, transparent)
     ),
-    url("/bg-forest.jpg") center top / cover no-repeat,
+    url("./assets/bg-forest.jpg") center top / cover no-repeat,
     var(--ground);
   pointer-events: none;
 }
