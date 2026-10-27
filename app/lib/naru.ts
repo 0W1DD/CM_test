@@ -31,9 +31,26 @@ function loadSdk(): Promise<Sdk> {
   return sdk;
 }
 
+/**
+ * The site's login name on a custom domain, which the SDK cannot read off
+ * the host: Naru's edge answers this path on every host it serves.
+ */
+async function customDomainSite(): Promise<string> {
+  const response = await fetch("/.well-known/naru-site", { cache: "no-store" });
+  if (!response.ok) throw new Error(`naru-site: ${response.status}`);
+  return (await response.text()).trim();
+}
+
 /** The page's client, bound to this site. */
 export function getNaru(): Promise<NaruClient> {
-  client ??= loadSdk().then(({ createNaru }) => createNaru());
+  client ??= loadSdk().then(async ({ createNaru }) => {
+    try {
+      return createNaru();
+    } catch (error) {
+      if (!(error instanceof TypeError)) throw error;
+      return createNaru({ site: await customDomainSite() });
+    }
+  });
   return client;
 }
 

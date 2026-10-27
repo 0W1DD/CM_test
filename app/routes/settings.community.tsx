@@ -3,6 +3,7 @@ import { ChevronLeft, Palette, RotateCcw, Save, Trash2 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
+import { OwnerLookSettings } from "~/components/owner-look-settings";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Spinner } from "~/components/ui/spinner";
@@ -317,6 +318,8 @@ export default function CommunitySettings() {
               )}
             </div>
           </div>
+
+          <OwnerLookSettings />
         </div>
       </main>
     </div>

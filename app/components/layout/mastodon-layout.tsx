@@ -2,8 +2,7 @@ import type { ReactNode } from "react";
 import { useScrollDirection } from "~/hooks/useScrollDirection";
 import { MobileBottomNav } from "./mobile-bottom-nav";
 import { MobileNavDrawer } from "./mobile-nav-drawer";
-import { CyberHud } from "./cyber-hud";
-import { SystemPanel } from "./system-panel";
+import { SidebarNav } from "./sidebar-nav";
 
 interface MastodonLayoutProps {
   children: ReactNode;
@@ -45,39 +44,47 @@ export function MastodonLayout({
         </header>
       )}
 
-      {/* Desktop: the top bar carries the menu */}
-      {showAuthenticatedLayout && (
-        <CyberHud
-          communityName={communityName}
-          unreadCount={unreadCount}
-          unreadMessageCount={unreadMessageCount}
-        />
-      )}
-
-      {/* The page in the middle, the system panel on wide screens */}
+      {/* Responsive grid when authenticated, plain container otherwise */}
       <div
         className={
           showAuthenticatedLayout
-            ? "max-w-[1320px] mx-auto md:px-5 md:py-6 xl:grid xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-6"
+            ? "md:grid md:grid-cols-[72px_1fr] lg:grid-cols-[280px_1fr] max-w-[960px] mx-auto"
             : ""
         }
       >
+        {/* Sidebar: hidden on mobile, sticky on tablet+ */}
+        {showAuthenticatedLayout && (
+          <div className="hidden md:block sticky top-0 h-screen overflow-y-auto">
+            {/* Tablet: collapsed sidebar */}
+            <div className="lg:hidden">
+              <SidebarNav
+                communityName={communityName}
+                unreadCount={unreadCount}
+                unreadMessageCount={unreadMessageCount}
+                collapsed
+              />
+            </div>
+            {/* Desktop: full sidebar */}
+            <div className="hidden lg:block">
+              <SidebarNav
+                communityName={communityName}
+                unreadCount={unreadCount}
+                unreadMessageCount={unreadMessageCount}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Main Content - always at same tree position */}
         <main
           className={
             showAuthenticatedLayout
-              ? "cyber-main min-w-0 min-h-screen md:min-h-[calc(100vh-7rem)] max-w-[760px] w-full mx-auto xl:mx-0 xl:ml-auto pb-24 md:pb-0"
+              ? "min-w-0 min-h-screen md:border-x md:border-border/70 md:bg-card/40 md:backdrop-blur-sm pb-24 md:pb-0"
               : "min-h-screen"
           }
         >
           {children}
         </main>
-        {showAuthenticatedLayout && (
-          <div className="hidden xl:block">
-            <div className="sticky top-[5.5rem] max-w-[320px]">
-              <SystemPanel />
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Mobile Bottom Navigation */}

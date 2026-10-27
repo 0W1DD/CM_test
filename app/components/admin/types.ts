@@ -31,6 +31,9 @@ export interface CommunitySettings {
   banner_image_url: string | null;
   banner_image_id: string | null;
   theme_key_color: string | null;
+  gate_html: string | null;
+  gate_image_id: string | null;
+  gate_image_url: string | null;
   is_set_up: boolean;
   starts_at: string | null;
   ends_at: string | null;

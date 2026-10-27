@@ -11,6 +11,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
 import { Spinner } from "~/components/ui/spinner";
+import { Textarea } from "~/components/ui/textarea";
 import { errorMessage } from "~/lib/naru";
 import { uploadImage } from "~/lib/upload-image";
 
@@ -55,6 +56,111 @@ function Check({
   );
 }
 
+/**
+ * A picture the settings keep by its image ID (images:register): its
+ * preview, and the ID to send, undefined while unchanged and null once
+ * removed.
+ */
+function useImageChoice(initialUrl: string | null | undefined) {
+  const [preview, setPreview] = useState(initialUrl ?? null);
+  const [id, setId] = useState<string | null | undefined>();
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  const select = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setError("이미지 파일만 업로드 가능합니다");
+      return;
+    }
+    setUploading(true);
+    setError("");
+    setPreview(URL.createObjectURL(file));
+    try {
+      const image = await uploadImage(file);
+      setId(image.id);
+      setPreview(image.url);
+    } catch (err) {
+      setError(errorMessage(err, "이미지 업로드에 실패했습니다"));
+      setPreview(initialUrl ?? null);
+    } finally {
+      setUploading(false);
+    }
+  };
+  const remove = () => {
+    setPreview(null);
+    setId(null);
+  };
+  return { preview, id, uploading, error, select, remove };
+}
+
+function ImageChoiceField({
+  label,
+  choice,
+}: {
+  label: string;
+  choice: ReturnType<typeof useImageChoice>;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <div className="border-2 border-dashed border-border rounded-lg p-4">
+        {choice.preview ? (
+          <div className="relative">
+            <img
+              src={choice.preview}
+              alt="미리보기"
+              className="w-full h-auto rounded"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="absolute top-2 right-2"
+              onClick={choice.remove}
+              disabled={choice.uploading}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            {choice.uploading && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded">
+                <div className="text-white text-sm">업로드 중...</div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center">
+            <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+            <div className="mt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileRef.current?.click()}
+                disabled={choice.uploading}
+              >
+                이미지 선택
+              </Button>
+            </div>
+          </div>
+        )}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) choice.select(file);
+            e.target.value = "";
+          }}
+        />
+      </div>
+      {choice.error && (
+        <p className="text-sm text-destructive">{choice.error}</p>
+      )}
+    </div>
+  );
+}
+
 /** The settings form, also the owner's first setup (`onSubmit` differs). */
 export function SettingsForm({
   initial,
@@ -73,6 +179,7 @@ export function SettingsForm({
     replies: useId(),
     bump: useId(),
     auto: useId(),
+    gate: useId(),
   };
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -100,40 +207,14 @@ export function SettingsForm({
   const [recruitingEndDate, setRecruitingEndDate] = useState(
     date(initial?.recruiting_ends_at),
   );
-  const [bannerPreview, setBannerPreview] = useState(
-    initial?.banner_image_url ?? null,
-  );
-  // undefined: unchanged; null: removed; a string: a new image.
-  const [bannerImageId, setBannerImageId] = useState<
-    string | null | undefined
-  >();
-  const [uploading, setUploading] = useState(false);
+  const banner = useImageChoice(initial?.banner_image_url);
+  // The front gate (components/front-gate.tsx): HTML and a picture.
+  const gateImage = useImageChoice(initial?.gate_image_url);
+  const [gateHtml, setGateHtml] = useState(initial?.gate_html ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const fileRef = useRef<HTMLInputElement>(null);
   const flag = (key: keyof Flags) => (checked: boolean) =>
     setFlags((prev) => ({ ...prev, [key]: checked }));
-
-  const selectBanner = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      setError("이미지 파일만 업로드 가능합니다");
-      return;
-    }
-    setUploading(true);
-    setError("");
-    setBannerPreview(URL.createObjectURL(file));
-    try {
-      const image = await uploadImage(file);
-      setBannerImageId(image.id);
-      setBannerPreview(image.url);
-    } catch (err) {
-      setError(errorMessage(err, "이미지 업로드에 실패했습니다"));
-      setBannerPreview(initial?.banner_image_url ?? null);
-    } finally {
-      setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,9 +249,9 @@ export function SettingsForm({
         show_all_replies: flags.show_all_replies,
         bump_on_reply: flags.bump_on_reply,
         auto_approve: flags.auto_approve,
-        ...(bannerImageId !== undefined
-          ? { banner_image_id: bannerImageId }
-          : {}),
+        ...(banner.id !== undefined ? { banner_image_id: banner.id } : {}),
+        gate_html: gateHtml.trim() ? gateHtml : null,
+        ...(gateImage.id !== undefined ? { gate_image_id: gateImage.id } : {}),
       });
     } catch (err) {
       setError(errorMessage(err, "커뮤 수정에 실패했습니다"));
@@ -199,62 +280,32 @@ export function SettingsForm({
 
       <Separator className="my-6" />
       <h3 className="text-sm font-medium text-foreground mb-4">커뮤 이미지</h3>
-      <div className="space-y-2">
-        <Label>커뮤 배너 이미지 (선택사항)</Label>
-        <div className="border-2 border-dashed border-border rounded-lg p-4">
-          {bannerPreview ? (
-            <div className="relative">
-              <img
-                src={bannerPreview}
-                alt="미리보기"
-                className="w-full h-auto rounded"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="absolute top-2 right-2"
-                onClick={() => {
-                  setBannerPreview(null);
-                  setBannerImageId(null);
-                }}
-                disabled={uploading}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              {uploading && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded">
-                  <div className="text-white text-sm">업로드 중...</div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-center">
-              <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-              <div className="mt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileRef.current?.click()}
-                  disabled={uploading}
-                >
-                  이미지 선택
-                </Button>
-              </div>
-            </div>
-          )}
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) selectBanner(file);
-            }}
-          />
-        </div>
-      </div>
+      <ImageChoiceField label="커뮤 배너 이미지 (선택사항)" choice={banner} />
+
+      <Separator className="my-6" />
+      <h3 className="text-sm font-medium text-foreground mb-4">첫 화면</h3>
+      <p className="text-sm text-muted-foreground -mt-2 mb-4">
+        아직 멤버가 아닌 방문자가 커뮤 첫 화면에서 로그인이나 가입 신청 버튼
+        위로 보는 그림과 글입니다.
+      </p>
+      <ImageChoiceField label="첫 화면 그림 (선택사항)" choice={gateImage} />
+      <Field>
+        <FieldLabel htmlFor={ids.gate}>첫 화면 글 (HTML, 선택사항)</FieldLabel>
+        <Textarea
+          id={ids.gate}
+          value={gateHtml}
+          onChange={(e) => setGateHtml(e.target.value)}
+          maxLength={20000}
+          rows={8}
+          spellCheck={false}
+          placeholder="<h2>어서 오세요</h2>&#10;<p>커뮤 소개를 적어 주세요.</p>"
+          className="font-mono text-sm"
+        />
+        <FieldDescription>
+          글자 모양, 링크, 그림, 표, style 속성은 그대로 보이고, 스크립트와 입력
+          양식은 빠집니다. 최대 2만 자입니다.
+        </FieldDescription>
+      </Field>
 
       <Separator className="my-6" />
       <h3 className="text-sm font-medium text-foreground mb-4">커뮤 일정</h3>
@@ -386,7 +437,11 @@ export function SettingsForm({
         <div className="text-sm text-destructive text-center">{error}</div>
       )}
 
-      <Button type="submit" className="w-full" disabled={saving || uploading}>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={saving || banner.uploading || gateImage.uploading}
+      >
         {saving && <Spinner />}
         {saving ? "저장 중..." : submitLabel}
       </Button>

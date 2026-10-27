@@ -295,3 +295,122 @@ test("staff read post reports with the post's author", async () => {
   assert.equal(report.post.author.username, "bob");
   assert.equal(report.post.content, "나쁜 글");
 });
+
+test("the site owner's look: 사용자 CSS and the _owner/ switch, in every page's head", async () => {
+  // Before the community is set up, a page is index.html as it is.
+  const empty = await testSite();
+  assert.deepEqual(await empty.route("/"), { file: "index.html" });
+
+  const { site } = await community();
+  assert.equal(
+    await refusal(site.mutate("community:setLook", { custom_css: "a {}" }, as("m-alice"))),
+    "not_owner",
+  );
+  for (const bad of [{ custom_css: 1 }, { owner_files: "yes" }, { custom_css: "a".repeat(50001) }])
+    assert.ok(await refusal(site.mutate("community:setLook", bad, as("m-owner"))));
+
+  const css = "a { color: red; } /* </style><script>x()</script> */";
+  assert.deepEqual(
+    await site.mutate("community:setLook", { custom_css: css, owner_files: true }, as("m-owner")),
+    { custom_css: css, owner_files: true },
+  );
+  await site.mutate("community:setTheme", { theme_key_color: "#6b7fb8" }, as("m-owner"));
+  const instance = await site.query("me:instance", null, VISITOR);
+  assert.equal(instance.custom_css, css);
+  assert.equal(instance.owner_files, true);
+  // The settings form leaves the look as it is.
+  await site.mutate("community:update", { name: "새 이름" }, as("m-owner"));
+  assert.equal((await site.query("me:instance", null, VISITOR)).custom_css, css);
+
+  const { buildThemeCss } = await import("../dist/_naru/modules/theme.js");
+  for (const path of ["/", "/home", "/@someone"]) {
+    const { file, head } = await site.route(path);
+    assert.equal(file, "index.html");
+    // The theme as the page makes it, then the owner's file, then 사용자 CSS,
+    // whose "</" cannot end its element.
+    assert.equal(
+      head,
+      [
+        `<style id="community-theme">${buildThemeCss("#6b7fb8").replace(/<\//g, "<\\/")}</style>`,
+        '<link rel="stylesheet" id="owner-file" href="/_owner/style.css" />',
+        `<style id="community-owner-css">${css.replace(/<\//g, "<\\/")}</style>`,
+      ].join("\n"),
+    );
+    assert.doesNotMatch(head, /<\/style><script>/);
+  }
+
+  // The files themselves are the site's, not the app's page.
+  for (const path of ["/_owner/style.css", "/_owner/script.js"])
+    assert.equal(await site.route(path), null, path);
+
+  // Cleared: the theme alone. Left out, a field keeps its value.
+  await site.mutate("community:setLook", { custom_css: "" }, as("m-owner"));
+  assert.match((await site.route("/")).head, /owner-file/);
+  await site.mutate("community:setLook", { owner_files: false }, as("m-owner"));
+  assert.equal(
+    (await site.route("/")).head,
+    `<style id="community-theme">${buildThemeCss("#6b7fb8")}</style>`,
+  );
+});
+
+test("0009 keeps a community's settings, and checks a colour without GLOB", async () => {
+  // A community's row as it was before 0009, written as 0001 to 0008 made
+  // the table (today's code writes the columns that come after).
+  const site = await testSite({ pending: "0009" });
+  site.run(
+    `INSERT INTO settings (id, name, description, starts_at, ends_at, is_recruiting,
+       theme_key_color, banner_image_id, created_at, updated_at)
+     VALUES (1, '커뮤', '소개', 1, 2, 1, '#aabbcc', 'b-1', 3, 4)`,
+  );
+  const [before] = site.rows("SELECT * FROM settings");
+  site.migrate();
+  const [after] = site.rows("SELECT * FROM settings");
+  assert.deepEqual(after, {
+    ...before,
+    custom_css: null,
+    owner_files: 0,
+    gate_html: null,
+    gate_image_id: null,
+  });
+  // The same colours as 0001's pattern, without one (Naru's SQLite refuses
+  // a GLOB pattern that long).
+  for (const ok of ["#AABBCC", "#012def", null])
+    site.run("UPDATE settings SET theme_key_color = ? WHERE id = 1", ok);
+  for (const bad of ["#12345g", "aabbcc", "#abc", "#aabbccd", "#aabbc "])
+    assert.throws(() => site.run("UPDATE settings SET theme_key_color = ? WHERE id = 1", bad), bad);
+});
+
+test("the front gate: the owner's HTML and picture, for visitors who are not members yet", async () => {
+  const { site } = await community();
+  site.upload({ member: "m-owner", name: "gate.png", type: "image/png" });
+  const [{ id: uploadId }] = site.rows("SELECT id FROM _naru_uploads");
+  const image = await site.mutate("images:register", { upload_id: uploadId, width: 800, height: 600 }, as("m-owner"));
+  const html = '<h2>어서 오세요</h2><p style="color: red">소개</p><img src=x onerror="alert(1)">';
+  assert.equal(
+    await refusal(site.mutate("community:update", { gate_html: html }, as("m-alice"))),
+    "not_owner",
+  );
+  for (const bad of [{ gate_html: "a".repeat(20001) }, { gate_image_id: "nope" }, { gate_html: 1 }])
+    assert.ok(await refusal(site.mutate("community:update", bad, as("m-owner"))));
+
+  const saved = await site.mutate(
+    "community:update",
+    { gate_html: html, gate_image_id: image.id },
+    as("m-owner"),
+  );
+  assert.equal(saved.gate_html, html);
+  assert.equal(saved.gate_image_id, image.id);
+  assert.equal(saved.gate_image_url, image.url);
+  // A visitor reads it as stored: the page sanitizes it as it shows it
+  // (app/components/front-gate.tsx).
+  const instance = await site.query("me:instance", null, VISITOR);
+  assert.equal(instance.gate_html, html);
+  assert.equal(instance.gate_image_url, image.url);
+  // Another save leaves it unless it names it; empty clears it.
+  await site.mutate("community:update", { name: "새 이름" }, as("m-owner"));
+  assert.equal((await site.query("me:instance", null, VISITOR)).gate_html, html);
+  await site.mutate("community:update", { gate_html: "", gate_image_id: null }, as("m-owner"));
+  const cleared = await site.query("me:instance", null, VISITOR);
+  assert.equal(cleared.gate_html, null);
+  assert.equal(cleared.gate_image_url, null);
+});

@@ -9,6 +9,10 @@ export interface SessionInstance {
   description: string | null;
   banner_image_url: string | null;
   theme_key_color: string | null;
+  custom_css: string | null;
+  owner_files: boolean;
+  gate_html: string | null;
+  gate_image_url: string | null;
   is_set_up: boolean;
   role: "owner" | "moderator" | "member" | null;
   starts_at: string | null;

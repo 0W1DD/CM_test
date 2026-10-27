@@ -31,6 +31,8 @@ export interface SettingsValues {
   auto_approve: number;
   theme_key_color: string | null;
   banner_image_id: string | null;
+  gate_html: string | null;
+  gate_image_id: string | null;
 }
 
 const DEFAULTS: SettingsValues = {
@@ -48,6 +50,8 @@ const DEFAULTS: SettingsValues = {
   auto_approve: 0,
   theme_key_color: null,
   banner_image_id: null,
+  gate_html: null,
+  gate_image_id: null,
 };
 
 function flag(ctx: Ctx, value: unknown, field: string): number {
@@ -135,19 +139,36 @@ export async function settingsValuesOf(
     out.auto_approve = flag(ctx, a.auto_approve, "가입 자동 승인");
   if (has("theme_key_color"))
     out.theme_key_color = themeColorOf(ctx, a.theme_key_color);
-  if (has("banner_image_id")) {
-    if (a.banner_image_id === null || a.banner_image_id === "")
-      out.banner_image_id = null;
-    else {
-      const imageId = text(ctx, a.banner_image_id, "배너 이미지", { max: 200 });
-      const { rows } = await ctx.sql`
-        SELECT id FROM images WHERE id = ${imageId} AND deleted_at IS NULL`;
-      if (!rows.length)
-        invalid(ctx, `잘못된 이미지 ID입니다: ${imageId}`, "invalid_image");
-      out.banner_image_id = imageId;
-    }
-  }
+  if (has("banner_image_id"))
+    out.banner_image_id = await imageIdOf(
+      ctx,
+      a.banner_image_id,
+      "배너 이미지",
+    );
+  // The front gate (home.tsx): the owner's HTML, sanitized as the page
+  // shows it, and its picture.
+  if (has("gate_html"))
+    out.gate_html = optionalText(ctx, a.gate_html, "첫 화면 글", {
+      max: 20000,
+    });
+  if (has("gate_image_id"))
+    out.gate_image_id = await imageIdOf(ctx, a.gate_image_id, "첫 화면 그림");
   return out;
+}
+
+/** A registered image's ID (images:register), or null to remove it. */
+async function imageIdOf(
+  ctx: Ctx,
+  value: unknown,
+  field: string,
+): Promise<string | null> {
+  if (value === null || value === "") return null;
+  const imageId = text(ctx, value, field, { max: 200 });
+  const { rows } = await ctx.sql`
+    SELECT id FROM images WHERE id = ${imageId} AND deleted_at IS NULL`;
+  if (!rows.length)
+    invalid(ctx, `잘못된 이미지 ID입니다: ${imageId}`, "invalid_image");
+  return imageId;
 }
 
 /** Writes the settings row (inserting it when `insert`). */
@@ -161,12 +182,14 @@ export async function writeSettings(
       INSERT INTO settings (id, name, description, starts_at, ends_at,
         is_recruiting, recruiting_starts_at, recruiting_ends_at,
         minimum_birth_year, mute_new_members, show_all_replies, bump_on_reply,
-        auto_approve, theme_key_color, banner_image_id, created_at, updated_at)
+        auto_approve, theme_key_color, banner_image_id, gate_html,
+        gate_image_id, created_at, updated_at)
       VALUES (1, ${v.name}, ${v.description}, ${v.starts_at}, ${v.ends_at},
         ${v.is_recruiting}, ${v.recruiting_starts_at}, ${v.recruiting_ends_at},
         ${v.minimum_birth_year}, ${v.mute_new_members}, ${v.show_all_replies},
         ${v.bump_on_reply}, ${v.auto_approve}, ${v.theme_key_color},
-        ${v.banner_image_id}, ${ctx.now}, ${ctx.now})`;
+        ${v.banner_image_id}, ${v.gate_html}, ${v.gate_image_id}, ${ctx.now},
+        ${ctx.now})`;
   else
     await ctx.sql`
       UPDATE settings SET name = ${v.name}, description = ${v.description},
@@ -179,7 +202,8 @@ export async function writeSettings(
         show_all_replies = ${v.show_all_replies},
         bump_on_reply = ${v.bump_on_reply}, auto_approve = ${v.auto_approve},
         theme_key_color = ${v.theme_key_color},
-        banner_image_id = ${v.banner_image_id}, updated_at = ${ctx.now}
+        banner_image_id = ${v.banner_image_id}, gate_html = ${v.gate_html},
+        gate_image_id = ${v.gate_image_id}, updated_at = ${ctx.now}
       WHERE id = 1`;
 }
 

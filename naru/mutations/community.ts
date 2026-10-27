@@ -49,6 +49,38 @@ export async function setTheme(ctx: MutationCtx, args: unknown) {
   return { theme_key_color: color };
 }
 
+/**
+ * Sets the site owner's own look: 사용자 CSS (up to 50,000 characters; empty
+ * clears it) and whether the page loads the site's /_owner/ files. Fields
+ * left out keep their values.
+ */
+export async function setLook(ctx: MutationCtx, args: unknown) {
+  await requireOwner(ctx);
+  const current = await currentSettings(ctx);
+  const a = argsOf(args);
+  let css = current.custom_css;
+  if ("custom_css" in a) {
+    if (a.custom_css !== null && typeof a.custom_css !== "string")
+      invalid(ctx, "사용자 CSS는 글이어야 합니다.");
+    css =
+      typeof a.custom_css === "string" && a.custom_css.trim()
+        ? a.custom_css
+        : null;
+    if (css && css.length > 50000)
+      invalid(ctx, "사용자 CSS는 50,000자까지 쓸 수 있습니다.");
+  }
+  let files = current.owner_files;
+  if ("owner_files" in a) {
+    if (typeof a.owner_files !== "boolean")
+      invalid(ctx, "owner_files는 참이나 거짓이어야 합니다.");
+    files = a.owner_files ? 1 : 0;
+  }
+  await ctx.sql`
+    UPDATE settings SET custom_css = ${css}, owner_files = ${files},
+      updated_at = ${ctx.now} WHERE id = 1`;
+  return { custom_css: css, owner_files: files === 1 };
+}
+
 const URL_PATTERN = /^https?:\/\/[^\s]+$/i;
 
 function linkFields(ctx: Ctx, a: Record<string, unknown>) {

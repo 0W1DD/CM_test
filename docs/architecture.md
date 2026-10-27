@@ -49,7 +49,25 @@ naru-dev, from a Naru checkout's `control-plane/`:
   programs subscribe to `bot:mentions` for the rest. How to write either:
   [commands.md](commands.md).
 - `routes.json`/`routes.ts` answer every page address with `index.html`
-  (the SPA); `assets/` and the other files are served as they are.
+  (the SPA); `assets/`, `_owner/` and the other files are served as they
+  are. The route writes the community's look into the page's `<head>`
+  (`modules/look.ts`), so a page opens in it before its scripts load: the
+  theme colour's CSS (`modules/theme.ts`, which the page's preview uses
+  too), the site's `/_owner/style.css` when the owner turned
+  `settings.owner_files` on, and 사용자 CSS (`settings.custom_css`), last.
+  The page keeps them as the settings change and loads `/_owner/script.js`
+  once it is up (`app/components/community-theme-injector.tsx`). Naru keeps
+  `_owner/` out of every template and update, and `community:setLook` and
+  the community settings page set both.
+- The front gate is what a visitor who is not a member yet sees on the
+  home, above the sign-in or apply button (`components/front-gate.tsx`):
+  `settings.gate_image_id`, a registered image as the banner is, and
+  `settings.gate_html`, the owner's HTML, set on the admin settings form
+  (`community:update`) and read by anyone (`me:instance`). It is stored as
+  written and sanitized with DOMPurify as the page shows it: the
+  community's owner may not be the site's, and a script there would run for
+  every visitor. Owners who need scripts have `/_owner/script.js`, which
+  only the site's owner can upload.
 
 **Who calls.** Anyone may call any query or mutation; each decides from
 `ctx.member` what the caller may see and do:
