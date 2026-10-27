@@ -27,26 +27,16 @@ function countTotalReplies(replies: Post[]): number {
   return count;
 }
 
-/**
- * Every reply under a post, oldest first, as one list: a conversation reads
- * top to bottom like a chat, one step in from the post, instead of each
- * answer stepping further in (who answers whom shows in the @mentions).
- */
-function flattenReplies(replies: readonly Post[]): Post[] {
-  const all: Post[] = [];
-  const walk = (list: readonly Post[]) => {
-    for (const reply of list) {
-      all.push({ ...reply, replies: [] });
-      if (reply.replies?.length) walk(reply.replies);
-    }
-  };
-  walk(replies);
-  return all.sort(
-    (a, b) =>
-      Date.parse(a.created_at ?? "") - Date.parse(b.created_at ?? "") ||
-      a.id.localeCompare(b.id),
-  );
-}
+/** How many steps replies indent before they stop moving in. */
+const MAX_INDENT = 4;
+
+/** A thread line per depth, so neighbouring levels are told apart. */
+const THREAD_LINE = [
+  "border-l-primary/60",
+  "border-l-mint-ink/60",
+  "border-l-butter-ink/60",
+  "border-l-lilac-ink/60",
+];
 
 export const PostCard = memo(function PostCard({
   post,
@@ -103,8 +93,11 @@ export const PostCard = memo(function PostCard({
   ]);
 
   // Collapse thread by default if user is not part of it (unless community shows all replies)
+  // (only a post's own list folds; replies inside it always show theirs)
   const [isThreadCollapsed, setIsThreadCollapsed] = useState(
-    showAllReplies ? false : !isUserPartOfThread(),
+    showAllReplies || (displayDepth ?? post.depth ?? 0) > 0
+      ? false
+      : !isUserPartOfThread(),
   );
 
   // Filter replies to show only relevant ones (for collapsed view)
@@ -113,7 +106,7 @@ export const PostCard = memo(function PostCard({
       return [];
     }
 
-    const replies = flattenReplies(post.replies);
+    const replies = post.replies;
     const relevantIds = new Set<string>();
 
     // Mark directly relevant replies
@@ -233,12 +226,10 @@ export const PostCard = memo(function PostCard({
     const hasReplies = post.replies && post.replies.length > 0;
     // Only add bottom padding to deepest replies (those without children)
     const padding = isReply
-      ? hasReplies
-        ? "pt-2.5 pl-4"
-        : "py-2.5 pl-4"
+      ? `${hasReplies ? "pt-2.5" : "py-2.5"} ${isContinuation ? "" : "pl-4"}`
       : "px-5 py-4";
     return { depth, isReply, cardSize, padding };
-  }, [displayDepth, post.depth, post.replies]);
+  }, [displayDepth, post.depth, post.replies, isContinuation]);
 
   return (
     <div
@@ -250,7 +241,7 @@ export const PostCard = memo(function PostCard({
             : `bg-card ${!hideBorder ? "border-b border-border" : ""}`
       } group/post overflow-hidden ${
         isReply && !isContinuation
-          ? "border-l-[3px] border-l-primary/40"
+          ? `border-l-[3px] ${THREAD_LINE[(depth - 1) % THREAD_LINE.length]}`
           : ""
       } ${cardSize}`}
     >
@@ -308,9 +299,7 @@ export const PostCard = memo(function PostCard({
 
         {/* Reply actions and reactions */}
         {!showEditForm && (
-          <div
-            className={isReply ? "mt-1" : "mt-3"}
-          >
+          <div className={isReply ? "mt-1" : "mt-3"}>
             {/* Action buttons row */}
             <div
               className={`flex items-center flex-wrap ${
@@ -379,19 +368,22 @@ export const PostCard = memo(function PostCard({
           post.replies &&
           post.replies.length > 0 &&
           (() => {
-            const thread = flattenReplies(post.replies);
             const filteredReplies = filterRelevantReplies();
-            const repliesToShow = isThreadCollapsed ? filteredReplies : thread;
-            const hasHiddenReplies = filteredReplies.length < thread.length;
+            const repliesToShow = isThreadCollapsed
+              ? filteredReplies
+              : post.replies;
+            const hasHiddenReplies =
+              filteredReplies.length < post.replies.length;
+            // An answer to the reply right above continues its line; when
+            // a reply has several answers, each starts a step further in.
+            const branches = isReply && post.replies.length > 1;
 
             const totalReplyCount = post.reply_count ?? post.replies.length;
 
             return (
-              <div
-                className="mt-2"
-              >
+              <div className="mt-2">
                 {/* Show toggle button only if there are hidden replies */}
-                {hasHiddenReplies && !showAllReplies && (
+                {hasHiddenReplies && !showAllReplies && !isReply && (
                   <button
                     type="button"
                     onClick={() => setIsThreadCollapsed(!isThreadCollapsed)}
@@ -411,19 +403,29 @@ export const PostCard = memo(function PostCard({
                 )}
                 {/* Always show replies (filtered when collapsed, all when expanded) */}
                 <div>
-                  {repliesToShow.map((reply) => {
+                  {repliesToShow.map((reply, index) => {
+                    const childDisplayDepth =
+                      isReply && !branches
+                        ? depth
+                        : Math.min(depth + 1, MAX_INDENT);
                     return (
-                      <PostCard
+                      <div
                         key={reply.id}
-                        post={reply}
-                        displayDepth={depth + 1}
-                        currentProfileId={currentProfileId}
-                        onDelete={onDelete}
-                        onRefresh={onRefresh}
-                        isCommunityOwner={isCommunityOwner}
-                        isModerator={isModerator}
-                        isProfileView={isProfileView}
-                      />
+                        // Separate sibling branches so each keeps its own line
+                        className={branches && index > 0 ? "mt-3" : ""}
+                      >
+                        <PostCard
+                          post={reply}
+                          displayDepth={childDisplayDepth}
+                          isContinuation={childDisplayDepth === depth}
+                          currentProfileId={currentProfileId}
+                          onDelete={onDelete}
+                          onRefresh={onRefresh}
+                          isCommunityOwner={isCommunityOwner}
+                          isModerator={isModerator}
+                          isProfileView={isProfileView}
+                        />
+                      </div>
                     );
                   })}
                 </div>
