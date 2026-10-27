@@ -49,7 +49,11 @@ export const PostCard = memo(function PostCard({
   isProfileView = false,
   displayDepth,
   isContinuation = false,
+  branchIndex = 0,
+  foldable = false,
 }: PostCardProps) {
+  // A folded branch shows its first reply and how many follow it.
+  const [branchOpen, setBranchOpen] = useState(false);
   const { currentProfile } = useAuth();
   const { currentInstance, showAllReplies } = useCurrentInstance();
   const [showReplyForm, setShowReplyForm] = useState(false);
@@ -241,7 +245,7 @@ export const PostCard = memo(function PostCard({
             : `bg-card ${!hideBorder ? "border-b border-border" : ""}`
       } group/post overflow-hidden ${
         isReply && !isContinuation
-          ? `border-l-[3px] ${THREAD_LINE[(depth - 1) % THREAD_LINE.length]}`
+          ? `border-l-[3px] ${THREAD_LINE[(depth - 1 + branchIndex) % THREAD_LINE.length]}`
           : ""
       } ${cardSize}`}
     >
@@ -379,6 +383,20 @@ export const PostCard = memo(function PostCard({
             const branches = isReply && post.replies.length > 1;
 
             const totalReplyCount = post.reply_count ?? post.replies.length;
+            // Folded: the rest of a long branch waits behind one button.
+            if (foldable && !branchOpen) {
+              const hidden = countTotalReplies(post.replies);
+              return (
+                <button
+                  type="button"
+                  onClick={() => setBranchOpen(true)}
+                  className="mt-1 mb-1 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                >
+                  <ChevronDown className="w-3.5 h-3.5" />
+                  이어진 답글 {hidden}개 더보기
+                </button>
+              );
+            }
 
             return (
               <div className="mt-2">
@@ -418,6 +436,20 @@ export const PostCard = memo(function PostCard({
                           post={reply}
                           displayDepth={childDisplayDepth}
                           isContinuation={childDisplayDepth === depth}
+                          // Sibling branches take turns through the line
+                          // colours; continuations keep their branch's.
+                          branchIndex={
+                            branches || !isReply
+                              ? branchIndex + index
+                              : branchIndex
+                          }
+                          // Every branch but the newest folds when it runs
+                          // long, so the newer one is not pushed far down.
+                          foldable={
+                            (branches || !isReply) &&
+                            index < repliesToShow.length - 1 &&
+                            countTotalReplies(reply.replies || []) >= 2
+                          }
                           currentProfileId={currentProfileId}
                           onDelete={onDelete}
                           onRefresh={onRefresh}

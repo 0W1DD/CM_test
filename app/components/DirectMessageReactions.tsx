@@ -28,6 +28,20 @@ const AVAILABLE_REACTIONS = [
   { emoji: "🤔", label: "생각" },
   { emoji: "😢", label: "슬픔" },
   { emoji: "👀", label: "주목" },
+  { emoji: "👍", label: "좋아" },
+  { emoji: "🙏", label: "감사" },
+  { emoji: "😭", label: "오열" },
+  { emoji: "😡", label: "화남" },
+  { emoji: "🥺", label: "애원" },
+  { emoji: "💀", label: "해골" },
+  { emoji: "🔥", label: "불" },
+  { emoji: "✨", label: "반짝" },
+  { emoji: "👏", label: "박수" },
+  { emoji: "⚔️", label: "전투" },
+  { emoji: "🩸", label: "피" },
+  { emoji: "🕯️", label: "촛불" },
+  { emoji: "🎲", label: "주사위" },
+  { emoji: "💤", label: "잠" },
 ];
 
 export function DirectMessageReactions({

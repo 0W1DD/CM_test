@@ -84,6 +84,10 @@ export interface PostCardProps {
   isProfileView?: boolean;
   displayDepth?: number;
   isContinuation?: boolean;
+  /** Which of its siblings this branch is, so neighbours get different lines. */
+  branchIndex?: number;
+  /** A long branch above a newer one folds to its first reply until opened. */
+  foldable?: boolean;
 }
 
 export interface PostListRef {
