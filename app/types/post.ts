@@ -88,6 +88,8 @@ export interface PostCardProps {
   branchIndex?: number;
   /** A long branch above a newer one folds to its first reply until opened. */
   foldable?: boolean;
+  /** Show the whole thread open: no folded branches, no collapsed list. */
+  noFold?: boolean;
 }
 
 export interface PostListRef {

@@ -51,6 +51,7 @@ export const PostCard = memo(function PostCard({
   isContinuation = false,
   branchIndex = 0,
   foldable = false,
+  noFold = false,
 }: PostCardProps) {
   // A folded branch shows its first reply and how many follow it.
   const [branchOpen, setBranchOpen] = useState(false);
@@ -99,7 +100,7 @@ export const PostCard = memo(function PostCard({
   // Collapse thread by default if user is not part of it (unless community shows all replies)
   // (only a post's own list folds; replies inside it always show theirs)
   const [isThreadCollapsed, setIsThreadCollapsed] = useState(
-    showAllReplies || (displayDepth ?? post.depth ?? 0) > 0
+    noFold || showAllReplies || (displayDepth ?? post.depth ?? 0) > 0
       ? false
       : !isUserPartOfThread(),
   );
@@ -384,7 +385,7 @@ export const PostCard = memo(function PostCard({
 
             const totalReplyCount = post.reply_count ?? post.replies.length;
             // Folded: the rest of a long branch waits behind one button.
-            if (foldable && !branchOpen) {
+            if (foldable && !noFold && !branchOpen) {
               const hidden = countTotalReplies(post.replies);
               return (
                 <button
@@ -456,6 +457,7 @@ export const PostCard = memo(function PostCard({
                           isCommunityOwner={isCommunityOwner}
                           isModerator={isModerator}
                           isProfileView={isProfileView}
+                          noFold={noFold}
                         />
                       </div>
                     );

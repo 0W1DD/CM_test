@@ -115,38 +115,37 @@ export default function PostDetail() {
   const allReplies = repliesData?.pages.flatMap((page) => page.data) ?? [];
   const totalReplyCount = repliesData?.pages[0]?.pagination.total_count ?? 0;
 
-  // Compute display depths: only indent when a parent branches (has multiple children)
-  const displayDepthMap = useMemo(() => {
-    const map = new Map<string, number>();
-    if (allReplies.length === 0 || !post_id) return map;
-
-    // Count children per parent
-    const childCount = new Map<string, number>();
+  // The replies as a tree under the post, so the page draws them exactly as
+  // the timeline does: a chain continues in place, a branch steps in.
+  const replyTree = useMemo(() => {
+    const nodes = new Map<string, Post>();
+    for (const reply of allReplies)
+      nodes.set(reply.id, {
+        ...reply,
+        author: {
+          ...reply.author,
+          profile_picture_url: reply.author.profile_picture_url || null,
+        },
+        content_warning: reply.content_warning || null,
+        in_reply_to_id: reply.in_reply_to_id || null,
+        root_post_id: reply.root_post_id || null,
+        images: reply.images || [],
+        is_bookmarked: reply.is_bookmarked || false,
+        reactions: reply.reactions || [],
+        replies: [],
+      });
+    const roots: Post[] = [];
     for (const reply of allReplies) {
-      const parentId = reply.in_reply_to_id;
-      if (parentId) {
-        childCount.set(parentId, (childCount.get(parentId) ?? 0) + 1);
-      }
+      const node = nodes.get(reply.id);
+      if (!node) continue;
+      const parent = reply.in_reply_to_id
+        ? nodes.get(reply.in_reply_to_id)
+        : undefined;
+      if (parent) parent.replies = [...(parent.replies ?? []), node];
+      else roots.push(node);
     }
-
-    // Process in order (sort_path guarantees parents before children)
-    for (const reply of allReplies) {
-      const parentId = reply.in_reply_to_id;
-      if (parentId === post_id) {
-        // Direct reply to main post — always depth 1
-        map.set(reply.id, 1);
-      } else {
-        const parentDisplayDepth = map.get(parentId ?? "") ?? 1;
-        const siblings = childCount.get(parentId ?? "") ?? 1;
-        // Only increase depth if parent has multiple children (branching)
-        map.set(
-          reply.id,
-          siblings > 1 ? parentDisplayDepth + 1 : parentDisplayDepth,
-        );
-      }
-    }
-    return map;
-  }, [allReplies, post_id]);
+    return roots;
+  }, [allReplies]);
 
   const handleMainPostDelete = () => {
     navigate("/", { state: { refetch: true } });
@@ -246,16 +245,27 @@ export default function PostDetail() {
             </div>
           )}
 
-          <PostCard
-            post={{
-              ...post,
-              replies: [],
-            }}
-            currentProfileId={currentProfile?.id}
-            onDelete={handleMainPostDelete}
-            onRefresh={handleRefresh}
-            isCommunityOwner={isCommunityOwner}
-          />
+          <div className="md:framed overflow-hidden">
+            <PostCard
+              post={{
+                ...post,
+                replies: replyTree,
+                reply_count: totalReplyCount,
+                has_more_replies: false,
+              }}
+              currentProfileId={currentProfile?.id}
+              onDelete={handleMainPostDelete}
+              onRefresh={handleRefresh}
+              isCommunityOwner={isCommunityOwner}
+              hideBorder
+              noFold
+            />
+            {(isRepliesLoading || isFetchingNextPage) && (
+              <div className="flex justify-center py-4">
+                <Spinner className="h-5 w-5" />
+              </div>
+            )}
+          </div>
 
           {/* Detailed Reactions section */}
           {post.reactions && post.reactions.length > 0 && (
@@ -315,65 +325,6 @@ export default function PostDetail() {
             </div>
           )}
 
-          {/* Replies section */}
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">
-              답글 ({totalReplyCount})
-            </h3>
-
-            {isRepliesLoading ? (
-              <div className="flex justify-center py-8">
-                <Spinner className="h-6 w-6" />
-              </div>
-            ) : allReplies.length === 0 ? (
-              <div className="bg-card rounded-2xl shadow-marsh border border-border p-8 text-center">
-                <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MessageCircle className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <h4 className="text-lg font-semibold text-foreground mb-2">
-                  아직 답글이 없습니다
-                </h4>
-                <p className="text-muted-foreground">
-                  첫 번째 답글을 작성해보세요!
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {allReplies.map((reply) => (
-                  <PostCard
-                    key={reply.id}
-                    post={{
-                      ...reply,
-                      author: {
-                        ...reply.author,
-                        profile_picture_url:
-                          reply.author.profile_picture_url || null,
-                      },
-                      content_warning: reply.content_warning || null,
-                      in_reply_to_id: reply.in_reply_to_id || null,
-                      root_post_id: reply.root_post_id || null,
-                      images: reply.images || [],
-                      is_bookmarked: reply.is_bookmarked || false,
-                      reactions: reply.reactions || [],
-                      depth: 0,
-                      replies: [],
-                    }}
-                    displayDepth={displayDepthMap.get(reply.id) ?? 1}
-                    currentProfileId={currentProfile?.id}
-                    onDelete={handleRefresh}
-                    onRefresh={handleRefresh}
-                    isCommunityOwner={isCommunityOwner}
-                  />
-                ))}
-
-                {isFetchingNextPage && (
-                  <div className="flex justify-center py-4">
-                    <Spinner className="h-4 w-4" />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
         </div>
       </main>
     </div>
