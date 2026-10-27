@@ -21,3 +21,11 @@ test("every command file is listed, named after its file, once", async () => {
     assert.equal(typeof command.run, "function");
   }
 });
+
+test("a command runs in a reply after the mentions the reply starts with", async () => {
+  const { parseSlashCommand } = await import("../dist/_naru/modules/commands.js");
+  assert.deepEqual(parseSlashCommand("@alice /roll 1d20"), { name: "roll", args: "1d20" });
+  assert.deepEqual(parseSlashCommand("@alice @bob /coin"), { name: "coin", args: "" });
+  assert.equal(parseSlashCommand("@alice 안녕 /roll"), null);
+  assert.equal(parseSlashCommand("@alice\n/roll"), null);
+});

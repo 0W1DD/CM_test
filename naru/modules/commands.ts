@@ -38,12 +38,22 @@ export const BUILTIN_COMMANDS: readonly Command[] = [
 
 const SLASH_COMMAND_PATTERN = /^\/([a-z][a-z0-9_-]{0,30})(?:\s+([\s\S]*))?$/i;
 
-/** The command in a post: one line that starts with `/name`. */
+/**
+ * Mentions a reply starts with: the composer writes "@author " for every
+ * reply, and members could not run a command in a reply without deleting it.
+ */
+const LEADING_MENTIONS = /^(?:@[A-Za-z0-9_]+\s+)+/;
+
+/**
+ * The command in a post: one line that starts with `/name`, after any
+ * mentions a reply begins with ("@alice /roll 1d20" runs /roll).
+ */
 export function parseSlashCommand(
   content: string,
 ): { name: string; args: string } | null {
-  if (content.includes("\n")) return null;
-  const match = SLASH_COMMAND_PATTERN.exec(content.trim());
+  const text = content.trim();
+  if (text.includes("\n")) return null;
+  const match = SLASH_COMMAND_PATTERN.exec(text.replace(LEADING_MENTIONS, ""));
   if (!match?.[1]) return null;
   return { name: match[1].toLowerCase(), args: match[2] ?? "" };
 }

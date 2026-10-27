@@ -27,16 +27,26 @@ function countTotalReplies(replies: Post[]): number {
   return count;
 }
 
-/** How many steps replies indent before they stop moving in. */
-const MAX_INDENT = 4;
-
-/** A thread line per depth, so neighbouring levels are told apart. */
-const THREAD_LINE = [
-  "border-l-primary/60",
-  "border-l-mint-ink/60",
-  "border-l-butter-ink/60",
-  "border-l-lilac-ink/60",
-];
+/**
+ * Every reply under a post, oldest first, as one list: a conversation reads
+ * top to bottom like a chat, one step in from the post, instead of each
+ * answer stepping further in (who answers whom shows in the @mentions).
+ */
+function flattenReplies(replies: readonly Post[]): Post[] {
+  const all: Post[] = [];
+  const walk = (list: readonly Post[]) => {
+    for (const reply of list) {
+      all.push({ ...reply, replies: [] });
+      if (reply.replies?.length) walk(reply.replies);
+    }
+  };
+  walk(replies);
+  return all.sort(
+    (a, b) =>
+      Date.parse(a.created_at ?? "") - Date.parse(b.created_at ?? "") ||
+      a.id.localeCompare(b.id),
+  );
+}
 
 export const PostCard = memo(function PostCard({
   post,
@@ -103,7 +113,7 @@ export const PostCard = memo(function PostCard({
       return [];
     }
 
-    const replies = post.replies;
+    const replies = flattenReplies(post.replies);
     const relevantIds = new Set<string>();
 
     // Mark directly relevant replies
@@ -240,7 +250,7 @@ export const PostCard = memo(function PostCard({
             : `bg-card ${!hideBorder ? "border-b border-border" : ""}`
       } group/post overflow-hidden ${
         isReply && !isContinuation
-          ? `border-l-[3px] ${THREAD_LINE[(depth - 1) % THREAD_LINE.length]}`
+          ? "border-l-[3px] border-l-primary/40"
           : ""
       } ${cardSize}`}
     >
@@ -369,18 +379,16 @@ export const PostCard = memo(function PostCard({
           post.replies &&
           post.replies.length > 0 &&
           (() => {
+            const thread = flattenReplies(post.replies);
             const filteredReplies = filterRelevantReplies();
-            const repliesToShow = isThreadCollapsed
-              ? filteredReplies
-              : post.replies;
-            const hasHiddenReplies =
-              filteredReplies.length < post.replies.length;
+            const repliesToShow = isThreadCollapsed ? filteredReplies : thread;
+            const hasHiddenReplies = filteredReplies.length < thread.length;
 
             const totalReplyCount = post.reply_count ?? post.replies.length;
 
             return (
               <div
-                className={`mt-2 ${isReply && depth < MAX_INDENT ? "ml-2" : ""}`}
+                className="mt-2"
               >
                 {/* Show toggle button only if there are hidden replies */}
                 {hasHiddenReplies && !showAllReplies && (
@@ -404,16 +412,11 @@ export const PostCard = memo(function PostCard({
                 {/* Always show replies (filtered when collapsed, all when expanded) */}
                 <div>
                   {repliesToShow.map((reply) => {
-                    // Each answer sits one step further in, so who answers
-                    // whom reads from the indentation; past MAX_INDENT steps
-                    // replies stay at that depth rather than squeezing.
-                    const childDisplayDepth = Math.min(depth + 1, MAX_INDENT);
                     return (
                       <PostCard
                         key={reply.id}
                         post={reply}
-                        displayDepth={childDisplayDepth}
-                        isContinuation={childDisplayDepth <= depth}
+                        displayDepth={depth + 1}
                         currentProfileId={currentProfileId}
                         onDelete={onDelete}
                         onRefresh={onRefresh}

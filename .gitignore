@@ -4,4 +4,3 @@ build/
 .naru-dev/
 .DS_Store
 # dist/ is committed: Naru deploys that folder of this repository.
-commung-repo.zip

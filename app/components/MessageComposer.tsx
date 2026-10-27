@@ -235,12 +235,15 @@ export function MessageComposer({
     setSelectedSlashIndex(0);
   }, [slashQuery, showSlashDropdown, allSlashCommands]);
 
-  // Check for /command at the very start of the message
+  // Check for /command at the start of the message, after the "@author "
+  // a reply begins with (the site runs it there too)
+  const [slashPrefix, setSlashPrefix] = useState("");
   const checkForSlashCommand = (text: string, cursorPosition: number) => {
     const beforeCursor = text.slice(0, cursorPosition);
-    const match = beforeCursor.match(/^\/([a-z0-9_-]*)$/i);
+    const match = beforeCursor.match(/^((?:@[A-Za-z0-9_]+\s+)*)\/([a-z0-9_-]*)$/i);
     if (match) {
-      setSlashQuery(match[1] ?? "");
+      setSlashPrefix(match[1] ?? "");
+      setSlashQuery(match[2] ?? "");
       setShowSlashDropdown(true);
       if (allSlashCommands === null) {
         fetchSlashCommands();
@@ -254,15 +257,15 @@ export function MessageComposer({
 
   // Insert selected slash command
   const selectSlashCommand = (cmd: SlashCommand) => {
-    const after = message.slice(slashQuery.length + 1);
-    const newMessage = `/${cmd.name} ${after.trimStart()}`;
+    const after = message.slice(slashPrefix.length + slashQuery.length + 1);
+    const newMessage = `${slashPrefix}/${cmd.name} ${after.trimStart()}`;
     setMessage(newMessage);
     setShowSlashDropdown(false);
     setSlashCommands([]);
     setSlashQuery("");
     setTimeout(() => {
       textareaRef.current?.focus();
-      const newPosition = cmd.name.length + 2;
+      const newPosition = slashPrefix.length + cmd.name.length + 2;
       textareaRef.current?.setSelectionRange(newPosition, newPosition);
     }, 0);
   };
