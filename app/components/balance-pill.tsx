@@ -25,7 +25,7 @@ export function BalancePill({
       <Link
         to="/shop"
         title={title}
-        className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-butter/40 text-butter-ink hover:bg-butter/60 transition-colors"
+        className="inline-flex items-center justify-center w-10 h-10 rounded-md border-[1.5px] border-[var(--frame)] bg-card text-foreground hover:bg-accent transition-colors"
       >
         <Coins className="h-4 w-4" />
       </Link>
@@ -36,7 +36,7 @@ export function BalancePill({
     <Link
       to="/shop"
       title={title}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-butter/40 text-butter-ink text-sm font-medium hover:bg-butter/60 transition-colors ${
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border-[1.5px] border-[var(--frame)] bg-card text-foreground text-sm font-medium hover:bg-accent transition-colors ${
         fullWidth ? "w-full justify-center" : ""
       }`}
     >

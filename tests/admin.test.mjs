@@ -331,7 +331,10 @@ test("the site owner's look: 사용자 CSS and the _owner/ switch, in every page
     assert.equal(
       head,
       [
-        `<style id="community-theme">${buildThemeCss("#6b7fb8").replace(/<\//g, "<\\/")}</style>`,
+        // (no theme element when the site keeps a fixed palette)
+        ...(buildThemeCss("#6b7fb8")
+          ? [`<style id="community-theme">${buildThemeCss("#6b7fb8").replace(/<\//g, "<\\/")}</style>`]
+          : []),
         '<link rel="stylesheet" id="owner-file" href="/_owner/style.css" />',
         `<style id="community-owner-css">${css.replace(/<\//g, "<\\/")}</style>`,
       ].join("\n"),
@@ -347,9 +350,12 @@ test("the site owner's look: 사용자 CSS and the _owner/ switch, in every page
   await site.mutate("community:setLook", { custom_css: "" }, as("m-owner"));
   assert.match((await site.route("/")).head, /owner-file/);
   await site.mutate("community:setLook", { owner_files: false }, as("m-owner"));
+  // (nothing at all when the site keeps a fixed palette)
   assert.equal(
     (await site.route("/")).head,
-    `<style id="community-theme">${buildThemeCss("#6b7fb8")}</style>`,
+    buildThemeCss("#6b7fb8")
+      ? `<style id="community-theme">${buildThemeCss("#6b7fb8")}</style>`
+      : undefined,
   );
 });
 

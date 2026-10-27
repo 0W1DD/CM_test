@@ -31,7 +31,7 @@ export function MastodonLayout({
       {/* Mobile Header */}
       {showAuthenticatedLayout && (
         <header
-          className={`sticky top-0 z-40 bg-card/85 backdrop-blur-xl border-b border-border/70 px-4 h-14 flex items-center gap-3 md:hidden transition-transform duration-300 ${headerHidden ? "-translate-y-full" : "translate-y-0"}`}
+          className={`sticky top-0 z-40 bg-card border-b-[1.5px] border-[var(--frame)] px-4 h-14 flex items-center gap-3 md:hidden transition-transform duration-300 ${headerHidden ? "-translate-y-full" : "translate-y-0"}`}
         >
           <MobileNavDrawer
             communityName={communityName}
@@ -48,13 +48,13 @@ export function MastodonLayout({
       <div
         className={
           showAuthenticatedLayout
-            ? "md:grid md:grid-cols-[72px_1fr] lg:grid-cols-[280px_1fr] max-w-[960px] mx-auto"
+            ? "md:grid md:grid-cols-[76px_1fr] lg:grid-cols-[260px_1fr] md:gap-5 max-w-[1000px] mx-auto md:px-5"
             : ""
         }
       >
         {/* Sidebar: hidden on mobile, sticky on tablet+ */}
         {showAuthenticatedLayout && (
-          <div className="hidden md:block sticky top-0 h-screen overflow-y-auto">
+          <div className="framed hidden md:block sticky top-6 self-start my-6 max-h-[calc(100vh-3rem)] overflow-y-auto">
             {/* Tablet: collapsed sidebar */}
             <div className="lg:hidden">
               <SidebarNav
@@ -79,7 +79,7 @@ export function MastodonLayout({
         <main
           className={
             showAuthenticatedLayout
-              ? "min-w-0 min-h-screen md:border-x md:border-border/70 md:bg-card/40 md:backdrop-blur-sm pb-24 md:pb-0"
+              ? "min-w-0 min-h-screen pb-24 md:pb-0 md:min-h-[calc(100vh-3rem)] md:my-6 md:framed"
               : "min-h-screen"
           }
         >

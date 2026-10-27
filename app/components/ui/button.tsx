@@ -5,18 +5,18 @@ import * as React from "react"
 import { cn } from "~/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-semibold tracking-tight transition-all duration-200 ease-out disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-ring/60 focus-visible:ring-[3px] focus-visible:ring-offset-2 focus-visible:ring-offset-background aria-invalid:ring-destructive/30 dark:aria-invalid:ring-destructive/50 aria-invalid:border-destructive active:scale-[0.97]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-semibold tracking-tight transition-colors duration-150 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-ring/60 focus-visible:ring-[3px] focus-visible:ring-offset-2 focus-visible:ring-offset-background aria-invalid:ring-destructive/30 dark:aria-invalid:ring-destructive/50 aria-invalid:border-destructive",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-marsh hover:shadow-marsh-lg hover:-translate-y-px hover:bg-primary/95",
+          "bg-primary text-primary-foreground border-[1.5px] border-[var(--frame)] hover:bg-primary/90",
         destructive:
-          "bg-destructive text-white shadow-marsh hover:shadow-marsh-lg hover:-translate-y-px hover:bg-destructive/90 focus-visible:ring-destructive/30 dark:focus-visible:ring-destructive/50",
+          "bg-destructive text-primary-foreground border-[1.5px] border-[var(--frame)] hover:bg-destructive/90",
         outline:
-          "border border-border bg-card/70 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground hover:border-primary/30 dark:bg-card/40",
+          "border-[1.5px] border-[var(--frame)] bg-card hover:bg-accent hover:text-accent-foreground",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-marsh/50",
+          "bg-secondary text-secondary-foreground border-[1.5px] border-[var(--frame)] hover:bg-secondary/80",
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/60",
         link: "text-primary underline-offset-4 hover:underline rounded-md",

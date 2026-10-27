@@ -56,7 +56,7 @@ export function ProfileSwitcher({ compact = false }: ProfileSwitcherProps) {
           className={
             compact
               ? "h-auto p-2 rounded-full"
-              : "h-auto p-2 justify-start space-x-2 rounded-full"
+              : "h-auto p-2 justify-start space-x-2 rounded-md"
           }
         >
           <ProfileAvatar

@@ -47,14 +47,14 @@ export function SidebarNav({
       (path !== "/" && location.pathname.startsWith(path));
 
     const baseClasses = collapsed
-      ? "flex items-center justify-center p-3 rounded-2xl transition-all duration-200"
-      : "flex items-center gap-3 px-4 py-2.5 text-base rounded-2xl transition-all duration-200 w-full";
+      ? "flex items-center justify-center p-3 rounded-md transition-colors"
+      : "flex items-center gap-3 px-3 py-2 text-base rounded-md transition-colors w-full";
 
     if (isActive) {
-      return `${baseClasses} text-primary bg-primary/12 font-bold shadow-marsh`;
+      return `${baseClasses} text-primary-foreground bg-primary font-bold`;
     }
 
-    return `${baseClasses} text-foreground/80 hover:text-foreground hover:bg-accent/70 hover:-translate-y-px`;
+    return `${baseClasses} text-foreground hover:bg-accent`;
   };
 
   const navigationItems = [
@@ -98,7 +98,7 @@ export function SidebarNav({
 
   return (
     <aside
-      className={`flex flex-col h-screen sticky top-0 ${collapsed ? "w-[72px] items-center" : "w-[280px]"} py-3 px-3`}
+      className={`flex flex-col ${collapsed ? "w-full items-center" : "w-full"} py-3 px-3`}
     >
       {/* Community Logo/Name */}
       <div

@@ -149,8 +149,15 @@ function rulesBlock(tokens: Record<string, string>): string {
     .join("\n");
 }
 
+/**
+ * This site keeps to its own three colours (app.css: ground, theme, accent);
+ * a key colour would replace them, so none is applied. Set false to let the
+ * settings' key colour drive the theme again.
+ */
+const FIXED_PALETTE = true;
+
 export function buildThemeCss(hex: string | null | undefined): string {
-  if (!hex) return "";
+  if (FIXED_PALETTE || !hex) return "";
   const key = keyOf(hex);
   if (!key) return "";
   const h = key.h;
