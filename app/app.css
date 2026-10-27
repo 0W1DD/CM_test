@@ -749,3 +749,52 @@ button.bg-primary {
     animation: none;
   }
 }
+
+/* ---------- One colour ----------
+   Everything glows in the same cyan: the accents that were pink, yellow,
+   violet or green are cyan at other strengths, so the page reads as one. */
+:root,
+.dark {
+  --neon-pink: oklch(0.88 0.15 195);
+  --neon-yellow: oklch(0.92 0.1 195);
+  --neon-violet: oklch(0.75 0.13 205);
+  --accent: oklch(0.88 0.15 195 / 0.12);
+  --secondary: oklch(0.22 0.04 220);
+  --blossom: oklch(0.88 0.15 195 / 0.18);
+  --mint: oklch(0.88 0.15 195 / 0.18);
+  --butter: oklch(0.88 0.15 195 / 0.18);
+  --lilac: oklch(0.88 0.15 195 / 0.18);
+  --sky-soft: oklch(0.88 0.15 195 / 0.18);
+  --blossom-ink: oklch(0.88 0.15 195);
+  --mint-ink: oklch(0.88 0.15 195);
+  --butter-ink: oklch(0.88 0.15 195);
+  --lilac-ink: oklch(0.82 0.12 200);
+  --lilac-strong: oklch(0.82 0.12 200);
+  --warning: oklch(0.88 0.15 195);
+  --online: oklch(0.88 0.15 195);
+  --star: oklch(0.88 0.15 195);
+  --masquerade: oklch(0.88 0.15 195);
+  --announce-from: oklch(0.88 0.15 195 / 0.1);
+  --announce-to: oklch(0.88 0.15 195 / 0.03);
+  --logo-gradient: linear-gradient(135deg, oklch(0.95 0.08 195), oklch(0.7 0.14 215));
+  --badge-gradient: linear-gradient(135deg, oklch(0.88 0.15 195), oklch(0.75 0.14 210));
+  --badge-shadow: 0 0 10px oklch(0.88 0.15 195 / 0.7);
+}
+
+body {
+  background-image:
+    radial-gradient(60rem 40rem at 0% 0%, oklch(0.88 0.15 195 / 0.12), transparent 60%),
+    radial-gradient(50rem 40rem at 100% 100%, oklch(0.88 0.15 195 / 0.08), transparent 60%),
+    linear-gradient(oklch(0.88 0.15 195 / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.88 0.15 195 / 0.05) 1px, transparent 1px);
+}
+
+.cyber-glitch::before {
+  color: oklch(0.95 0.08 195);
+}
+.cyber-glitch::after {
+  color: oklch(0.65 0.14 215);
+}
+.cyber-badge {
+  color: oklch(0.12 0.02 275);
+}

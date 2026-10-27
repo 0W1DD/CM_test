@@ -32,10 +32,10 @@ const MAX_INDENT = 4;
 
 /** A thread line per depth, so neighbouring levels are told apart. */
 const THREAD_LINE = [
+  "border-l-primary/80",
+  "border-l-primary/40",
   "border-l-primary/60",
-  "border-l-mint-ink/60",
-  "border-l-butter-ink/60",
-  "border-l-lilac-ink/60",
+  "border-l-primary/25",
 ];
 
 export const PostCard = memo(function PostCard({
