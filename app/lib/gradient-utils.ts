@@ -1,14 +1,14 @@
 // Gradient color combinations for consistent user avatars and headers
-// One family of neon cyans, told apart by depth, to match the neon theme.
+// Greys only, told apart by depth, to keep to black, white and one red.
 const gradientCombinations = [
-  "from-cyan-300 to-sky-600",
-  "from-cyan-400 to-sky-700",
-  "from-cyan-500 to-teal-800",
-  "from-sky-400 to-cyan-800",
-  "from-teal-400 to-cyan-700",
-  "from-sky-500 to-slate-800",
-  "from-cyan-600 to-slate-900",
-  "from-teal-500 to-slate-800",
+  "from-zinc-300 to-zinc-600",
+  "from-zinc-400 to-zinc-700",
+  "from-neutral-300 to-neutral-600",
+  "from-neutral-400 to-neutral-700",
+  "from-stone-300 to-stone-600",
+  "from-zinc-500 to-zinc-800",
+  "from-neutral-500 to-neutral-800",
+  "from-stone-400 to-stone-700",
 ];
 
 // Simple hash function to generate consistent index from string

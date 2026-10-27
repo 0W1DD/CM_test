@@ -312,30 +312,30 @@ button:active,
   --radius-3xl: 0.45rem;
   --radius-xl: 0.3rem;
 
-  --neon-cyan: oklch(0.88 0.15 195);
-  --neon-pink: oklch(0.72 0.27 345);
-  --neon-yellow: oklch(0.94 0.19 108);
-  --neon-violet: oklch(0.7 0.2 295);
+  --neon-cyan: oklch(0.66 0.25 25);
+  --neon-pink: oklch(0.66 0.25 25);
+  --neon-yellow: oklch(0.66 0.25 25);
+  --neon-violet: oklch(0.66 0.25 25);
 
-  --background: oklch(0.12 0.025 275);
-  --foreground: oklch(0.95 0.02 205);
-  --card: oklch(0.155 0.03 275 / 0.88);
-  --card-foreground: oklch(0.95 0.02 205);
-  --popover: oklch(0.16 0.035 280);
-  --popover-foreground: oklch(0.95 0.02 205);
+  --background: oklch(0.15 0 0);
+  --foreground: oklch(0.94 0 0);
+  --card: oklch(0.18 0 0 / 0.88);
+  --card-foreground: oklch(0.94 0 0);
+  --popover: oklch(0.19 0 0);
+  --popover-foreground: oklch(0.94 0 0);
   --primary: var(--neon-cyan);
-  --primary-foreground: oklch(0.13 0.03 275);
-  --secondary: oklch(0.22 0.05 300);
-  --secondary-foreground: oklch(0.95 0.02 205);
-  --muted: oklch(0.19 0.035 275);
-  --muted-foreground: oklch(0.74 0.05 230);
-  --accent: oklch(0.24 0.08 330 / 0.55);
-  --accent-foreground: oklch(0.97 0.02 205);
-  --destructive: oklch(0.68 0.24 15);
-  --border: oklch(0.88 0.15 195 / 0.2);
-  --input: oklch(0.88 0.15 195 / 0.28);
+  --primary-foreground: oklch(0.16 0 0);
+  --secondary: oklch(0.24 0 0);
+  --secondary-foreground: oklch(0.94 0 0);
+  --muted: oklch(0.21 0 0);
+  --muted-foreground: oklch(0.72 0 0);
+  --accent: oklch(0.66 0.25 25 / 0.55);
+  --accent-foreground: oklch(0.96 0 0);
+  --destructive: oklch(0.66 0.25 25);
+  --border: oklch(0.66 0.25 25 / 0.2);
+  --input: oklch(0.66 0.25 25 / 0.28);
   --ring: var(--neon-cyan);
-  --sidebar: oklch(0.14 0.03 275);
+  --sidebar: oklch(0.17 0 0);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--neon-cyan);
   --sidebar-primary-foreground: var(--primary-foreground);
@@ -344,26 +344,26 @@ button:active,
   --sidebar-border: var(--border);
   --sidebar-ring: var(--neon-cyan);
 
-  --blossom: oklch(0.72 0.27 345 / 0.35);
-  --mint: oklch(0.85 0.18 165 / 0.35);
-  --butter: oklch(0.94 0.19 108 / 0.25);
-  --lilac: oklch(0.7 0.2 295 / 0.35);
-  --sky-soft: oklch(0.88 0.15 195 / 0.3);
-  --blossom-ink: oklch(0.8 0.2 345);
-  --mint-ink: oklch(0.87 0.17 165);
-  --butter-ink: oklch(0.94 0.19 108);
-  --lilac-ink: oklch(0.8 0.15 295);
+  --blossom: oklch(0.66 0.25 25 / 0.35);
+  --mint: oklch(0.66 0.25 25 / 0.35);
+  --butter: oklch(0.66 0.25 25 / 0.25);
+  --lilac: oklch(0.66 0.25 25 / 0.35);
+  --sky-soft: oklch(0.66 0.25 25 / 0.3);
+  --blossom-ink: oklch(0.72 0.2 25);
+  --mint-ink: oklch(0.72 0.2 25);
+  --butter-ink: oklch(0.66 0.25 25);
+  --lilac-ink: oklch(0.72 0.2 25);
   --lilac-strong: var(--neon-violet);
   --warning: var(--neon-yellow);
-  --online: oklch(0.87 0.22 150);
+  --online: oklch(0.66 0.25 25);
   --star: var(--neon-yellow);
   --masquerade: var(--neon-pink);
-  --announce-from: oklch(0.24 0.1 345 / 0.6);
-  --announce-to: oklch(0.2 0.08 230 / 0.6);
+  --announce-from: oklch(0.66 0.25 25 / 0.6);
+  --announce-to: oklch(0.66 0.25 25 / 0.6);
 
   --logo-gradient: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan));
-  --badge-gradient: linear-gradient(135deg, var(--neon-pink), oklch(0.6 0.27 330));
-  --badge-shadow: 0 0 10px oklch(0.72 0.27 345 / 0.7);
+  --badge-gradient: linear-gradient(135deg, var(--neon-pink), oklch(0.55 0.23 22));
+  --badge-shadow: 0 0 10px oklch(0.66 0.25 25 / 0.7);
 
   --font-sans:
     "Pretendard Variable", "Pretendard", "Noto Sans KR", ui-sans-serif,
@@ -371,9 +371,9 @@ button:active,
   --font-display: "Orbitron", "Pretendard Variable", "Noto Sans KR", sans-serif;
   --font-mono: "Share Tech Mono", ui-monospace, monospace;
 
-  --shadow-marsh: 0 0 0 1px oklch(0.88 0.15 195 / 0.08);
+  --shadow-marsh: 0 0 0 1px oklch(0.66 0.25 25 / 0.08);
   --shadow-marsh-lg:
-    0 0 0 1px oklch(0.88 0.15 195 / 0.25), 0 0 24px -6px oklch(0.88 0.15 195 / 0.35);
+    0 0 0 1px oklch(0.66 0.25 25 / 0.25), 0 0 24px -6px oklch(0.66 0.25 25 / 0.35);
 }
 
 html {
@@ -383,10 +383,10 @@ html {
 body {
   background-color: var(--background);
   background-image:
-    radial-gradient(60rem 40rem at 0% 0%, oklch(0.88 0.15 195 / 0.12), transparent 60%),
-    radial-gradient(50rem 40rem at 100% 100%, oklch(0.72 0.27 345 / 0.14), transparent 60%),
-    linear-gradient(oklch(0.88 0.15 195 / 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, oklch(0.88 0.15 195 / 0.05) 1px, transparent 1px);
+    radial-gradient(60rem 40rem at 0% 0%, oklch(0.66 0.25 25 / 0.12), transparent 60%),
+    radial-gradient(50rem 40rem at 100% 100%, oklch(0.66 0.25 25 / 0.14), transparent 60%),
+    linear-gradient(oklch(0.66 0.25 25 / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.66 0.25 25 / 0.05) 1px, transparent 1px);
   background-size: auto, auto, 44px 44px, 44px 44px;
   background-attachment: fixed;
 }
@@ -409,11 +409,11 @@ body::after {
 
 ::selection {
   background: var(--neon-pink);
-  color: oklch(0.12 0.02 275);
+  color: oklch(0.13 0 0);
 }
 
 * {
-  scrollbar-color: oklch(0.88 0.15 195 / 0.4) transparent;
+  scrollbar-color: oklch(0.66 0.25 25 / 0.4) transparent;
 }
 
 .no-scrollbar {
@@ -434,7 +434,7 @@ button:focus-visible {
 
 @media (min-width: 700px) {
   .cyber-main {
-    background: oklch(0.13 0.03 275 / 0.72);
+    background: oklch(0.16 0 0 / 0.72);
     border: 1px solid var(--border);
     clip-path: polygon(
       0 0,
@@ -461,7 +461,7 @@ button:focus-visible {
 
 .cyber-panel {
   position: relative;
-  background: oklch(0.14 0.03 275 / 0.82);
+  background: oklch(0.17 0 0 / 0.82);
   border: 1px solid var(--border);
   clip-path: polygon(
     0 0,
@@ -500,7 +500,7 @@ button:focus-visible {
   font-size: 2rem;
   letter-spacing: 0.08em;
   color: var(--neon-cyan);
-  text-shadow: 0 0 14px oklch(0.88 0.15 195 / 0.7);
+  text-shadow: 0 0 14px oklch(0.66 0.25 25 / 0.7);
 }
 
 .cyber-blink {
@@ -515,10 +515,10 @@ button:focus-visible {
 /* ---------- The top bar ---------- */
 
 .cyber-hud {
-  background: oklch(0.1 0.025 275 / 0.82);
+  background: oklch(0.12 0 0 / 0.82);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
-  box-shadow: 0 1px 0 oklch(0.72 0.27 345 / 0.35), 0 10px 30px -18px var(--neon-cyan);
+  box-shadow: 0 1px 0 oklch(0.66 0.25 25 / 0.35), 0 10px 30px -18px var(--neon-cyan);
 }
 
 .cyber-logo {
@@ -547,7 +547,7 @@ button:focus-visible {
 }
 @keyframes cyber-pulse {
   50% {
-    filter: drop-shadow(0 0 8px var(--neon-pink)) hue-rotate(40deg);
+    filter: drop-shadow(0 0 8px var(--neon-pink));
   }
 }
 
@@ -564,12 +564,12 @@ button:focus-visible {
 }
 .cyber-tab:hover {
   color: var(--foreground);
-  background: linear-gradient(to top, oklch(0.88 0.15 195 / 0.1), transparent);
+  background: linear-gradient(to top, oklch(0.66 0.25 25 / 0.1), transparent);
 }
 .cyber-tab.is-active {
   color: var(--neon-cyan);
-  text-shadow: 0 0 10px oklch(0.88 0.15 195 / 0.8);
-  background: linear-gradient(to top, oklch(0.88 0.15 195 / 0.16), transparent);
+  text-shadow: 0 0 10px oklch(0.66 0.25 25 / 0.8);
+  background: linear-gradient(to top, oklch(0.66 0.25 25 / 0.16), transparent);
 }
 .cyber-tab.is-active::after {
   content: "";
@@ -599,7 +599,7 @@ button:focus-visible {
   place-items: center;
   font-family: var(--font-mono);
   font-size: 10px;
-  color: oklch(0.12 0.02 275);
+  color: oklch(0.13 0 0);
   background: var(--neon-pink);
   box-shadow: 0 0 10px var(--neon-pink);
   clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
@@ -620,19 +620,19 @@ button:focus-visible {
   transition: filter 0.15s, transform 0.15s;
 }
 .cyber-button {
-  color: oklch(0.12 0.02 275);
-  background: linear-gradient(90deg, var(--neon-cyan), oklch(0.8 0.17 220));
+  color: oklch(0.13 0 0);
+  background: linear-gradient(90deg, var(--neon-cyan), oklch(0.58 0.24 22));
 }
 .cyber-button:hover {
   filter: drop-shadow(0 0 10px var(--neon-cyan)) brightness(1.1);
 }
 .cyber-button-ghost {
   color: var(--neon-cyan);
-  background: oklch(0.88 0.15 195 / 0.1);
-  box-shadow: inset 0 0 0 1px oklch(0.88 0.15 195 / 0.45);
+  background: oklch(0.66 0.25 25 / 0.1);
+  box-shadow: inset 0 0 0 1px oklch(0.66 0.25 25 / 0.45);
 }
 .cyber-button-ghost:hover {
-  background: oklch(0.88 0.15 195 / 0.2);
+  background: oklch(0.66 0.25 25 / 0.2);
 }
 
 .cyber-quick {
@@ -648,12 +648,12 @@ button:focus-visible {
 .cyber-quick:hover {
   color: var(--neon-cyan);
   border-left-color: var(--neon-cyan);
-  background: oklch(0.88 0.15 195 / 0.08);
+  background: oklch(0.66 0.25 25 / 0.08);
   padding-left: 14px;
 }
 
 .cyber-online > div {
-  background: oklch(0.14 0.03 275 / 0.82);
+  background: oklch(0.17 0 0 / 0.82);
   border-radius: 0;
 }
 
@@ -663,7 +663,7 @@ button:focus-visible {
   position: relative;
   display: inline-block;
   color: var(--foreground);
-  text-shadow: 0 0 12px oklch(0.88 0.15 195 / 0.55);
+  text-shadow: 0 0 12px oklch(0.66 0.25 25 / 0.55);
 }
 .cyber-glitch::before,
 .cyber-glitch::after {
@@ -750,51 +750,41 @@ button.bg-primary {
   }
 }
 
-/* ---------- One colour ----------
-   Everything glows in the same cyan: the accents that were pink, yellow,
-   violet or green are cyan at other strengths, so the page reads as one. */
+
+/* ---------- Three colours ----------
+   Black ground, white text (greys are white at lower strength), one neon
+   red for everything that should catch the eye. No hue anywhere else. */
 :root,
 .dark {
-  --neon-pink: oklch(0.88 0.15 195);
-  --neon-yellow: oklch(0.92 0.1 195);
-  --neon-violet: oklch(0.75 0.13 205);
-  --accent: oklch(0.88 0.15 195 / 0.12);
-  --secondary: oklch(0.22 0.04 220);
-  --blossom: oklch(0.88 0.15 195 / 0.18);
-  --mint: oklch(0.88 0.15 195 / 0.18);
-  --butter: oklch(0.88 0.15 195 / 0.18);
-  --lilac: oklch(0.88 0.15 195 / 0.18);
-  --sky-soft: oklch(0.88 0.15 195 / 0.18);
-  --blossom-ink: oklch(0.88 0.15 195);
-  --mint-ink: oklch(0.88 0.15 195);
-  --butter-ink: oklch(0.88 0.15 195);
-  --lilac-ink: oklch(0.82 0.12 200);
-  --lilac-strong: oklch(0.82 0.12 200);
-  --warning: oklch(0.88 0.15 195);
-  --online: oklch(0.88 0.15 195);
-  --star: oklch(0.88 0.15 195);
-  --masquerade: oklch(0.88 0.15 195);
-  --announce-from: oklch(0.88 0.15 195 / 0.1);
-  --announce-to: oklch(0.88 0.15 195 / 0.03);
-  --logo-gradient: linear-gradient(135deg, oklch(0.95 0.08 195), oklch(0.7 0.14 215));
-  --badge-gradient: linear-gradient(135deg, oklch(0.88 0.15 195), oklch(0.75 0.14 210));
-  --badge-shadow: 0 0 10px oklch(0.88 0.15 195 / 0.7);
+  --accent: oklch(0.66 0.25 25 / 0.12);
+  --border: oklch(0.94 0 0 / 0.12);
+  --input: oklch(0.94 0 0 / 0.18);
+  --primary-foreground: oklch(0.13 0 0);
+  --blossom: oklch(0.66 0.25 25 / 0.16);
+  --mint: oklch(0.66 0.25 25 / 0.16);
+  --butter: oklch(0.66 0.25 25 / 0.16);
+  --lilac: oklch(0.94 0 0 / 0.1);
+  --sky-soft: oklch(0.94 0 0 / 0.1);
+  --announce-from: oklch(0.66 0.25 25 / 0.12);
+  --announce-to: oklch(0.66 0.25 25 / 0.03);
+  --logo-gradient: linear-gradient(135deg, oklch(0.75 0.2 25), oklch(0.5 0.22 25));
+  --badge-gradient: var(--logo-gradient);
 }
 
 body {
   background-image:
-    radial-gradient(60rem 40rem at 0% 0%, oklch(0.88 0.15 195 / 0.12), transparent 60%),
-    radial-gradient(50rem 40rem at 100% 100%, oklch(0.88 0.15 195 / 0.08), transparent 60%),
-    linear-gradient(oklch(0.88 0.15 195 / 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, oklch(0.88 0.15 195 / 0.05) 1px, transparent 1px);
+    radial-gradient(60rem 40rem at 0% 0%, oklch(0.66 0.25 25 / 0.08), transparent 60%),
+    radial-gradient(50rem 40rem at 100% 100%, oklch(0.66 0.25 25 / 0.05), transparent 60%),
+    linear-gradient(oklch(0.94 0 0 / 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.94 0 0 / 0.035) 1px, transparent 1px);
 }
 
 .cyber-glitch::before {
-  color: oklch(0.95 0.08 195);
+  color: oklch(0.66 0.25 25);
 }
 .cyber-glitch::after {
-  color: oklch(0.65 0.14 215);
+  color: oklch(0.94 0 0);
 }
-.cyber-badge {
-  color: oklch(0.12 0.02 275);
+.cyber-glitch {
+  text-shadow: 0 0 12px oklch(0.66 0.25 25 / 0.45);
 }
