@@ -297,3 +297,455 @@ button:active,
   margin-top: 0.35em;
   margin-bottom: 0.35em;
 }
+
+/* ======================================================================
+   NEON GRID: the experimental cyberpunk theme. It overrides the tokens
+   above (light and dark alike, the page is always dark), then adds the
+   effects: a grid with neon glows behind everything, scanlines over it,
+   cut-corner panels, a glitching title and the desktop's top bar.
+   ====================================================================== */
+
+:root,
+.dark {
+  --radius: 0.2rem;
+  --radius-2xl: 0.35rem;
+  --radius-3xl: 0.45rem;
+  --radius-xl: 0.3rem;
+
+  --neon-cyan: oklch(0.88 0.15 195);
+  --neon-pink: oklch(0.72 0.27 345);
+  --neon-yellow: oklch(0.94 0.19 108);
+  --neon-violet: oklch(0.7 0.2 295);
+
+  --background: oklch(0.12 0.025 275);
+  --foreground: oklch(0.95 0.02 205);
+  --card: oklch(0.155 0.03 275 / 0.88);
+  --card-foreground: oklch(0.95 0.02 205);
+  --popover: oklch(0.16 0.035 280);
+  --popover-foreground: oklch(0.95 0.02 205);
+  --primary: var(--neon-cyan);
+  --primary-foreground: oklch(0.13 0.03 275);
+  --secondary: oklch(0.22 0.05 300);
+  --secondary-foreground: oklch(0.95 0.02 205);
+  --muted: oklch(0.19 0.035 275);
+  --muted-foreground: oklch(0.74 0.05 230);
+  --accent: oklch(0.24 0.08 330 / 0.55);
+  --accent-foreground: oklch(0.97 0.02 205);
+  --destructive: oklch(0.68 0.24 15);
+  --border: oklch(0.88 0.15 195 / 0.2);
+  --input: oklch(0.88 0.15 195 / 0.28);
+  --ring: var(--neon-cyan);
+  --sidebar: oklch(0.14 0.03 275);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--neon-cyan);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--neon-cyan);
+
+  --blossom: oklch(0.72 0.27 345 / 0.35);
+  --mint: oklch(0.85 0.18 165 / 0.35);
+  --butter: oklch(0.94 0.19 108 / 0.25);
+  --lilac: oklch(0.7 0.2 295 / 0.35);
+  --sky-soft: oklch(0.88 0.15 195 / 0.3);
+  --blossom-ink: oklch(0.8 0.2 345);
+  --mint-ink: oklch(0.87 0.17 165);
+  --butter-ink: oklch(0.94 0.19 108);
+  --lilac-ink: oklch(0.8 0.15 295);
+  --lilac-strong: var(--neon-violet);
+  --warning: var(--neon-yellow);
+  --online: oklch(0.87 0.22 150);
+  --star: var(--neon-yellow);
+  --masquerade: var(--neon-pink);
+  --announce-from: oklch(0.24 0.1 345 / 0.6);
+  --announce-to: oklch(0.2 0.08 230 / 0.6);
+
+  --logo-gradient: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan));
+  --badge-gradient: linear-gradient(135deg, var(--neon-pink), oklch(0.6 0.27 330));
+  --badge-shadow: 0 0 10px oklch(0.72 0.27 345 / 0.7);
+
+  --font-sans:
+    "Pretendard Variable", "Pretendard", "Noto Sans KR", ui-sans-serif,
+    system-ui, sans-serif;
+  --font-display: "Orbitron", "Pretendard Variable", "Noto Sans KR", sans-serif;
+  --font-mono: "Share Tech Mono", ui-monospace, monospace;
+
+  --shadow-marsh: 0 0 0 1px oklch(0.88 0.15 195 / 0.08);
+  --shadow-marsh-lg:
+    0 0 0 1px oklch(0.88 0.15 195 / 0.25), 0 0 24px -6px oklch(0.88 0.15 195 / 0.35);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(60rem 40rem at 0% 0%, oklch(0.88 0.15 195 / 0.12), transparent 60%),
+    radial-gradient(50rem 40rem at 100% 100%, oklch(0.72 0.27 345 / 0.14), transparent 60%),
+    linear-gradient(oklch(0.88 0.15 195 / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.88 0.15 195 / 0.05) 1px, transparent 1px);
+  background-size: auto, auto, 44px 44px, 44px 44px;
+  background-attachment: fixed;
+}
+
+/* Scanlines and a vignette over the whole page; clicks pass through. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      oklch(1 0 0 / 0.025) 0 1px,
+      transparent 1px 3px
+    ),
+    radial-gradient(ellipse at center, transparent 60%, oklch(0 0 0 / 0.45));
+}
+
+::selection {
+  background: var(--neon-pink);
+  color: oklch(0.12 0.02 275);
+}
+
+* {
+  scrollbar-color: oklch(0.88 0.15 195 / 0.4) transparent;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--neon-cyan);
+  outline-offset: 2px;
+}
+
+/* ---------- The page frame ---------- */
+
+.cyber-main {
+  position: relative;
+}
+
+@media (min-width: 700px) {
+  .cyber-main {
+    background: oklch(0.13 0.03 275 / 0.72);
+    border: 1px solid var(--border);
+    clip-path: polygon(
+      0 0,
+      calc(100% - 22px) 0,
+      100% 22px,
+      100% 100%,
+      22px 100%,
+      0 calc(100% - 22px)
+    );
+    backdrop-filter: blur(6px);
+  }
+  .cyber-main::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 140px;
+    height: 2px;
+    background: var(--neon-pink);
+    box-shadow: 0 0 12px var(--neon-pink);
+    z-index: 1;
+  }
+}
+
+.cyber-panel {
+  position: relative;
+  background: oklch(0.14 0.03 275 / 0.82);
+  border: 1px solid var(--border);
+  clip-path: polygon(
+    0 0,
+    calc(100% - 14px) 0,
+    100% 14px,
+    100% 100%,
+    0 100%
+  );
+}
+.cyber-panel::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(
+    225deg,
+    var(--neon-cyan) 0 2px,
+    transparent 2px
+  );
+  opacity: 0.8;
+}
+
+.cyber-kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--neon-pink);
+  text-transform: uppercase;
+}
+
+.cyber-clock {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2rem;
+  letter-spacing: 0.08em;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 14px oklch(0.88 0.15 195 / 0.7);
+}
+
+.cyber-blink {
+  animation: cyber-blink 1s steps(2) infinite;
+}
+@keyframes cyber-blink {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+/* ---------- The top bar ---------- */
+
+.cyber-hud {
+  background: oklch(0.1 0.025 275 / 0.82);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 0 oklch(0.72 0.27 345 / 0.35), 0 10px 30px -18px var(--neon-cyan);
+}
+
+.cyber-logo {
+  width: 38px;
+  height: 38px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  background: var(--logo-gradient);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  animation: cyber-pulse 3s ease-in-out infinite;
+}
+.cyber-logo > span {
+  width: 26px;
+  height: 26px;
+  background: var(--background);
+  clip-path: inherit;
+  position: relative;
+}
+.cyber-logo > span::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  background: var(--neon-cyan);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+@keyframes cyber-pulse {
+  50% {
+    filter: drop-shadow(0 0 8px var(--neon-pink)) hue-rotate(40deg);
+  }
+}
+
+.cyber-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  font-size: 14px;
+  white-space: nowrap;
+  color: var(--muted-foreground);
+  transition: color 0.15s, background 0.15s;
+}
+.cyber-tab:hover {
+  color: var(--foreground);
+  background: linear-gradient(to top, oklch(0.88 0.15 195 / 0.1), transparent);
+}
+.cyber-tab.is-active {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 10px oklch(0.88 0.15 195 / 0.8);
+  background: linear-gradient(to top, oklch(0.88 0.15 195 / 0.16), transparent);
+}
+.cyber-tab.is-active::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  height: 2px;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 10px var(--neon-cyan);
+}
+.cyber-tab-code {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--neon-pink);
+  opacity: 0.8;
+}
+
+.cyber-badge {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: oklch(0.12 0.02 275);
+  background: var(--neon-pink);
+  box-shadow: 0 0 10px var(--neon-pink);
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+}
+
+.cyber-button,
+.cyber-button-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  transition: filter 0.15s, transform 0.15s;
+}
+.cyber-button {
+  color: oklch(0.12 0.02 275);
+  background: linear-gradient(90deg, var(--neon-cyan), oklch(0.8 0.17 220));
+}
+.cyber-button:hover {
+  filter: drop-shadow(0 0 10px var(--neon-cyan)) brightness(1.1);
+}
+.cyber-button-ghost {
+  color: var(--neon-cyan);
+  background: oklch(0.88 0.15 195 / 0.1);
+  box-shadow: inset 0 0 0 1px oklch(0.88 0.15 195 / 0.45);
+}
+.cyber-button-ghost:hover {
+  background: oklch(0.88 0.15 195 / 0.2);
+}
+
+.cyber-quick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  font-size: 14px;
+  color: var(--muted-foreground);
+  border-left: 2px solid transparent;
+  transition: all 0.15s;
+}
+.cyber-quick:hover {
+  color: var(--neon-cyan);
+  border-left-color: var(--neon-cyan);
+  background: oklch(0.88 0.15 195 / 0.08);
+  padding-left: 14px;
+}
+
+.cyber-online > div {
+  background: oklch(0.14 0.03 275 / 0.82);
+  border-radius: 0;
+}
+
+/* ---------- The glitching title ---------- */
+
+.cyber-glitch {
+  position: relative;
+  display: inline-block;
+  color: var(--foreground);
+  text-shadow: 0 0 12px oklch(0.88 0.15 195 / 0.55);
+}
+.cyber-glitch::before,
+.cyber-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.cyber-glitch::before {
+  color: var(--neon-pink);
+  transform: translate(-2px, 0);
+  clip-path: inset(0 0 60% 0);
+  animation: cyber-glitch-a 3.2s infinite steps(1);
+  mix-blend-mode: screen;
+}
+.cyber-glitch::after {
+  color: var(--neon-cyan);
+  transform: translate(2px, 0);
+  clip-path: inset(55% 0 0 0);
+  animation: cyber-glitch-b 2.7s infinite steps(1);
+  mix-blend-mode: screen;
+}
+@keyframes cyber-glitch-a {
+  0%, 86%, 100% { transform: translate(0); clip-path: inset(0 0 100% 0); }
+  88% { transform: translate(-3px, -1px); clip-path: inset(10% 0 55% 0); }
+  92% { transform: translate(3px, 1px); clip-path: inset(40% 0 30% 0); }
+  95% { transform: translate(-2px, 0); clip-path: inset(70% 0 5% 0); }
+}
+@keyframes cyber-glitch-b {
+  0%, 80%, 100% { transform: translate(0); clip-path: inset(100% 0 0 0); }
+  83% { transform: translate(3px, 1px); clip-path: inset(60% 0 10% 0); }
+  87% { transform: translate(-3px, -1px); clip-path: inset(20% 0 60% 0); }
+}
+a:hover .cyber-glitch::before,
+a:hover .cyber-glitch::after {
+  animation-duration: 0.6s;
+}
+
+/* ---------- The existing pieces, re-dressed ---------- */
+
+.font-display {
+  letter-spacing: 0.04em;
+}
+
+/* Posts: a neon edge lights up on hover. */
+.group\/post {
+  transition: box-shadow 0.2s, background 0.2s;
+}
+.cyber-main > div .group\/post:hover {
+  box-shadow: inset 2px 0 0 var(--neon-cyan);
+}
+
+/* Announcements stand out in magenta. */
+.bg-announce {
+  box-shadow: inset 3px 0 0 var(--neon-pink), inset 0 0 40px -20px var(--neon-pink);
+}
+
+/* Times and handles in the terminal face. */
+time,
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Inputs glow when focused. */
+input:focus,
+textarea:focus {
+  box-shadow: 0 0 0 1px var(--neon-cyan), 0 0 14px -4px var(--neon-cyan);
+}
+
+/* Primary buttons from the UI kit get the cut corners too. */
+[data-slot="button"][data-variant="default"],
+button.bg-primary {
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  box-shadow: 0 0 16px -4px var(--neon-cyan);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cyber-glitch::before,
+  .cyber-glitch::after,
+  .cyber-logo,
+  .cyber-blink {
+    animation: none;
+  }
+}

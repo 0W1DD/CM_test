@@ -113,6 +113,8 @@ function darkTokens(h: number, keyC: number): Record<string, string> {
   };
 }
 
+const CYBER_THEME = true;
+
 function rulesBlock(tokens: Record<string, string>): string {
   return Object.entries(tokens)
     .map(([k, v]) => `  ${k}: ${v};`)
@@ -120,7 +122,9 @@ function rulesBlock(tokens: Record<string, string>): string {
 }
 
 export function buildThemeCss(hex: string | null | undefined): string {
-  if (!hex) return "";
+  // The neon theme keeps its own colors; a key color would wash them out.
+  // (The light/dark tokens below are kept for going back to that theme.)
+  if (CYBER_THEME || !hex) return "";
   const key = extract(hex);
   if (!key) return "";
   const h = key.h;
