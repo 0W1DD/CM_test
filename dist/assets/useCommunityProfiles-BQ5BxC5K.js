@@ -1,0 +1,1 @@
+import{v as o,q as u}from"./utils-DSqslbps.js";const i=["profiles"];function t(e=!0){return o({queryKey:i,queryFn:()=>u("profiles:list"),staleTime:3e4,enabled:e})}function a(){const{data:e,isLoading:r,refetch:s}=t();return{profiles:e??[],loading:r,refetch:s}}export{a,t as u};

@@ -1,0 +1,16 @@
+{
+  // The site's code, run by Naru in QuickJS: type checked only, compiled
+  // file by file by scripts/build.mjs.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2023"],
+    "types": [],
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "isolatedModules": true
+  },
+  "include": ["**/*.ts", "../types/functions.d.ts"]
+}

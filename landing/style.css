@@ -1,0 +1,319 @@
+:root {
+  /* commung's own palette (app/app.css): slate blue on a near-white. */
+  --ground: oklch(0.985 0.004 255);
+  --card: oklch(0.995 0.003 255);
+  --ink: oklch(0.27 0.02 255);
+  --muted: oklch(0.55 0.02 255);
+  --line: oklch(0.92 0.005 255);
+  --accent: oklch(0.52 0.06 255);
+  --accent-ink: oklch(0.99 0.003 255);
+  --soft: oklch(0.94 0.008 255);
+  --shadow: 0 2px 4px oklch(0.78 0.015 255 / 0.08),
+    0 24px 48px -16px oklch(0.55 0.03 255 / 0.22);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: oklch(0.205 0.02 255);
+    --card: oklch(0.255 0.02 255);
+    --ink: oklch(0.96 0.005 255);
+    --muted: oklch(0.74 0.015 255);
+    --line: oklch(1 0 0 / 12%);
+    --accent: oklch(0.78 0.06 255);
+    --accent-ink: oklch(0.22 0.02 255);
+    --soft: oklch(0.33 0.03 255);
+    --shadow: 0 2px 4px oklch(0 0 0 / 0.2), 0 24px 48px -16px oklch(0 0 0 / 0.5);
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "Quicksand", "Pretendard Variable", "Noto Sans KR", system-ui,
+    sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  word-break: keep-all;
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+code {
+  background: var(--soft);
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 0.92em;
+}
+
+.top,
+main,
+.bottom {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.brand {
+  font-family: "Gowun Dodum", sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.top nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 15px;
+}
+
+.top nav a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.top nav a:hover {
+  color: var(--accent);
+}
+
+section {
+  padding: 48px 0;
+  border-top: 1px solid var(--line);
+}
+
+.hero {
+  border-top: 0;
+  padding-top: 40px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+h1 {
+  margin: 8px 0 16px;
+  font-family: "Gowun Dodum", sans-serif;
+  font-size: clamp(32px, 6vw, 52px);
+  line-height: 1.25;
+}
+
+h2 {
+  margin: 0 0 24px;
+  font-family: "Gowun Dodum", sans-serif;
+  font-size: 28px;
+}
+
+h3 {
+  margin: 0 0 6px;
+  font-size: 17px;
+}
+
+.lead {
+  max-width: 640px;
+  font-size: 18px;
+  color: var(--muted);
+}
+
+.lead strong {
+  color: var(--ink);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 22px;
+  border: 2px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.button.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.hero-shots {
+  position: relative;
+  margin-top: 40px;
+  padding-right: 56px;
+}
+
+.hero-shots img,
+.tour img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.hero-shots .phone {
+  position: absolute;
+  right: 0;
+  bottom: -24px;
+  width: 22%;
+  border-radius: 22px;
+  border-width: 4px;
+  border-color: var(--ink);
+}
+
+.tour {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.tour figure {
+  margin: 0;
+}
+
+.tour figcaption {
+  margin-top: 10px;
+  font-weight: 700;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.features li {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.features p,
+.steps p,
+.faq dd {
+  margin: 0;
+  color: var(--muted);
+}
+
+.note {
+  margin: 20px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  display: grid;
+  gap: 16px;
+}
+
+.steps li {
+  counter-increment: step;
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px 20px 20px 72px;
+}
+
+.steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 20px;
+  top: 18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.steps strong {
+  color: var(--ink);
+}
+
+.steps .hint {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.faq {
+  margin: 0;
+  display: grid;
+  gap: 20px;
+}
+
+.faq dt {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.bottom {
+  padding-top: 24px;
+  padding-bottom: 40px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+@media (max-width: 520px) {
+  .hero-shots {
+    padding-right: 32px;
+  }
+
+  .hero-shots .phone {
+    width: 30%;
+    border-radius: 14px;
+    border-width: 3px;
+  }
+
+  .steps li {
+    padding: 64px 18px 18px;
+  }
+
+  .steps li::before {
+    left: 18px;
+    top: 16px;
+  }
+}
