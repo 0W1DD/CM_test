@@ -379,6 +379,9 @@ button:active,
 html {
   color-scheme: dark;
 }
+html:not(.dark) {
+  color-scheme: light;
+}
 
 body {
   background-color: var(--background);
@@ -555,8 +558,8 @@ button:focus-visible {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 14px;
+  gap: 6px;
+  padding: 0 10px;
   font-size: 14px;
   white-space: nowrap;
   color: var(--muted-foreground);
@@ -787,4 +790,84 @@ body {
 }
 .cyber-glitch {
   text-shadow: 0 0 12px oklch(0.66 0.25 25 / 0.45);
+}
+
+/* ---------- White version ----------
+   The same three colours turned over: white ground, black text, the red
+   a shade deeper so it reads on white. */
+html:not(.dark) {
+  --neon-cyan: oklch(0.57 0.23 25);
+  --neon-pink: oklch(0.57 0.23 25);
+  --neon-yellow: oklch(0.57 0.23 25);
+  --neon-violet: oklch(0.57 0.23 25);
+  --background: oklch(0.97 0 0);
+  --foreground: oklch(0.16 0 0);
+  --card: oklch(1 0 0 / 0.9);
+  --card-foreground: oklch(0.16 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.16 0 0);
+  --primary: oklch(0.57 0.23 25);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.93 0 0);
+  --secondary-foreground: oklch(0.16 0 0);
+  --muted: oklch(0.94 0 0);
+  --muted-foreground: oklch(0.42 0 0);
+  --accent: oklch(0.57 0.23 25 / 0.08);
+  --accent-foreground: oklch(0.16 0 0);
+  --border: oklch(0.16 0 0 / 0.14);
+  --input: oklch(0.16 0 0 / 0.2);
+  --ring: oklch(0.57 0.23 25);
+  --blossom-ink: oklch(0.57 0.23 25);
+  --mint-ink: oklch(0.57 0.23 25);
+  --butter-ink: oklch(0.57 0.23 25);
+  --lilac-ink: oklch(0.42 0 0);
+  --lilac-strong: oklch(0.42 0 0);
+  --warning: oklch(0.57 0.23 25);
+  --online: oklch(0.57 0.23 25);
+  --star: oklch(0.57 0.23 25);
+  --masquerade: oklch(0.57 0.23 25);
+  --shadow-marsh: 0 0 0 1px oklch(0.16 0 0 / 0.06);
+  --shadow-marsh-lg: 0 6px 24px -10px oklch(0.16 0 0 / 0.25);
+}
+html:not(.dark) body {
+  background-image:
+    radial-gradient(60rem 40rem at 0% 0%, oklch(0.57 0.23 25 / 0.06), transparent 60%),
+    linear-gradient(oklch(0.16 0 0 / 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.16 0 0 / 0.045) 1px, transparent 1px);
+  background-size: auto, 44px 44px, 44px 44px;
+}
+html:not(.dark) body::after {
+  background: repeating-linear-gradient(
+    to bottom,
+    oklch(0 0 0 / 0.018) 0 1px,
+    transparent 1px 3px
+  );
+}
+html:not(.dark) .cyber-hud {
+  background: oklch(1 0 0 / 0.85);
+  box-shadow: 0 1px 0 oklch(0.57 0.23 25 / 0.5);
+}
+html:not(.dark) .cyber-main {
+  background: oklch(1 0 0 / 0.8);
+}
+html:not(.dark) .cyber-panel,
+html:not(.dark) .cyber-online > div {
+  background: oklch(1 0 0 / 0.9);
+}
+html:not(.dark) .cyber-logo > span {
+  background: oklch(0.97 0 0);
+}
+html:not(.dark) .cyber-clock,
+html:not(.dark) .cyber-tab.is-active,
+html:not(.dark) .cyber-glitch {
+  text-shadow: none;
+}
+html:not(.dark) .cyber-glitch::after {
+  color: oklch(0.16 0 0);
+}
+html:not(.dark) .cyber-button {
+  color: oklch(1 0 0);
+}
+html:not(.dark) .cyber-badge {
+  color: oklch(1 0 0);
 }

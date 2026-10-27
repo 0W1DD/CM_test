@@ -7,14 +7,17 @@ import {
   Megaphone,
   Menu,
   MessageCircle,
+  Moon,
   PenSquare,
   Search,
   Settings,
   ShieldCheck,
   ShoppingBag,
   User,
+  Sun,
   UserCheck,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Link, useLocation } from "react-router";
 import { BalancePill } from "~/components/balance-pill";
 import { ProfileSwitcher } from "~/components/profile-switcher";
@@ -55,6 +58,8 @@ export function CyberHud({
   const { currentProfile, logout } = useAuth();
   const { isModerator } = useCurrentInstance();
   const name = communityName || "COMMUNG";
+  const { resolvedTheme, setTheme } = useTheme();
+  const dark = resolvedTheme !== "light";
 
   const main = [
     { to: "/", icon: Home, label: "홈", code: "01" },
@@ -86,7 +91,7 @@ export function CyberHud({
 
   return (
     <header className="cyber-hud sticky top-0 z-40 hidden md:block">
-      <div className="max-w-[1320px] mx-auto h-16 px-5 flex items-center gap-5">
+      <div className="max-w-[1320px] mx-auto h-16 px-5 flex items-center gap-3">
         <Link to="/" className="flex items-center gap-3 min-w-0 shrink-0 group">
           <span className="cyber-logo" aria-hidden="true">
             <span />
@@ -137,6 +142,15 @@ export function CyberHud({
             <BalancePill />
           </div>
           <ProfileSwitcher compact />
+          <button
+            type="button"
+            onClick={() => setTheme(dark ? "light" : "dark")}
+            className="cyber-button-ghost !px-3"
+            aria-label={dark ? "밝은 화면으로" : "어두운 화면으로"}
+            title={dark ? "밝은 화면으로" : "어두운 화면으로"}
+          >
+            {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button type="button" className="cyber-button-ghost" aria-label="전체 메뉴">
