@@ -623,6 +623,38 @@ body,
   border-left-color: var(--holly);
   color: var(--foreground);
 }
+/* The post text's own typography colours (headings, bold, code, list marks,
+   quotes) follow the card too, in both the light and the dark set. */
+.bg-announce .prose {
+  --tw-prose-body: var(--snow);
+  --tw-prose-headings: var(--snow);
+  --tw-prose-bold: var(--snow);
+  --tw-prose-links: var(--gold);
+  --tw-prose-code: var(--snow);
+  --tw-prose-quotes: var(--snow);
+  --tw-prose-quote-borders: var(--gold);
+  --tw-prose-bullets: var(--gold);
+  --tw-prose-counters: var(--gold);
+  --tw-prose-hr: color-mix(in srgb, var(--snow) 30%, transparent);
+  --tw-prose-invert-body: var(--snow);
+  --tw-prose-invert-headings: var(--snow);
+  --tw-prose-invert-bold: var(--snow);
+  --tw-prose-invert-links: var(--gold);
+  --tw-prose-invert-code: var(--snow);
+  --tw-prose-invert-quotes: var(--snow);
+  --tw-prose-invert-quote-borders: var(--gold);
+  --tw-prose-invert-bullets: var(--gold);
+  --tw-prose-invert-counters: var(--gold);
+  --tw-prose-invert-hr: color-mix(in srgb, var(--snow) 30%, transparent);
+}
+.bg-announce .prose :where(code):not(:where(pre *)) {
+  background: color-mix(in srgb, var(--snow) 16%, transparent);
+  padding: 0.1em 0.35em;
+}
+.bg-announce .prose :where(code):not(:where(pre *))::before,
+.bg-announce .prose :where(code):not(:where(pre *))::after {
+  content: none;
+}
 .bg-announce::before {
   content: "";
   position: absolute;
