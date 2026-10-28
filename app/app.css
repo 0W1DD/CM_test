@@ -415,19 +415,17 @@ body,
 
 /* Background photo behind the windows: a snowy forest at sunset. A fixed
    layer rather than background-attachment: fixed, which mobile Safari
-   ignores. A wash of the ground colour keeps it calm behind the frames. */
-body::before {
-  content: "";
+   ignores. A wash of the ground colour keeps it calm behind the frames.
+   The photo itself is set inline in root.tsx: Naru serves this stylesheet
+   from another host, where a url() written here would not resolve. */
+.bg-photo {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background:
-    linear-gradient(
-      color-mix(in srgb, var(--ground) 18%, transparent),
-      color-mix(in srgb, var(--ground) 18%, transparent)
-    ),
-    url("./assets/bg-forest.jpg") center top / cover no-repeat,
-    var(--ground);
+  background-color: var(--ground);
+  background-position: center top;
+  background-size: cover;
+  background-repeat: no-repeat;
   pointer-events: none;
 }
 

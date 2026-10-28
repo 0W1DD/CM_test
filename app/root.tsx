@@ -17,6 +17,7 @@ import { Toaster } from "~/components/ui/sonner";
 import { CurrentProfileProvider } from "~/providers/CurrentProfileProvider";
 import type { Route } from "./+types/root";
 import "./app.css";
+import bgForest from "./assets/bg-forest.jpg";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -66,6 +67,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
+        <div
+          className="bg-photo"
+          aria-hidden
+          style={{
+            backgroundImage: `linear-gradient(color-mix(in srgb, var(--ground) 18%, transparent), color-mix(in srgb, var(--ground) 18%, transparent)), url(${bgForest})`,
+          }}
+        />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
           <Toaster />
