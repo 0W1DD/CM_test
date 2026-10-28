@@ -24,6 +24,7 @@ import { Link } from "react-router";
 import { toast } from "sonner";
 import { ApplicationFormFields } from "~/components/admin/application-form";
 import { SettingsForm } from "~/components/admin/settings-form";
+import { TimelineCleanup } from "~/components/admin/timeline-cleanup";
 import { PageHeader } from "~/components/admin/ui";
 import { LoadingState } from "~/components/shared/LoadingState";
 import { Badge } from "~/components/ui/badge";
@@ -339,6 +340,7 @@ function StaffSections() {
           ),
         )}
       </div>
+      {isOwner && <TimelineCleanup />}
     </div>
   );
 }

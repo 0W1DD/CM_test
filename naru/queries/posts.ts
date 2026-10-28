@@ -1,7 +1,11 @@
 // Reading posts: commung's GET /app/posts, /posts/:id (+ replies, history),
 // /announcements, /bookmarks, /scheduled-posts, /posts/search and
 // /profiles/:username/posts.
-import { actingProfile, requireMembership } from "../modules/access.js";
+import {
+  actingProfile,
+  requireMembership,
+  requireOwner,
+} from "../modules/access.js";
 import { settingsOf } from "../modules/community.js";
 import {
   argsOf,
@@ -12,8 +16,11 @@ import {
   notFound,
   type QueryCtx,
   type SqlValue,
+  invalid,
+  msOf,
 } from "../modules/core.js";
 import { imagesById } from "../modules/images.js";
+import { purgeWhere } from "../modules/posts.js";
 import {
   ancestors,
   authorsById,
@@ -396,7 +403,8 @@ async function parentSummaries(ctx: QueryCtx, rows: readonly PostRow[]) {
     const trimmed = parent.content.trim();
     summaries.set(parent.id, {
       id: parent.id,
-      content_excerpt: trimmed.length > 80 ? `${trimmed.slice(0, 80)}…` : trimmed,
+      content_excerpt:
+        trimmed.length > 80 ? `${trimmed.slice(0, 80)}…` : trimmed,
       author: {
         id: parent.author_id,
         name: parent.name,
@@ -443,7 +451,9 @@ export async function search(ctx: QueryCtx, args: unknown) {
   if (a.kind === "posts") conditions.push("p.depth = 0");
   else if (a.kind === "replies") conditions.push("p.depth > 0");
   if (/^#[\p{L}\p{N}_]+$/u.test(text)) {
-    conditions.push("p.id IN (SELECT post_id FROM post_hashtags WHERE tag = ?)");
+    conditions.push(
+      "p.id IN (SELECT post_id FROM post_hashtags WHERE tag = ?)",
+    );
     values.push(text.slice(1).toLowerCase());
   } else if (text.length >= 3) {
     conditions.push(
@@ -479,4 +489,21 @@ export async function search(ctx: QueryCtx, args: unknown) {
     (last) => last.id,
     total,
   );
+}
+
+/**
+ * How many posts a timeline clean-up before `before` would take, replies
+ * under them included (the owner, before confirming).
+ */
+export async function purgeCount(ctx: QueryCtx, args: unknown) {
+  await requireOwner(ctx);
+  const a = argsOf(args);
+  const before = msOf(ctx, a.before, "before");
+  if (before === null) invalid(ctx, "날짜를 골라 주세요.");
+  const { where, values } = purgeWhere(before, a.keep_announcements !== false);
+  const { rows } = await ctx.sql<{ n: number }>(
+    `SELECT count(*) AS n FROM posts WHERE ${where}`,
+    values,
+  );
+  return { count: rows[0]?.n ?? 0 };
 }

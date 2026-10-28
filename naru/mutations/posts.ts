@@ -1,7 +1,7 @@
 // Writing posts: commung's POST/PATCH/DELETE /app/posts/:id and its
 // bookmark, reactions, pin and report. Each first publishes scheduled posts
 // whose time has come (publishDue, modules/posts.ts).
-import { actingProfile, isStaff } from "../modules/access.js";
+import { actingProfile, isStaff, requireOwner } from "../modules/access.js";
 import { settingsOf } from "../modules/community.js";
 import {
   argsOf,
@@ -30,6 +30,7 @@ import {
   notifyProfiles,
   postPath,
   publishDue,
+  purgeWhere,
   unindexPost,
 } from "../modules/posts.js";
 
@@ -408,4 +409,37 @@ export async function report(ctx: MutationCtx, args: unknown) {
       path: postPath(post.author_username, postId),
     });
   return { success: true };
+}
+
+/**
+ * Clears the timeline (the owner): deletes every live post written before
+ * `before`, with the replies under them, keeping announcements unless
+ * `keep_announcements` is false. Deleted as one post is (hidden, out of
+ * search), and logged once as the acting profile. Answers how many went.
+ */
+export async function adminPurge(ctx: MutationCtx, args: unknown) {
+  await requireOwner(ctx);
+  const a = argsOf(args);
+  const profile = await actingProfile(ctx, a.profile_id);
+  const before = msOf(ctx, a.before, "before");
+  if (before === null) invalid(ctx, "날짜를 골라 주세요.");
+  const keep = a.keep_announcements !== false;
+  const { where, values } = purgeWhere(before, keep);
+  await ctx.sql(
+    `DELETE FROM posts_search WHERE post_id IN (SELECT id FROM posts WHERE ${where})`,
+    values,
+  );
+  const { changes } = await ctx.sql(
+    `UPDATE posts SET deleted_at = ? WHERE ${where}`,
+    [ctx.now, ...values],
+  );
+  if (changes) {
+    const day = new Date(before).toISOString().slice(0, 10);
+    await ctx.sql`
+      INSERT INTO moderation_log (id, action, description, moderator, created_at)
+      VALUES (${uuidv7(ctx.now)}, 'delete_post',
+        ${`타임라인 정리: ${day} 이전 게시물 ${changes}개를 삭제했습니다${keep ? " (공지사항 제외)" : ""}`},
+        ${profile.id}, ${ctx.now})`;
+  }
+  return { deleted: changes };
 }

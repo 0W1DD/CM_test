@@ -73,6 +73,21 @@ export async function unindexPost(ctx, postId) {
     await ctx.sql `DELETE FROM posts_search WHERE post_id = ${postId}`;
 }
 /**
+ * The posts a timeline clean-up takes, as a WHERE clause and its values:
+ * the live posts written before `before` (announcements kept unless asked)
+ * and every reply under them, so no reply is left without its thread. A
+ * few set-wide statements, since a call may make only so many.
+ */
+export function purgeWhere(before, keepAnnouncements) {
+    const roots = `SELECT id FROM posts WHERE deleted_at IS NULL AND created_at < ?
+    AND (? = 0 OR announcement = 0)`;
+    const keep = keepAnnouncements ? 1 : 0;
+    return {
+        where: `deleted_at IS NULL AND (id IN (${roots}) OR root_post_id IN (${roots}))`,
+        values: [before, keep, before, keep],
+    };
+}
+/**
  * What publishing a post sends: a reply notification to the parent's author
  * and mentions (rows in `mentions`, and notifications to everyone mentioned
  * but the author and the one already told of the reply).

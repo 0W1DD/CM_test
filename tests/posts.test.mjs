@@ -257,6 +257,34 @@ test("hashtags are suggested by prefix and listed by use, from posts still up", 
   assert.deepEqual(await tags("search:popularHashtags", {}), [["바다", 2], ["등대", 1], ["바다탐사", 1]]);
 });
 
+test("the owner clears the timeline before a day, threads whole, announcements kept", async () => {
+  const { site, profiles } = await community();
+  const old = await write(site, "m-alice", profiles.alice, "오래된 글 #정리");
+  const notice = await write(site, "m-owner", profiles.owner, "오래된 공지", { announcement: true });
+  site.now += 86400000;
+  const cut = new Date(site.now).toISOString();
+  site.now += 1000;
+  const lateReply = await write(site, "m-bob", profiles.bob, "나중 답글", { in_reply_to_id: old.id });
+  const fresh = await write(site, "m-bob", profiles.bob, "새 글");
+  const count = (args) => site.query("posts:purgeCount", args, as("m-owner"));
+
+  assert.equal(await refusal(site.query("posts:purgeCount", { before: cut }, as("m-alice"))), "not_owner");
+  assert.equal(
+    await refusal(site.mutate("posts:adminPurge", { before: cut, profile_id: profiles.alice }, as("m-alice"))),
+    "not_owner",
+  );
+  // The old post and the reply under it, written later; the announcement stays unless asked.
+  assert.deepEqual(await count({ before: cut }), { count: 2 });
+  assert.deepEqual(await count({ before: cut, keep_announcements: false }), { count: 3 });
+  const done = await site.mutate("posts:adminPurge", { before: cut, profile_id: profiles.owner }, as("m-owner"));
+  assert.equal(done.deleted, 2);
+  const left = await site.query("posts:list", {}, as("m-bob"));
+  assert.deepEqual(left.data.map((p) => p.id).sort(), [fresh.id, notice.id].sort());
+  assert.equal((await site.query("posts:search", { q: "#정리" }, as("m-bob"))).data.length, 0);
+  assert.equal(site.rows("SELECT deleted_at FROM posts WHERE id = ?", lateReply.id)[0].deleted_at !== null, true);
+  assert.deepEqual(await count({ before: cut }), { count: 0 });
+});
+
 test("authors delete their posts; moderators delete others' and it is logged", async () => {
   const { site, profiles } = await community({ members: ["alice", "bob", "mod"] });
   site.run("UPDATE members SET role = 'moderator' WHERE member = 'm-mod'");

@@ -1,10 +1,11 @@
 // Reading posts: commung's GET /app/posts, /posts/:id (+ replies, history),
 // /announcements, /bookmarks, /scheduled-posts, /posts/search and
 // /profiles/:username/posts.
-import { actingProfile, requireMembership } from "../modules/access.js";
+import { actingProfile, requireMembership, requireOwner, } from "../modules/access.js";
 import { settingsOf } from "../modules/community.js";
-import { argsOf, id, iso, limitOf, list as jsonList, notFound, } from "../modules/core.js";
+import { argsOf, id, iso, limitOf, list as jsonList, notFound, invalid, msOf, } from "../modules/core.js";
 import { imagesById } from "../modules/images.js";
+import { purgeWhere } from "../modules/posts.js";
 import { ancestors, authorsById, childrenOf, descendants, extrasFor, firstOf, flatReplies, page, postJson, postsWithReplies, TIMELINE_REPLY_LIMIT, threadRows, VISIBLE, viewerProfile, visiblePost, } from "../modules/post-data.js";
 const cursorOf = (value) => typeof value === "string" && value ? value : null;
 async function countOf(ctx, where, values) {
@@ -361,4 +362,18 @@ export async function search(ctx, args) {
             ? (summaries.get(post.in_reply_to_id) ?? null)
             : null,
     })), rows[rows.length - 1], hasMore, (last) => last.id, total);
+}
+/**
+ * How many posts a timeline clean-up before `before` would take, replies
+ * under them included (the owner, before confirming).
+ */
+export async function purgeCount(ctx, args) {
+    await requireOwner(ctx);
+    const a = argsOf(args);
+    const before = msOf(ctx, a.before, "before");
+    if (before === null)
+        invalid(ctx, "날짜를 골라 주세요.");
+    const { where, values } = purgeWhere(before, a.keep_announcements !== false);
+    const { rows } = await ctx.sql(`SELECT count(*) AS n FROM posts WHERE ${where}`, values);
+    return { count: rows[0]?.n ?? 0 };
 }
