@@ -111,55 +111,68 @@ function startFire(ctx: AudioContext) {
   };
 }
 
-/** The pixel fire: logs, and two frames of flame (or embers when out). */
+/** The pixel fireplace: a mantel over stone, logs in the hearth, and two
+ * frames of flame (or a few embers when it is out). */
 function FireArt({ lit }: { lit: boolean }) {
   return (
     <svg
       viewBox="0 0 16 16"
-      width="48"
-      height="48"
+      width="44"
+      height="44"
       shapeRendering="crispEdges"
       aria-hidden="true"
     >
+      <rect x="0" y="1" width="16" height="1" fill="#8a5030" />
+      <rect x="0" y="2" width="16" height="1" fill="#6b3a1e" />
+      <rect x="1" y="3" width="14" height="12" fill="#8c8176" />
+      <rect x="5" y="4" width="4" height="1" fill="#74695f" />
+      <rect x="2" y="5" width="2" height="1" fill="#74695f" />
+      <rect x="12" y="5" width="2" height="1" fill="#74695f" />
+      <rect x="1" y="8" width="2" height="1" fill="#74695f" />
+      <rect x="13" y="9" width="2" height="1" fill="#74695f" />
+      <rect x="2" y="11" width="2" height="1" fill="#74695f" />
+      <rect x="12" y="12" width="2" height="1" fill="#74695f" />
+      <rect x="4" y="6" width="8" height="9" fill="#1d1410" />
+      <rect x="4" y="6" width="1" height="1" fill="#8c8176" />
+      <rect x="11" y="6" width="1" height="1" fill="#8c8176" />
       {lit ? (
         <>
           <g className="campfire-frame-a">
-            <rect x="6" y="4" width="3" height="8" fill="#d9381e" />
-            <rect x="5" y="7" width="6" height="5" fill="#d9381e" />
-            <rect x="4" y="9" width="8" height="3" fill="#d9381e" />
-            <rect x="7" y="2" width="1" height="2" fill="#d9381e" />
-            <rect x="6" y="7" width="4" height="5" fill="#f28a1d" />
-            <rect x="7" y="5" width="1" height="2" fill="#f28a1d" />
-            <rect x="7" y="9" width="2" height="3" fill="#ffd75e" />
+            <rect x="6" y="8" width="4" height="5" fill="#d9381e" />
+            <rect x="5" y="10" width="6" height="3" fill="#d9381e" />
+            <rect x="7" y="7" width="1" height="1" fill="#d9381e" />
+            <rect x="6" y="10" width="4" height="3" fill="#f28a1d" />
+            <rect x="7" y="9" width="1" height="1" fill="#f28a1d" />
+            <rect x="7" y="11" width="2" height="2" fill="#ffd75e" />
           </g>
           <g className="campfire-frame-b">
-            <rect x="7" y="4" width="3" height="8" fill="#d9381e" />
-            <rect x="5" y="6" width="6" height="6" fill="#d9381e" />
-            <rect x="4" y="9" width="8" height="3" fill="#d9381e" />
-            <rect x="9" y="2" width="1" height="2" fill="#d9381e" />
-            <rect x="4" y="7" width="1" height="2" fill="#d9381e" />
-            <rect x="6" y="7" width="4" height="5" fill="#f28a1d" />
-            <rect x="8" y="5" width="1" height="2" fill="#f28a1d" />
-            <rect x="7" y="10" width="2" height="2" fill="#ffd75e" />
+            <rect x="6" y="8" width="4" height="5" fill="#d9381e" />
+            <rect x="5" y="9" width="6" height="4" fill="#d9381e" />
+            <rect x="8" y="7" width="1" height="1" fill="#d9381e" />
+            <rect x="6" y="10" width="4" height="3" fill="#f28a1d" />
+            <rect x="8" y="9" width="1" height="1" fill="#f28a1d" />
+            <rect x="7" y="12" width="2" height="1" fill="#ffd75e" />
+            <rect x="8" y="11" width="1" height="1" fill="#ffd75e" />
           </g>
         </>
       ) : (
         <>
-          <rect x="6" y="11" width="4" height="1" fill="#8a2a10" />
-          <rect x="7" y="11" width="1" height="1" fill="#d9381e" />
-          <rect x="9" y="11" width="1" height="1" fill="#f28a1d" />
+          <rect x="6" y="12" width="4" height="1" fill="#8a2a10" />
+          <rect x="6" y="12" width="1" height="1" fill="#d9381e" />
+          <rect x="8" y="12" width="1" height="1" fill="#f28a1d" />
         </>
       )}
-      <rect x="2" y="12" width="12" height="2" fill="#7a4423" />
-      <rect x="3" y="14" width="10" height="1" fill="#4a2812" />
-      <rect x="2" y="12" width="1" height="2" fill="#c08850" />
-      <rect x="13" y="12" width="1" height="2" fill="#c08850" />
+      <rect x="5" y="13" width="6" height="1" fill="#7a4423" />
+      <rect x="5" y="14" width="6" height="1" fill="#4a2812" />
+      <rect x="5" y="13" width="1" height="1" fill="#c08850" />
+      <rect x="10" y="13" width="1" height="1" fill="#c08850" />
+      <rect x="0" y="15" width="16" height="1" fill="#5a5048" />
     </svg>
   );
 }
 
 /**
- * A little campfire in the corner. Pressed, it catches: the fire crackles,
+ * A little fireplace in the corner. Pressed, it catches: the fire crackles,
  * calm classical music plays, and the warm light over the page grows and
  * flickers. Pressed again, it all fades out. Nothing plays on its own.
  */
@@ -243,10 +256,12 @@ export function Campfire() {
           onClick={toggle}
           className="campfire-button"
           aria-pressed={lit}
-          aria-label={lit ? "모닥불 끄기" : "모닥불 피우기"}
-          title={lit ? "모닥불 끄기" : "모닥불 피우기 (소리가 나요)"}
+          title={lit ? "벽난로 끄기" : "벽난로 피우기 (소리가 나요)"}
         >
           <FireArt lit={lit} />
+          <span className="campfire-label">
+            {lit ? "불 끄기" : "불 피우기"}
+          </span>
         </button>
       </div>
     </>
