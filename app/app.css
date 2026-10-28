@@ -796,3 +796,99 @@ textarea,
 .prose blockquote p::after {
   content: none;
 }
+
+/* Firelight (campfire.tsx): a warm wash over the whole page, glowing from
+   the corner where the fire sits, stronger and flickering once it is lit. */
+.cozy-filter {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+  background:
+    radial-gradient(
+      circle at 100% 100%,
+      rgb(255 140 50 / 0.35),
+      transparent 55%
+    ),
+    rgb(255 170 90 / 0.18);
+  transition: opacity 1.5s ease;
+  opacity: 0.8;
+}
+.fire-lit .cozy-filter {
+  opacity: 1;
+  background:
+    radial-gradient(
+      circle at 100% 100%,
+      rgb(255 130 40 / 0.6),
+      transparent 65%
+    ),
+    rgb(255 160 80 / 0.25);
+  animation: firelight 3s ease-in-out infinite;
+}
+@keyframes firelight {
+  0%, 100% { opacity: 1; }
+  20% { opacity: 0.88; }
+  35% { opacity: 0.97; }
+  60% { opacity: 0.85; }
+  80% { opacity: 0.95; }
+}
+
+.campfire {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+@media (max-width: 767px) {
+  .campfire {
+    right: 0.75rem;
+    bottom: calc(env(safe-area-inset-bottom) + 5.5rem);
+  }
+}
+.campfire-button {
+  image-rendering: pixelated;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: transform 0.15s ease, opacity 0.3s ease, filter 0.6s ease;
+}
+.campfire-button:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+.fire-lit .campfire-button {
+  opacity: 1;
+  filter: drop-shadow(0 0 10px rgb(255 140 40 / 0.8));
+}
+.campfire-frame-b {
+  animation: campfire-flip 0.5s steps(1) infinite;
+}
+.campfire-frame-a {
+  animation: campfire-flip 0.5s steps(1) infinite reverse;
+}
+@keyframes campfire-flip {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+}
+.campfire-track {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  color: #fbf1dc;
+  background: rgb(40 24 12 / 0.75);
+  padding: 0.25rem 0.6rem;
+  white-space: nowrap;
+  animation: timeline-in 0.6s ease-out backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fire-lit .cozy-filter,
+  .campfire-frame-a,
+  .campfire-frame-b {
+    animation: none;
+  }
+  .campfire-frame-b {
+    display: none;
+  }
+}

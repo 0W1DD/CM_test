@@ -13,6 +13,7 @@ import {
   CommunityOwnerLook,
   CommunityThemeInjector,
 } from "~/components/community-theme-injector";
+import { Campfire } from "~/components/campfire";
 import { Snowfall } from "~/components/snowfall";
 import { Toaster } from "~/components/ui/sonner";
 import { CurrentProfileProvider } from "~/providers/CurrentProfileProvider";
@@ -75,6 +76,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Snowfall />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
+          <Campfire />
           <Toaster />
           <ScrollRestoration />
           <Scripts />
