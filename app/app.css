@@ -506,12 +506,12 @@ body,
     --card: color-mix(in srgb, var(--ground-raised) 90%, transparent);
     --background: color-mix(in srgb, var(--ground) 90%, transparent);
   }
-  /* Sides and bottom on every block, a top only on the first (the
-     composer), so the joins are single lines. */
+  /* The column's sides and top in the frame colour; between the blocks the
+     posts' own light lines, as on wide screens. */
   .home-timeline .timeline-item {
     margin: 0 0.75rem;
-    border: 1.5px solid var(--frame);
-    border-top: 0;
+    border-left: 1.5px solid var(--frame);
+    border-right: 1.5px solid var(--frame);
     overflow: hidden;
   }
   .home-timeline > div > .timeline-item:first-child {
@@ -583,10 +583,49 @@ body,
   --cut: 8px;
 }
 
-/* Announcements: the accent as a bar on the left. */
+/* Announcements: a Christmas card. Pine green with snow-white writing, a
+   candy-cane stripe along the top, a holly-red bar on the left and a gold
+   badge, so they stand apart from every other post. The colours inside are
+   swapped through the theme's own variables, so the text, links and
+   buttons follow without touching the post card. */
 .bg-announce {
-  background: var(--card);
-  box-shadow: inset 4px 0 0 var(--accent-color);
+  --pine: #1f4a37;
+  --pine-light: #2a5c46;
+  --holly: #c8102e;
+  --gold: #f2c94c;
+  --snow: #fbf7ea;
+  --foreground: var(--snow);
+  --card-foreground: var(--snow);
+  --muted-foreground: #c8d9c1;
+  --border: color-mix(in srgb, var(--snow) 22%, transparent);
+  --card: var(--pine-light);
+  --background: var(--pine-light);
+  --primary: var(--gold);
+  --primary-foreground: var(--pine);
+  --accent: color-mix(in srgb, var(--snow) 12%, transparent);
+  --accent-foreground: var(--snow);
+  position: relative;
+  padding-top: 6px;
+  background: var(--pine);
+  border-left-color: var(--holly);
+  color: var(--foreground);
+}
+.bg-announce::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--holly) 0 8px,
+    var(--snow) 8px 16px
+  );
+}
+.announce-badge {
+  background: var(--gold);
+  color: var(--pine);
 }
 
 /* Links and focus: accent, clearly visible. */

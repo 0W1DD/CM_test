@@ -120,7 +120,7 @@ export function PostCardHeader({
               </span>
             </Link>
             {isAnnouncement && (
-              <div className="flex items-center gap-1 bg-butter/40 text-butter-ink dark:bg-butter/25 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+              <div className="announce-badge flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold">
                 <Megaphone className="h-3 w-3" />
                 <span>공지사항</span>
               </div>
