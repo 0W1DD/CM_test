@@ -467,11 +467,48 @@ body,
   letter-spacing: 0.2em;
 }
 
-/* Phones show the page edge to edge with nothing around it, so the photo
-   would never be seen: hidden, the browser does not download it. */
-@media (max-width: 767px) {
-  .bg-photo {
+/* Snow over the background photo and under the page (Snowfall): each flake
+   falls the height of the screen, drifting sideways by its own --drift. */
+.snowfall {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.snowfall span {
+  position: absolute;
+  top: -10px;
+  border-radius: 50%;
+  background: #fff;
+  animation: snowfall linear infinite;
+  will-change: transform;
+}
+@keyframes snowfall {
+  to {
+    transform: translate3d(var(--drift), 105vh, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .snowfall {
     display: none;
+  }
+}
+
+/* Phones: the home timeline lets the photo through. The page itself goes
+   clear, and the composer and each post become separate blocks of slightly
+   see-through paper with a frame, so the photo and the snow show in the
+   gaps and faintly behind the text, which stays easy to read. */
+@media (max-width: 767px) {
+  .app-main:has(.home-timeline) {
+    background: transparent;
+    --card: color-mix(in srgb, var(--ground-raised) 90%, transparent);
+    --background: color-mix(in srgb, var(--ground) 90%, transparent);
+  }
+  .home-timeline .timeline-item {
+    margin: 0 0.75rem 0.75rem;
+    border: 1.5px solid var(--frame);
+    overflow: hidden;
   }
 }
 

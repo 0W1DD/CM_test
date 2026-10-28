@@ -122,7 +122,13 @@ export function usePageTransition(target: RefObject<HTMLElement | null>) {
     });
     const blank = document.createElement("div");
     blank.className = "page-blinds-blank";
-    blank.style.background = getComputedStyle(element).backgroundColor;
+    // The page's colour, or the ground where the page is clear (the home
+    // timeline on phones, which lets the photo through).
+    const colour = getComputedStyle(element).backgroundColor;
+    blank.style.background =
+      colour === "rgba(0, 0, 0, 0)" || colour === "transparent"
+        ? "var(--ground)"
+        : colour;
     layer.appendChild(blank);
 
     const count = style.colours.length;

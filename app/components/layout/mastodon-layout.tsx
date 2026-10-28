@@ -84,8 +84,8 @@ export function MastodonLayout({
           ref={mainRef}
           className={
             showAuthenticatedLayout
-              ? "min-w-0 min-h-screen pb-24 md:pb-0 md:min-h-[calc(100vh-3rem)] md:my-6 bg-background md:framed"
-              : "min-h-screen bg-background"
+              ? "app-main min-w-0 min-h-screen pb-24 md:pb-0 md:min-h-[calc(100vh-3rem)] md:my-6 bg-background md:framed"
+              : "app-main min-h-screen bg-background"
           }
         >
           {children}

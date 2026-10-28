@@ -13,6 +13,7 @@ import {
   CommunityOwnerLook,
   CommunityThemeInjector,
 } from "~/components/community-theme-injector";
+import { Snowfall } from "~/components/snowfall";
 import { Toaster } from "~/components/ui/sonner";
 import { CurrentProfileProvider } from "~/providers/CurrentProfileProvider";
 import type { Route } from "./+types/root";
@@ -74,6 +75,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             backgroundImage: `linear-gradient(color-mix(in srgb, var(--ground) 18%, transparent), color-mix(in srgb, var(--ground) 18%, transparent)), url(${bgForest})`,
           }}
         />
+        <Snowfall />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
           <Toaster />

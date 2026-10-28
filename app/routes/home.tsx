@@ -120,11 +120,11 @@ export default function Home() {
   }
 
   return (
-    <main className="py-4">
+    <main className="home-timeline py-4">
       <AnnouncementTicker />
       <div className="space-y-0">
         {/* Message Composer */}
-        <div className="border-b border-border/70">
+        <div className="timeline-item border-b border-border/70">
           <MessageSender
             key={currentProfile?.id || "no-profile"}
             onPostSuccess={handlePostSuccess}

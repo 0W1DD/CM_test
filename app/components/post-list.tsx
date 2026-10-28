@@ -200,9 +200,9 @@ export const PostList = forwardRef<PostListRef>((_props, ref) => {
             {allPosts.map((post) => (
               <div
                 key={post.id}
-                className={
+                className={`timeline-item ${
                   post.parent_summary ? "bg-card border-b border-border" : ""
-                }
+                }`}
               >
                 {/* A reply on the timeline says what it answers, and reads
                     as a post of its own rather than a nested reply. */}
