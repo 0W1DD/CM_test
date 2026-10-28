@@ -641,6 +641,27 @@ body,
   color: var(--pine);
 }
 
+/* In the dark the page itself is pine-dark, so the card turns holly red
+   with a pine bar and stripe instead, and still stands out. */
+.dark .bg-announce {
+  --card: #8e1a2b;
+  --background: #8e1a2b;
+  --muted-foreground: #f1cdd0;
+  --primary-foreground: #6d1121;
+  background: #7a1426;
+  border-left-color: var(--pine);
+}
+.dark .bg-announce::before {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--pine) 0 8px,
+    var(--snow) 8px 16px
+  );
+}
+.dark .announce-badge {
+  color: #6d1121;
+}
+
 /* Links and focus: accent, clearly visible. */
 a:focus-visible,
 button:focus-visible,
