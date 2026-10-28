@@ -138,7 +138,7 @@ export function GroupChatMessageReactions({
 
           {openReactionSelector && (
             <div
-              className={`absolute bottom-full mb-2 bg-popover border border-border rounded-lg shadow-marsh-lg p-2 flex gap-1 z-10 ${
+              className={`absolute bottom-full mb-2 bg-popover border-[1.5px] border-[var(--frame)] p-2 flex gap-1 z-10 ${
                 isFromMe ? "right-0" : "left-0"
               }`}
             >

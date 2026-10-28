@@ -109,13 +109,13 @@ export function PostCardReactions({
           </button>
 
           {openReactionSelector && (
-            <div className="reaction-selector basis-full bg-popover border border-border/80 rounded-2xl shadow-marsh-lg p-2 flex flex-wrap gap-1">
+            <div className="reaction-selector basis-full mt-1 bg-popover border-[1.5px] border-[var(--frame)] p-2 flex flex-wrap gap-1">
               {AVAILABLE_REACTIONS.map(({ emoji, label }) => (
                 <button
                   type="button"
                   key={emoji}
                   onClick={() => handleReactionClick(emoji)}
-                  className="hover:bg-accent p-1 rounded text-lg transition-colors"
+                  className="hover:bg-accent p-1.5 rounded text-xl leading-none transition-colors"
                   title={label}
                 >
                   {emoji}
