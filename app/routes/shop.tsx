@@ -1,13 +1,25 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Coins, Package, ShoppingBag, Sparkles } from "lucide-react";
+import {
+  Coins,
+  Lock,
+  Package,
+  ScrollText,
+  ShoppingBag,
+  Sparkles,
+} from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router";
 import { toast } from "sonner";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useAuth } from "~/hooks/useAuth";
-import { type ShopItem, useShopSummary } from "~/hooks/useShopSummary";
+import {
+  type ShopInventoryEntry,
+  type ShopItem,
+  useShopSummary,
+} from "~/hooks/useShopSummary";
 import { errorMessage, mutate } from "~/lib/naru";
 
 export function meta() {
@@ -118,26 +130,36 @@ export default function ShopPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  // Using an item posts `/use <name>` as the acting profile, so the shop
-  // bot answers in the timeline exactly as the slash command does, without
-  // members having to learn the command.
+  // Using an item writes it to the use log, off the timeline, where the
+  // staff confirm it; a secret use shows to others only as a secret.
+  const [using, setUsing] = useState<string | null>(null);
+  const [note, setNote] = useState("");
+  const [secret, setSecret] = useState(false);
+  const startUsing = (itemId: string | null) => {
+    setUsing(itemId);
+    setNote("");
+    setSecret(false);
+  };
   const use = useMutation({
-    mutationFn: async (name: string) => {
+    mutationFn: async (entry: ShopInventoryEntry) => {
       if (!currentProfile) throw new Error("프로필을 선택하세요");
       try {
-        await mutate("posts:create", {
+        await mutate("uses:use", {
           profile_id: currentProfile.id,
-          content: `/use ${name}`,
+          item_id: entry.itemId,
+          note,
+          secret,
         });
       } catch (error) {
         throw new Error(errorMessage(error, "사용하지 못했습니다"));
       }
-      return name;
+      return entry.itemName;
     },
     onSuccess: (name) => {
-      toast.success(`${name}을(를) 사용했습니다. 타임라인에 기록됐어요.`);
+      toast.success(`${name}을(를) 사용했습니다. 사용 로그에 기록됐어요.`);
+      startUsing(null);
       queryClient.invalidateQueries({ queryKey: ["shop-summary"] });
-      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: ["item-uses"] });
       refetch();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -241,36 +263,98 @@ export default function ShopPage() {
       {/* Inventory */}
       {data.inventory.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">보유 상품</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">보유 상품</h2>
+            <Link
+              to="/uses"
+              className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+            >
+              <ScrollText className="h-4 w-4" />
+              사용 로그
+            </Link>
+          </div>
           <Card>
             <CardContent className="p-4 space-y-2">
               {data.inventory.map((entry) => (
-                <div
-                  key={entry.itemId}
-                  className="flex items-center justify-between gap-3 py-2 border-b last:border-b-0"
-                >
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <Package className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <span className="font-medium truncate">
-                      {entry.itemName}
+                <div key={entry.itemId} className="border-b last:border-b-0">
+                  <div className="flex items-center justify-between gap-3 py-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <Package className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="font-medium truncate">
+                        {entry.itemName}
+                      </span>
+                      {entry.consumable && (
+                        <Badge variant="outline" className="text-xs">
+                          소모품
+                        </Badge>
+                      )}
+                    </div>
+                    <span className="text-sm tabular-nums whitespace-nowrap">
+                      ×{entry.qty}
                     </span>
-                    {entry.consumable && (
-                      <Badge variant="outline" className="text-xs">
-                        소모품
-                      </Badge>
-                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={use.isPending || entry.qty < 1}
+                      onClick={() =>
+                        startUsing(using === entry.itemId ? null : entry.itemId)
+                      }
+                    >
+                      {entry.consumable ? "사용" : "꺼내 보이기"}
+                    </Button>
                   </div>
-                  <span className="text-sm tabular-nums whitespace-nowrap">
-                    ×{entry.qty}
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={use.isPending || entry.qty < 1}
-                    onClick={() => use.mutate(entry.itemName)}
-                  >
-                    {entry.consumable ? "사용" : "꺼내 보이기"}
-                  </Button>
+                  {using === entry.itemId && (
+                    <form
+                      className="mb-3 space-y-2 border-[1.5px] border-[var(--frame)] bg-background p-3"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        use.mutate(entry);
+                      }}
+                    >
+                      <textarea
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        maxLength={500}
+                        rows={2}
+                        placeholder="어떻게 사용하나요? (선택)"
+                        className="w-full resize-none border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <input
+                            type="checkbox"
+                            checked={secret}
+                            onChange={(e) => setSecret(e.target.checked)}
+                          />
+                          <Lock className="h-3.5 w-3.5" />
+                          비밀로 사용
+                        </label>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => startUsing(null)}
+                          >
+                            취소
+                          </Button>
+                          <Button
+                            type="submit"
+                            size="sm"
+                            disabled={use.isPending}
+                          >
+                            {entry.consumable ? "사용하기" : "꺼내 보이기"}
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        타임라인에는 올라가지 않고 사용 로그에 기록되며,
+                        운영진이 확인하면 승인됩니다.
+                        {secret &&
+                          " 비밀 사용은 나와 운영진에게만 내용이 보입니다."}
+                      </p>
+                    </form>
+                  )}
                 </div>
               ))}
             </CardContent>

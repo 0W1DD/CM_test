@@ -228,3 +228,44 @@ test("the owner grants to everyone or to chosen profiles at once, and takes back
     "not_owner",
   );
 });
+
+test("the use log: members use items off the timeline, secrets stay hidden, staff confirm", async () => {
+  const { site, profiles, potion, sword, qty } = await withShop();
+  const give = (item, profile, n = 1) =>
+    site.mutate("shop:adminGrant", { kind: "item", profile_id: profile, item_id: item.id, qty: n }, as("m-owner"));
+  await give(potion, profiles.alice, 2);
+  const use = (args, member = "m-alice") =>
+    site.mutate("uses:use", { profile_id: profiles.alice, ...args }, as(member));
+
+  // A consumable is spent; a use of something not held is refused and spends nothing.
+  site.now += 1;
+  const open = await use({ item_id: potion.id, note: "상처에 바른다" });
+  assert.equal(open.item_name, "포션");
+  assert.equal(open.status, "pending");
+  assert.equal(qty(profiles.alice, potion.id), 1);
+  assert.equal(await refusal(use({ item_id: sword.id })), "not_owned");
+  assert.equal(await refusal(use({ item_id: potion.id }, "m-bob")), "not_found");
+  site.now += 1;
+  const secret = await use({ item_id: potion.id, note: "몰래", secret: true });
+  assert.equal(secret.item_name, "포션"); // its owner sees it
+  assert.equal(qty(profiles.alice, potion.id), 0);
+  assert.equal(await refusal(use({ item_id: potion.id })), "insufficient_quantity");
+
+  // Others see the secret only as a secret; the staff see it all.
+  const seen = async (member) => (await site.query("uses:list", null, as(member))).data;
+  const bob = await seen("m-bob");
+  assert.deepEqual(bob.map((u) => [u.item_name, u.note, u.hidden]), [[null, null, true], ["포션", "상처에 바른다", false]]);
+  const owner = await site.query("uses:list", null, as("m-owner"));
+  assert.equal(owner.data[0].note, "몰래");
+  assert.equal(owner.pending_count, 2);
+  assert.equal((await site.query("uses:list", null, as("m-bob"))).pending_count, null);
+
+  // Only the staff confirm; the pending filter follows.
+  assert.equal(await refusal(site.mutate("uses:approve", { use_id: open.id }, as("m-bob"))), "not_moderator");
+  const approved = await site.mutate("uses:approve", { use_id: open.id }, as("m-owner"));
+  assert.equal(approved.status, "approved");
+  const pending = await site.query("uses:list", { pending: true }, as("m-owner"));
+  assert.deepEqual(pending.data.map((u) => u.id), [secret.id]);
+  assert.equal(pending.pending_count, 1);
+  assert.equal(await refusal(site.query("uses:list", null, VISITOR)), "signed_out");
+});

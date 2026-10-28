@@ -1,0 +1,1 @@
+import{u as e}from"./useQuery-Ckc3ZaV5.js";import{q as s}from"./utils-BEU1-fQ1.js";const r=["session"];function i(){return e({queryKey:r,queryFn:()=>s("me:session"),staleTime:600*1e3,gcTime:3600*1e3})}export{r as S,i as u};

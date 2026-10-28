@@ -20,6 +20,7 @@ export default [
   route("/messages/:username", "routes/messages.$username.tsx"),
   route("/group-chats/:group_chat_id", "routes/group-chats.$group_chat_id.tsx"),
   route("/shop", "routes/shop.tsx"),
+  route("/uses", "routes/uses.tsx"),
   route("/boards", "routes/boards.tsx"),
   route("/boards/:slug", "routes/boards.$slug.tsx"),
   route("/boards/:slug/:postId", "routes/boards.$slug.$postId.tsx"),

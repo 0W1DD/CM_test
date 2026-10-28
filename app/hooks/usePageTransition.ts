@@ -51,6 +51,7 @@ const PAGE_NAMES: [string, string][] = [
   ["/announcements", "공지사항"],
   ["/boards", "게시판"],
   ["/shop", "상점"],
+  ["/uses", "사용 로그"],
   ["/bookmarks", "북마크"],
   ["/search", "검색"],
   ["/profiles", "멤버"],

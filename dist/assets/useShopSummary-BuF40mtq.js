@@ -1,0 +1,1 @@
+import{u as e}from"./useQuery-Ckc3ZaV5.js";import{q as s}from"./utils-BEU1-fQ1.js";import{u as o}from"./useAuth-DWZjZNqI.js";function n(){const{currentProfile:u}=o(),r=u==null?void 0:u.id;return e({queryKey:["shop-summary",r],queryFn:async()=>r?await s("shop:summary",{profile_id:r}).catch(()=>null):null,enabled:!!r,staleTime:3e4})}export{n as u};

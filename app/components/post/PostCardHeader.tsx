@@ -43,7 +43,7 @@ interface PostCardHeaderProps {
  * only when it is not this year): no seconds, so a busy thread stays easy
  * to scan. The full time is the link's tooltip.
  */
-function shortTime(iso: string): string {
+export function shortTime(iso: string): string {
   const date = new Date(iso);
   const diff = Date.now() - date.getTime();
   const minutes = Math.floor(diff / 60_000);
