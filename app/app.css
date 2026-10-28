@@ -13,7 +13,7 @@
     system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol", "Noto Color Emoji";
   --font-display:
-    "Pretendard Variable", "Pretendard", "Noto Sans KR", ui-sans-serif,
+    "Gowun Batang", "Pretendard Variable", "Pretendard", "Noto Sans KR", ui-sans-serif,
     system-ui, sans-serif;
 
   --shadow-marsh: 0 1px 2px oklch(0.6 0.02 255 / 0.08);
@@ -762,4 +762,37 @@ textarea,
     animation: none;
     transition: none;
   }
+}
+
+/* A softer mood: paper with a faint grain, the photo dimmed at its edges,
+   and quotes set in the serif of the titles. */
+.bg-card,
+.app-main {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.28 0 0 0 0 0.18 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.dark .bg-card,
+.dark .app-main {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 0.95 0 0 0 0 0.85 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.bg-photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 55%,
+    rgb(30 22 12 / 0.35) 100%
+  );
+}
+.prose blockquote {
+  font-family: var(--font-display);
+  font-style: normal;
+  font-weight: 400;
+  border-left: 2px solid var(--accent-color);
+  color: inherit;
+  opacity: 0.85;
+}
+.prose blockquote p::before,
+.prose blockquote p::after {
+  content: none;
 }

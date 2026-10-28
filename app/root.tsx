@@ -43,10 +43,15 @@ export function meta() {
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://cdn.jsdelivr.net", crossOrigin: "anonymous" },
   // Pretendard: a Korean UI face built for screens, loaded as a subset. It
-  // covers every glyph the pages use, so no second Korean face is loaded.
+  // covers every glyph the pages use.
   {
     rel: "stylesheet",
     href: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css",
+  },
+  // Gowun Batang: a gentle serif for titles and quotes only.
+  {
+    rel: "stylesheet",
+    href: "https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap",
   },
 ];
 
