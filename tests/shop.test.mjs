@@ -269,3 +269,49 @@ test("the use log: members use items off the timeline, secrets stay hidden, staf
   assert.equal(pending.pending_count, 1);
   assert.equal(await refusal(site.query("uses:list", null, VISITOR)), "signed_out");
 });
+
+test("transfers move items to another profile and log them; entries take comments", async () => {
+  const { site, profiles, potion, sword, qty } = await withShop({ members: ["alice", "bob", "carol"] });
+  const give = (item, profile, n = 1) =>
+    site.mutate("shop:adminGrant", { kind: "item", profile_id: profile, item_id: item.id, qty: n }, as("m-owner"));
+  await give(potion, profiles.alice, 3);
+  await give(sword, profiles.alice);
+  await give(sword, profiles.bob);
+  const transfer = (args) =>
+    site.mutate("uses:transfer", { profile_id: profiles.alice, ...args }, as("m-alice"));
+
+  site.now += 1;
+  const sent = await transfer({ item_id: potion.id, to_username: "@bob", qty: 2, note: "치료용으로" });
+  assert.equal(sent.kind, "transfer");
+  assert.equal(sent.target.username, "bob");
+  assert.equal(sent.qty, 2);
+  assert.equal(qty(profiles.alice, potion.id), 1);
+  assert.equal(qty(profiles.bob, potion.id), 2);
+  // Short, to oneself, to nobody, or a unique item the receiver holds: refused, nothing moves.
+  assert.equal(await refusal(transfer({ item_id: potion.id, to_username: "bob", qty: 5 })), "insufficient_quantity");
+  assert.equal(await refusal(transfer({ item_id: potion.id, to_username: "alice" })), "self_transfer");
+  assert.equal(await refusal(transfer({ item_id: potion.id, to_username: "nobody" })), "not_found");
+  assert.equal(await refusal(transfer({ item_id: sword.id, to_username: "bob" })), "already_owned");
+  assert.equal(qty(profiles.alice, sword.id), 1);
+
+  // A secret transfer: the receiver sees it, the owner too; the rest see a secret.
+  site.now += 1;
+  const secret = await transfer({ item_id: potion.id, to_username: "bob", secret: true });
+  const seenBy = async (member) =>
+    (await site.query("uses:list", null, as(member))).data.find((u) => u.id === secret.id);
+  assert.equal((await seenBy("m-bob")).item_name, "포션");
+  assert.equal((await seenBy("m-owner")).target.username, "bob");
+  const carol = await seenBy("m-carol");
+  assert.equal(carol.hidden, true);
+  assert.equal(carol.target, null);
+
+  // Comments: anyone on an open entry, only those who see a secret one in full.
+  const comment = (member, profile_id, use_id, content) =>
+    site.mutate("uses:comment", { profile_id, use_id, content }, as(member));
+  const withComment = await comment("m-bob", profiles.bob, sent.id, "잘 받았습니다");
+  assert.deepEqual(withComment.comments.map((c) => [c.profile.username, c.content]), [["bob", "잘 받았습니다"]]);
+  await comment("m-owner", profiles.owner, secret.id, "확인했습니다");
+  assert.equal((await seenBy("m-bob")).comments.length, 1);
+  assert.deepEqual(carol.comments, []);
+  assert.equal(await refusal(comment("m-bob", profiles.bob, sent.id, "")), "invalid");
+});

@@ -1,0 +1,1 @@
+import{v as r,q as s}from"./utils-CtB_kT2J.js";import{u as a}from"./useAuth-D5-Eb3ht.js";function m(){const{currentProfile:e}=a(),u=e==null?void 0:e.id;return r({queryKey:["shop-summary",u],queryFn:async()=>u?await s("shop:summary",{profile_id:u}).catch(()=>null):null,enabled:!!u,staleTime:3e4})}export{m as u};

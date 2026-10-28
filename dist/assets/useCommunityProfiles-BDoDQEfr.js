@@ -1,1 +1,0 @@
-import{u as s}from"./useQuery-Ckc3ZaV5.js";import{q as u}from"./utils-BEU1-fQ1.js";const i=["profiles"];function t(e=!0){return s({queryKey:i,queryFn:()=>u("profiles:list"),staleTime:3e4,enabled:e})}function f(){const{data:e,isLoading:r,refetch:o}=t();return{profiles:e??[],loading:r,refetch:o}}export{f as a,t as u};

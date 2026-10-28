@@ -3,7 +3,7 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { Check, Clock, Lock, ScrollText } from "lucide-react";
+import { ArrowRight, Check, Clock, Lock, ScrollText } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import { ProfileAvatar } from "~/components/profile-avatar";
 import { shortTime } from "~/components/post/PostCardHeader";
 import { LoadingState } from "~/components/shared/LoadingState";
 import { Button } from "~/components/ui/button";
+import { useAuth } from "~/hooks/useAuth";
 import { errorMessage, mutate, query } from "~/lib/naru";
 
 export function meta() {
@@ -20,16 +21,29 @@ export function meta() {
   ];
 }
 
+interface Brief {
+  id: string;
+  name: string;
+  username: string;
+  profile_picture_url: string | null;
+}
+
+interface UseComment {
+  id: string;
+  profile: Brief | null;
+  content: string;
+  created_at: string;
+}
+
 interface ItemUse {
   id: string;
-  profile: {
-    id: string;
-    name: string;
-    username: string;
-    profile_picture_url: string | null;
-  } | null;
+  kind: "use" | "transfer";
+  profile: Brief | null;
+  target: Brief | null;
   item_name: string | null;
+  qty: number;
   note: string | null;
+  comments: UseComment[];
   secret: boolean;
   hidden: boolean;
   consumed: boolean;
@@ -47,10 +61,79 @@ interface UsesPage {
 
 type Filter = "all" | "pending";
 
+/** The comments under an entry, and a box to add one as the acting profile. */
+function UseComments({ use }: { use: ItemUse }) {
+  const { currentProfile } = useAuth();
+  const queryClient = useQueryClient();
+  const [content, setContent] = useState("");
+  const send = useMutation({
+    mutationFn: async () => {
+      if (!currentProfile) throw new Error("프로필을 선택하세요");
+      try {
+        await mutate("uses:comment", {
+          profile_id: currentProfile.id,
+          use_id: use.id,
+          content,
+        });
+      } catch (error) {
+        throw new Error(errorMessage(error, "댓글을 달지 못했습니다"));
+      }
+    },
+    onSuccess: () => {
+      setContent("");
+      queryClient.invalidateQueries({ queryKey: ["item-uses"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="mt-2 space-y-1.5">
+      {use.comments.map((comment) => (
+        <div key={comment.id} className="flex gap-2 text-sm">
+          <span className="font-semibold text-foreground whitespace-nowrap">
+            {comment.profile?.name ?? "알 수 없음"}
+          </span>
+          <span className="text-foreground whitespace-pre-line break-words min-w-0">
+            {comment.content}
+          </span>
+          <span className="ml-auto text-xs text-muted-foreground whitespace-nowrap">
+            {shortTime(comment.created_at)}
+          </span>
+        </div>
+      ))}
+      {currentProfile && (
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (content.trim()) send.mutate();
+          }}
+        >
+          <input
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            maxLength={1000}
+            placeholder={`${currentProfile.name}(으)로 댓글 달기`}
+            className="min-w-0 flex-1 border border-border bg-background px-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+          <Button
+            type="submit"
+            size="sm"
+            variant="outline"
+            disabled={send.isPending || !content.trim()}
+          >
+            등록
+          </Button>
+        </form>
+      )}
+    </div>
+  );
+}
+
 /**
- * The use log: items members used from their inventory, newest first, kept
- * off the timeline. The staff confirm each use; a secret use shows to
- * others only as a secret.
+ * The use log: items members used from their inventory or handed to each
+ * other, newest first, kept off the timeline, with comments under each. The
+ * staff confirm each entry; a secret one shows to others only as a secret.
  */
 export default function UsesPage() {
   const [filter, setFilter] = useState<Filter>("all");
@@ -189,15 +272,26 @@ export default function UsesPage() {
                   </p>
                 ) : (
                   <>
-                    <p className="mt-1 text-sm text-foreground">
-                      <strong>{use.item_name}</strong>을(를){" "}
-                      {use.consumed ? "사용했습니다" : "꺼내 보였습니다"}.
-                    </p>
+                    {use.kind === "transfer" ? (
+                      <p className="mt-1 text-sm text-foreground inline-flex flex-wrap items-center gap-1">
+                        <strong>{use.item_name}</strong>
+                        {use.qty > 1 && <span>×{use.qty}</span>}
+                        <ArrowRight className="h-3.5 w-3.5 text-primary" />
+                        <strong>{use.target?.name ?? "알 수 없음"}</strong>
+                        <span>님에게 양도했습니다.</span>
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-sm text-foreground">
+                        <strong>{use.item_name}</strong>을(를){" "}
+                        {use.consumed ? "사용했습니다" : "꺼내 보였습니다"}.
+                      </p>
+                    )}
                     {use.note && (
                       <p className="mt-1 text-sm text-muted-foreground whitespace-pre-line break-words border-l-2 border-border pl-2">
                         {use.note}
                       </p>
                     )}
+                    <UseComments use={use} />
                   </>
                 )}
               </div>

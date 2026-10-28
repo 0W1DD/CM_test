@@ -15,6 +15,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useAuth } from "~/hooks/useAuth";
+import { useCommunityProfilesQuery } from "~/hooks/useCommunityProfiles";
 import {
   type ShopInventoryEntry,
   type ShopItem,
@@ -130,16 +131,30 @@ export default function ShopPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  // Using an item writes it to the use log, off the timeline, where the
-  // staff confirm it; a secret use shows to others only as a secret.
+  // Using an item, or handing it to someone, writes it to the use log, off
+  // the timeline, where the staff confirm it; a secret entry shows to
+  // others only as a secret.
   const [using, setUsing] = useState<string | null>(null);
+  const [mode, setMode] = useState<"use" | "transfer">("use");
   const [note, setNote] = useState("");
   const [secret, setSecret] = useState(false);
-  const startUsing = (itemId: string | null) => {
+  const [to, setTo] = useState("");
+  const [qty, setQty] = useState(1);
+  const startUsing = (
+    itemId: string | null,
+    nextMode: "use" | "transfer" = "use",
+  ) => {
     setUsing(itemId);
+    setMode(nextMode);
     setNote("");
     setSecret(false);
+    setTo("");
+    setQty(1);
   };
+  const { data: profiles = [] } = useCommunityProfilesQuery(
+    using !== null && mode === "transfer",
+  );
+  const recipients = profiles.filter((p) => p.id !== currentProfile?.id);
   const use = useMutation({
     mutationFn: async (entry: ShopInventoryEntry) => {
       if (!currentProfile) throw new Error("프로필을 선택하세요");
@@ -164,6 +179,35 @@ export default function ShopPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const transfer = useMutation({
+    mutationFn: async (entry: ShopInventoryEntry) => {
+      if (!currentProfile) throw new Error("프로필을 선택하세요");
+      if (!to) throw new Error("받는 사람을 고르세요");
+      try {
+        await mutate("uses:transfer", {
+          profile_id: currentProfile.id,
+          item_id: entry.itemId,
+          to_username: to,
+          qty,
+          note,
+          secret,
+        });
+      } catch (error) {
+        throw new Error(errorMessage(error, "양도하지 못했습니다"));
+      }
+      return entry.itemName;
+    },
+    onSuccess: (name) => {
+      toast.success(`${name}을(를) 양도했습니다. 사용 로그에 기록됐어요.`);
+      startUsing(null);
+      queryClient.invalidateQueries({ queryKey: ["shop-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["item-uses"] });
+      refetch();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const busy = use.isPending || transfer.isPending;
 
   if (isLoading || !data) {
     return (
@@ -295,12 +339,32 @@ export default function ShopPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={use.isPending || entry.qty < 1}
+                      disabled={busy || entry.qty < 1}
                       onClick={() =>
-                        startUsing(using === entry.itemId ? null : entry.itemId)
+                        startUsing(
+                          using === entry.itemId && mode === "use"
+                            ? null
+                            : entry.itemId,
+                          "use",
+                        )
                       }
                     >
                       {entry.consumable ? "사용" : "꺼내 보이기"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy || entry.qty < 1}
+                      onClick={() =>
+                        startUsing(
+                          using === entry.itemId && mode === "transfer"
+                            ? null
+                            : entry.itemId,
+                          "transfer",
+                        )
+                      }
+                    >
+                      양도
                     </Button>
                   </div>
                   {using === entry.itemId && (
@@ -308,15 +372,55 @@ export default function ShopPage() {
                       className="mb-3 space-y-2 border-[1.5px] border-[var(--frame)] bg-background p-3"
                       onSubmit={(e) => {
                         e.preventDefault();
-                        use.mutate(entry);
+                        if (mode === "transfer") transfer.mutate(entry);
+                        else use.mutate(entry);
                       }}
                     >
+                      {mode === "transfer" && (
+                        <div className="flex gap-2">
+                          <select
+                            value={to}
+                            onChange={(e) => setTo(e.target.value)}
+                            className="min-w-0 flex-1 border border-border bg-card px-2 h-9 text-sm"
+                          >
+                            <option value="">받는 사람 고르기</option>
+                            {recipients.map((p) => (
+                              <option key={p.id} value={p.username}>
+                                {p.name} (@{p.username})
+                              </option>
+                            ))}
+                          </select>
+                          {entry.qty > 1 && (
+                            <input
+                              type="number"
+                              min={1}
+                              max={entry.qty}
+                              step={1}
+                              value={qty}
+                              onChange={(e) =>
+                                setQty(
+                                  Math.min(
+                                    entry.qty,
+                                    Math.max(1, Number(e.target.value) || 1),
+                                  ),
+                                )
+                              }
+                              aria-label="수량"
+                              className="w-20 border border-border bg-card px-2 h-9 text-sm"
+                            />
+                          )}
+                        </div>
+                      )}
                       <textarea
                         value={note}
                         onChange={(e) => setNote(e.target.value)}
                         maxLength={500}
                         rows={2}
-                        placeholder="어떻게 사용하나요? (선택)"
+                        placeholder={
+                          mode === "transfer"
+                            ? "양도하며 남길 말 (선택)"
+                            : "어떻게 사용하나요? (선택)"
+                        }
                         className="w-full resize-none border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                       <div className="flex items-center justify-between gap-2">
@@ -327,7 +431,7 @@ export default function ShopPage() {
                             onChange={(e) => setSecret(e.target.checked)}
                           />
                           <Lock className="h-3.5 w-3.5" />
-                          비밀로 사용
+                          {mode === "transfer" ? "비밀로 양도" : "비밀로 사용"}
                         </label>
                         <div className="flex gap-2">
                           <Button
@@ -341,17 +445,25 @@ export default function ShopPage() {
                           <Button
                             type="submit"
                             size="sm"
-                            disabled={use.isPending}
+                            disabled={busy || (mode === "transfer" && !to)}
                           >
-                            {entry.consumable ? "사용하기" : "꺼내 보이기"}
+                            {mode === "transfer"
+                              ? "양도하기"
+                              : entry.consumable
+                                ? "사용하기"
+                                : "꺼내 보이기"}
                           </Button>
                         </div>
                       </div>
                       <p className="text-xs text-muted-foreground">
                         타임라인에는 올라가지 않고 사용 로그에 기록되며,
                         운영진이 확인하면 승인됩니다.
+                        {mode === "transfer" &&
+                          " 아이템은 바로 받는 사람에게 넘어갑니다."}
                         {secret &&
-                          " 비밀 사용은 나와 운영진에게만 내용이 보입니다."}
+                          (mode === "transfer"
+                            ? " 비밀 양도는 주고받는 사람과 운영진에게만 내용이 보입니다."
+                            : " 비밀 사용은 나와 운영진에게만 내용이 보입니다.")}
                       </p>
                     </form>
                   )}

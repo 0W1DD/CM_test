@@ -4,14 +4,7 @@
 // grant writes nothing: balances and quantities never go below zero, and a
 // unique item is held once. Rows answer in commung's shapes (camelCase, as
 // its API passed its rows through).
-import {
-  bool,
-  type Ctx,
-  iso,
-  list,
-  type MutationCtx,
-  uuidv7,
-} from "./core.js";
+import { bool, type Ctx, iso, list, type MutationCtx, uuidv7 } from "./core.js";
 
 export const CURRENCY_NAME_MAX = 50;
 export const NAME_MAX = 100;
@@ -568,6 +561,60 @@ export async function grantItem(
   });
 }
 
+/**
+ * Hands `qty` of an item from one profile to another: taken, then given,
+ * or neither (short, or the receiver already holds a unique one). The
+ * ledger has no transfer kind, so each side is written as a consume and a
+ * grant whose reason names the other profile.
+ */
+export async function transferItem(
+  ctx: MutationCtx,
+  p: {
+    fromId: string;
+    toId: string;
+    fromName: string;
+    toName: string;
+    itemId: string;
+    qty: number;
+    actor?: string | null;
+  },
+) {
+  validateAmount(p.qty);
+  const item = await validateItemExists(ctx, p.itemId);
+  await profileExists(ctx, p.toId);
+  if (item.isUnique && (await owns(ctx, p.toId, p.itemId)))
+    throw new ShopError(
+      "CONFLICT",
+      "받는 사람이 이미 보유 중인 상품입니다",
+      "already_owned",
+    );
+  const { changes } = await ctx.sql`
+    UPDATE shop_inventory SET qty = qty - ${p.qty}, updated_at = ${ctx.now}
+    WHERE profile_id = ${p.fromId} AND item_id = ${p.itemId} AND qty >= ${p.qty}`;
+  if (!changes)
+    throw invalid("보유 수량이 부족합니다", "insufficient_quantity");
+  await addToInventory(ctx, p.toId, p.itemId, p.qty);
+  await record(ctx, {
+    profileId: p.fromId,
+    kind: "item_consume",
+    source: "consume",
+    itemId: p.itemId,
+    itemQtyDelta: -p.qty,
+    reason: `양도 → @${p.toName}`,
+    actor: p.actor,
+  });
+  await record(ctx, {
+    profileId: p.toId,
+    kind: "item_grant",
+    source: "owner_grant",
+    itemId: p.itemId,
+    itemQtyDelta: p.qty,
+    reason: `양도 ← @${p.fromName}`,
+    actor: p.actor,
+  });
+  return item;
+}
+
 /** Buys one of an item with its currency: charges, then adds it, or neither. */
 export async function purchaseItem(
   ctx: MutationCtx,
@@ -675,7 +722,15 @@ export async function grantMany(
       `INSERT INTO shop_transactions (id, profile_id, kind, source, currency_id, currency_delta, reason, actor_member, created_at)
        SELECT ? || '-' || t.id, t.id, 'currency_grant', 'owner_grant', ?, ?, ?, ?, ?
        FROM (${targets}) t`,
-      [prefix, p.grant.currencyId, p.grant.amount, p.reason, p.actor, ctx.now, ...targetValues],
+      [
+        prefix,
+        p.grant.currencyId,
+        p.grant.amount,
+        p.reason,
+        p.actor,
+        ctx.now,
+        ...targetValues,
+      ],
     );
     return changes;
   }
@@ -696,7 +751,15 @@ export async function grantMany(
     `INSERT INTO shop_transactions (id, profile_id, kind, source, item_id, item_qty_delta, reason, actor_member, created_at)
      SELECT ? || '-' || e.id, e.id, 'item_grant', 'owner_grant', ?, ?, ?, ?, ?
      FROM (${eligible}) e`,
-    [prefix, p.grant.itemId, qty, p.reason, p.actor, ctx.now, ...eligibleValues],
+    [
+      prefix,
+      p.grant.itemId,
+      qty,
+      p.reason,
+      p.actor,
+      ctx.now,
+      ...eligibleValues,
+    ],
   );
   const { changes } = await ctx.sql(
     `INSERT INTO shop_inventory (id, profile_id, item_id, qty, granted_at, updated_at)
