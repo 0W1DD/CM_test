@@ -1,5 +1,5 @@
 import { type ReactNode, useRef } from "react";
-import { useScanTransition } from "~/hooks/useScanTransition";
+import { usePageTransition } from "~/hooks/usePageTransition";
 import { useScrollDirection } from "~/hooks/useScrollDirection";
 import { ClockCalendar } from "./clock-calendar";
 import { MobileBottomNav } from "./mobile-bottom-nav";
@@ -25,7 +25,7 @@ export function MastodonLayout({
 }: MastodonLayoutProps) {
   const headerHidden = useScrollDirection();
   const mainRef = useRef<HTMLElement>(null);
-  useScanTransition(mainRef);
+  usePageTransition(mainRef);
 
   // Members get the app's navigation; visitors and applicants a plain page.
   const showAuthenticatedLayout = isAuthenticated && !isLoading;

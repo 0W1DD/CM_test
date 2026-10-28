@@ -429,26 +429,42 @@ body,
   pointer-events: none;
 }
 
-/* The page change sweep (useScanTransition): a cover in the page colour
-   below a line in the accent, with a warm wash trailing above the line. */
-.scan-cover {
+/* The page change (usePageTransition): strips over the page, framed in the
+   theme colour, the top one with the page's name and the date. */
+.page-blinds {
   position: fixed;
   z-index: 30;
+  overflow: hidden;
   pointer-events: none;
-  border-top: 2px solid var(--accent-color);
 }
-.scan-cover::before {
-  content: "";
+.page-blinds-blank {
+  position: absolute;
+  inset: 0;
+}
+.page-blinds-strip {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 100%;
-  height: 36px;
-  background: linear-gradient(
-    to top,
-    color-mix(in srgb, var(--accent-color) 16%, transparent),
-    transparent
-  );
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border-bottom: 1.5px solid var(--theme);
+}
+.page-blinds-title {
+  padding-left: 1.25rem;
+  color: var(--ground-raised);
+  font-size: clamp(1.25rem, 4vw, 1.875rem);
+  font-weight: 900;
+  letter-spacing: 0.25em;
+  white-space: nowrap;
+}
+.page-blinds-date {
+  margin-left: auto;
+  padding-right: 1.25rem;
+  color: var(--ground-raised);
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
 }
 
 /* Phones show the page edge to edge with nothing around it, so the photo
