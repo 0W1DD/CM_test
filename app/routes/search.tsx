@@ -1,5 +1,5 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { Clock, Search, Users, X } from "lucide-react";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { Clock, Hash, Search, Users, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { LoginButton } from "~/components/LoginButton";
@@ -141,6 +141,17 @@ export default function SearchPage() {
       return next;
     });
   };
+
+  // The most used tags, offered while the box is empty.
+  const { data: popularTags = [] } = useQuery({
+    queryKey: ["popular-hashtags"],
+    queryFn: () =>
+      query<{ tag: string; count: number }[]>("search:popularHashtags", {
+        limit: 12,
+      }),
+    staleTime: 60000,
+    enabled: !!isAuthenticated && !!belongsToCurrentInstance,
+  });
 
   // Members whose name or username holds the words, searched in the
   // profile list the app already keeps (nothing new is asked of the site).
@@ -342,7 +353,9 @@ export default function SearchPage() {
                     className="inline-flex items-center gap-2 pl-1 pr-3 py-1 bg-card border border-border rounded-full hover:border-primary text-sm"
                   >
                     <ProfileAvatar
-                      profilePictureUrl={person.profile_picture_url || undefined}
+                      profilePictureUrl={
+                        person.profile_picture_url || undefined
+                      }
                       name={person.name}
                       username={person.username}
                       size="sm"
@@ -361,45 +374,74 @@ export default function SearchPage() {
 
           {/* Search Results */}
           {!debouncedQuery || debouncedQuery.length < 2 ? (
-            recent.length > 0 ? (
-              <div className="bg-card rounded-2xl border border-border p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    최근 검색어
-                  </h2>
-                  <button
-                    type="button"
-                    onClick={() => forgetRecent()}
-                    className="text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    모두 지우기
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {recent.map((q) => (
-                    <span
-                      key={q}
-                      className="inline-flex items-center gap-1 border border-border rounded-full text-sm"
-                    >
+            recent.length > 0 || popularTags.length > 0 ? (
+              <div className="space-y-4">
+                {popularTags.length > 0 && (
+                  <div className="bg-card rounded-2xl border border-border p-4">
+                    <h2 className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground mb-3">
+                      <Hash className="h-4 w-4" />
+                      많이 쓴 태그
+                    </h2>
+                    <div className="flex flex-wrap gap-2">
+                      {popularTags.map((item) => (
+                        <button
+                          key={item.tag}
+                          type="button"
+                          onClick={() => setInputValue(`#${item.tag}`)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 border border-border rounded-full text-sm hover:border-primary"
+                        >
+                          <span className="font-semibold text-primary">
+                            #{item.tag}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {item.count}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {recent.length > 0 && (
+                  <div className="bg-card rounded-2xl border border-border p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h2 className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        최근 검색어
+                      </h2>
                       <button
                         type="button"
-                        onClick={() => setInputValue(q)}
-                        className="pl-3 py-1 text-foreground hover:text-primary"
+                        onClick={() => forgetRecent()}
+                        className="text-xs text-muted-foreground hover:text-foreground"
                       >
-                        {q}
+                        모두 지우기
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => forgetRecent(q)}
-                        aria-label={`${q} 지우기`}
-                        className="pr-2 py-1 text-muted-foreground hover:text-foreground"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {recent.map((q) => (
+                        <span
+                          key={q}
+                          className="inline-flex items-center gap-1 border border-border rounded-full text-sm"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setInputValue(q)}
+                            className="pl-3 py-1 text-foreground hover:text-primary"
+                          >
+                            {q}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => forgetRecent(q)}
+                            aria-label={`${q} 지우기`}
+                            className="pr-2 py-1 text-muted-foreground hover:text-foreground"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <EmptyState
@@ -450,9 +492,7 @@ export default function SearchPage() {
             <div className="space-y-4" ref={resultsRef}>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Search className="h-4 w-4" />
-                <span>
-                  검색 결과 {totalCount ?? searchResults.length}개
-                </span>
+                <span>검색 결과 {totalCount ?? searchResults.length}개</span>
               </div>
 
               {searchResults.map((post: Post) => (

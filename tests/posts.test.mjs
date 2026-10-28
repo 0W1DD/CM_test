@@ -246,6 +246,17 @@ test("editing keeps history, only by the author; search follows the edit", async
   assert.deepEqual(await site.query("search:hashtags", { q: "태" }), []);
 });
 
+test("hashtags are suggested by prefix and listed by use, from posts still up", async () => {
+  const { site, profiles } = await community();
+  await write(site, "m-alice", profiles.alice, "#바다 #바다탐사");
+  await write(site, "m-bob", profiles.bob, "#바다 #등대");
+  const gone = await write(site, "m-bob", profiles.bob, "#바닷물");
+  await site.mutate("posts:remove", { post_id: gone.id, profile_id: profiles.bob }, as("m-bob"));
+  const tags = async (name, args) => (await site.query(name, args)).map((t) => [t.tag, t.count]);
+  assert.deepEqual(await tags("search:hashtags", { q: "#바" }), [["바다", 2], ["바다탐사", 1]]);
+  assert.deepEqual(await tags("search:popularHashtags", {}), [["바다", 2], ["등대", 1], ["바다탐사", 1]]);
+});
+
 test("authors delete their posts; moderators delete others' and it is logged", async () => {
   const { site, profiles } = await community({ members: ["alice", "bob", "mod"] });
   site.run("UPDATE members SET role = 'moderator' WHERE member = 'm-mod'");

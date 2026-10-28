@@ -467,6 +467,16 @@ body,
   letter-spacing: 0.2em;
 }
 
+/* #tags in posts (markdown-hashtags.ts): the accent, underlined on hover. */
+.prose a.hashtag {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+.prose a.hashtag:hover {
+  text-decoration: underline;
+}
+
 /* Search: the searched words marked in the results (search.tsx). */
 ::highlight(search-match) {
   background-color: color-mix(in srgb, var(--accent-color) 28%, transparent);

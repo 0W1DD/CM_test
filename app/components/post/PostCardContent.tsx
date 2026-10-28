@@ -1,6 +1,7 @@
 import { AlertTriangle, Eye } from "lucide-react";
 import type MarkdownIt from "markdown-it";
-import { useState } from "react";
+import { type MouseEvent, useState } from "react";
+import { useNavigate } from "react-router";
 
 interface PostCardContentProps {
   content: string;
@@ -23,6 +24,21 @@ export function PostCardContent({
     internalShowContentWarningContent,
     setInternalShowContentWarningContent,
   ] = useState(false);
+
+  const navigate = useNavigate();
+
+  // Links into the community (#tags, @mentions) open in the app without
+  // reloading the page; others, and clicks with a modifier, as usual.
+  const openInApp = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.defaultPrevented || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const link =
+      event.target instanceof Element ? event.target.closest("a") : null;
+    const href = link?.getAttribute("href");
+    if (!href?.startsWith("/") || href.startsWith("//") || link?.target) return;
+    event.preventDefault();
+    navigate(href);
+  };
 
   const showContentWarningContent =
     externalShowContentWarningContent ?? internalShowContentWarningContent;
@@ -64,12 +80,16 @@ export function PostCardContent({
 
   return (
     <>
+      {/* Only catches clicks on the links inside, which keep their own keyboard use. */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: see above */}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: see above */}
       <div
         className={`post-body prose dark:prose-invert ${
           isReply ? "prose-sm text-[14px]" : "prose-sm text-[15px]"
         } max-w-none text-foreground leading-relaxed ${isReply ? "my-1" : "my-2"}`}
         // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized html
         dangerouslySetInnerHTML={{ __html: md.render(content) }}
+        onClick={openInApp}
       />
 
       {/* Show a small indicator if content warning was revealed */}

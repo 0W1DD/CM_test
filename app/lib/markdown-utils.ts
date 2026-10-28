@@ -1,5 +1,6 @@
 import mention from "@fedify/markdown-it-mention";
 import MarkdownIt from "markdown-it";
+import { hashtags } from "~/lib/markdown-hashtags";
 import { query } from "~/lib/naru";
 
 // Cache for profile existence checks
@@ -18,7 +19,7 @@ export function getReadOnlyMarkdownInstance(): MarkdownIt {
     return readOnlyMarkdownInstance;
   }
 
-  readOnlyMarkdownInstance = new MarkdownIt({ linkify: true }).use(mention, {
+  readOnlyMarkdownInstance = new MarkdownIt({ linkify: true }).use(hashtags).use(mention, {
     localDomain: (_bareHandle: string) => {
       // Return the current app domain for bare handles like @miro
       if (typeof window !== "undefined") {
@@ -155,7 +156,7 @@ export async function validateProfilesViaUsername(
 export function createMarkdownInstance(
   validProfiles: Map<string, boolean>,
 ): MarkdownIt {
-  return new MarkdownIt({ linkify: true }).use(mention, {
+  return new MarkdownIt({ linkify: true }).use(hashtags).use(mention, {
     localDomain: (_bareHandle: string) => {
       // Return the current app domain for bare handles like @miro
       if (typeof window !== "undefined") {

@@ -34,6 +34,11 @@ import { ProfileAvatar } from "./profile-avatar";
 
 const MAX_MESSAGE_LENGTH = 500;
 
+interface HashtagSuggestion {
+  tag: string;
+  count: number;
+}
+
 // The date picker (with its calendar) only loads when a post is scheduled,
 // so the composer on every page does not carry it.
 const DateTimePicker = lazy(() =>
@@ -279,6 +284,74 @@ export function MessageComposer({
     }, 0);
   };
 
+  // #tag autocomplete: tags already in use that start with what is typed
+  // after a `#`, or the most used ones for a bare `#`.
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const [tagQuery, setTagQuery] = useState("");
+  const [tagStart, setTagStart] = useState(0);
+  const [tagSuggestions, setTagSuggestions] = useState<HashtagSuggestion[]>(
+    [],
+  );
+  const [selectedTagIndex, setSelectedTagIndex] = useState(0);
+
+  useEffect(() => {
+    if (!showTagDropdown) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const result = await query<HashtagSuggestion[]>(
+          tagQuery ? "search:hashtags" : "search:popularHashtags",
+          tagQuery ? { q: tagQuery, limit: 8 } : { limit: 8 },
+        );
+        if (cancelled) return;
+        setTagSuggestions(Array.isArray(result) ? result : []);
+        setSelectedTagIndex(0);
+      } catch (error) {
+        console.error("Failed to fetch hashtags:", error);
+      }
+    }, 200);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [tagQuery, showTagDropdown]);
+
+  const closeTagDropdown = () => {
+    setShowTagDropdown(false);
+    setTagSuggestions([]);
+    setTagQuery("");
+  };
+
+  const checkForTag = (text: string, cursorPosition: number) => {
+    const match = text
+      .slice(0, cursorPosition)
+      .match(/(^|\s)#([\p{L}\p{N}_]*)$/u);
+    if (match) {
+      const typed = match[2] ?? "";
+      setTagStart(cursorPosition - typed.length - 1);
+      setTagQuery(typed);
+      setShowTagDropdown(true);
+    } else if (showTagDropdown) {
+      closeTagDropdown();
+    }
+  };
+
+  const selectTag = (tag: string) => {
+    const before = message.slice(0, tagStart);
+    const cursor =
+      textareaRef.current?.selectionStart ?? tagStart + 1 + tagQuery.length;
+    const after = message
+      .slice(Math.max(cursor, tagStart + 1))
+      .replace(/^[\p{L}\p{N}_]*/u, "");
+    setMessage(`${before}#${tag} ${after.trimStart()}`);
+    closeTagDropdown();
+    setTimeout(() => {
+      textareaRef.current?.focus();
+      const position = before.length + tag.length + 2;
+      textareaRef.current?.setSelectionRange(position, position);
+    }, 0);
+  };
+
   // Check for @ mentions
   const checkForMention = (text: string, cursorPosition: number) => {
     let beforeCursor = text.slice(0, cursorPosition);
@@ -428,6 +501,38 @@ export function MessageComposer({
       return;
     }
 
+    if (showTagDropdown && tagSuggestions.length > 0) {
+      // Enter while composing Korean commits the syllable, not a tag.
+      if (e.nativeEvent.isComposing) return;
+      switch (e.key) {
+        case "ArrowDown":
+          e.preventDefault();
+          setSelectedTagIndex((prev) =>
+            prev < tagSuggestions.length - 1 ? prev + 1 : 0,
+          );
+          return;
+        case "ArrowUp":
+          e.preventDefault();
+          setSelectedTagIndex((prev) =>
+            prev > 0 ? prev - 1 : tagSuggestions.length - 1,
+          );
+          return;
+        case "Enter":
+        case "Tab": {
+          const selected = tagSuggestions[selectedTagIndex];
+          if (selected) {
+            e.preventDefault();
+            selectTag(selected.tag);
+          }
+          return;
+        }
+        case "Escape":
+          e.preventDefault();
+          closeTagDropdown();
+          return;
+      }
+    }
+
     if (showSlashDropdown && slashCommands.length > 0) {
       switch (e.key) {
         case "ArrowDown":
@@ -467,12 +572,14 @@ export function MessageComposer({
     const cursorPosition = e.target.selectionStart;
     checkForMention(newMessage, cursorPosition);
     checkForSlashCommand(newMessage, cursorPosition);
+    checkForTag(newMessage, cursorPosition);
   };
 
   const handleTextareaClick = (e: React.MouseEvent<HTMLTextAreaElement>) => {
     const cursorPosition = e.currentTarget.selectionStart;
     checkForMention(message, cursorPosition);
     checkForSlashCommand(message, cursorPosition);
+    checkForTag(message, cursorPosition);
   };
 
   // IME composition handlers for CJK input
@@ -496,6 +603,7 @@ export function MessageComposer({
     const currentValue = e.currentTarget.value;
     const cursorPosition = e.currentTarget.selectionStart;
     checkForMention(currentValue, cursorPosition);
+    checkForTag(currentValue, cursorPosition);
   };
 
   // Close dropdown when clicking outside
@@ -761,7 +869,8 @@ export function MessageComposer({
               disabled={isSubmitting}
               className={`resize-none border-0 focus:ring-0 focus:border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent text-base leading-relaxed transition-all ${
                 (showMentionDropdown && mentionProfiles.length > 0) ||
-                (showSlashDropdown && slashCommands.length > 0)
+                (showSlashDropdown && slashCommands.length > 0) ||
+                (showTagDropdown && tagSuggestions.length > 0)
                   ? "min-h-[120px] rounded-t-none"
                   : "min-h-[120px] rounded-none"
               }`}
@@ -837,6 +946,38 @@ export function MessageComposer({
             </div>
           )}
 
+        {/* Hashtag autocomplete */}
+        {showTagDropdown && tagSuggestions.length > 0 && !isPreviewMode && (
+          <div className="tag-dropdown bg-card border-t border-border max-h-48 overflow-y-auto">
+            {tagSuggestions.map((item, index) => (
+              <button
+                key={item.tag}
+                type="button"
+                className={`px-4 py-2.5 cursor-pointer w-full text-left flex items-center gap-3 transition-colors border-l-4 ${
+                  index === selectedTagIndex
+                    ? "bg-accent border-l-primary"
+                    : "hover:bg-background border-l-transparent"
+                }`}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => selectTag(item.tag)}
+              >
+                <span className="text-sm font-semibold text-primary">
+                  #{item.tag}
+                </span>
+                <span className="ml-auto text-xs text-muted-foreground">
+                  글 {item.count}개
+                </span>
+              </button>
+            ))}
+            <div className="px-4 py-2 bg-background border-t border-border">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{tagQuery ? "쓰인 태그" : "많이 쓴 태그"} · ↑↓ 선택</span>
+                <span>Tab 확인</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Slash command autocomplete */}
         {showSlashDropdown && slashCommands.length > 0 && !isPreviewMode && (
           <div className="slash-dropdown bg-card border-t border-border max-h-48 overflow-y-auto">
@@ -889,7 +1030,8 @@ export function MessageComposer({
         className={`px-4 py-3 bg-background ${
           (
             (showMentionDropdown && mentionProfiles.length > 0) ||
-              (showSlashDropdown && slashCommands.length > 0)
+              (showSlashDropdown && slashCommands.length > 0) ||
+              (showTagDropdown && tagSuggestions.length > 0)
           ) && !isPreviewMode
             ? "border-t-0"
             : "border-t border-border"
