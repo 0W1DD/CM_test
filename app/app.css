@@ -429,30 +429,6 @@ body,
   pointer-events: none;
 }
 
-/* The announcement strip on the timeline: the headlines twice in a row,
-   moved left by one copy's width, loop without a seam. It stops under the
-   pointer, and stays still for those who ask for less motion. */
-@keyframes ticker {
-  to {
-    transform: translateX(-50%);
-  }
-}
-.ticker-track {
-  animation: ticker linear infinite;
-}
-.ticker:hover .ticker-track,
-.ticker:focus-within .ticker-track {
-  animation-play-state: paused;
-}
-@media (prefers-reduced-motion: reduce) {
-  .ticker {
-    overflow-x: auto;
-  }
-  .ticker-track {
-    animation: none;
-  }
-}
-
 /* Phones show the page edge to edge with nothing around it, so the photo
    would never be seen: hidden, the browser does not download it. */
 @media (max-width: 767px) {
