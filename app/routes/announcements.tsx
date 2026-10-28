@@ -1,9 +1,11 @@
-import { ArrowLeft, Megaphone } from "lucide-react";
-import { Link } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Megaphone } from "lucide-react";
+import { useEffect } from "react";
+import { Link } from "react-router";
 import { PostCard } from "~/components/post-card";
 import { Spinner } from "~/components/ui/spinner";
 import { useAuth } from "~/hooks/useAuth";
+import { markAnnouncementsSeen } from "~/lib/announcements-seen";
 import { query } from "~/lib/naru";
 import type { Post } from "~/types/post";
 
@@ -24,6 +26,11 @@ export default function Announcements() {
       });
     },
   });
+
+  // Opening the list counts as reading them all.
+  useEffect(() => {
+    markAnnouncementsSeen(announcements);
+  }, [announcements]);
 
   const handleAnnouncementDelete = () => {
     queryClient.invalidateQueries({ queryKey: ["announcements"] });

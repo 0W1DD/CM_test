@@ -1,0 +1,1 @@
+const a="announcements-seen-at";function c(){try{const e=localStorage.getItem(a);return e&&Date.parse(e)||0}catch{return 0}}function r(e){const n=c();return e.filter(t=>t.created_at&&Date.parse(t.created_at)>n).length}function s(e){var t;const n=(t=e[0])==null?void 0:t.created_at;if(n)try{localStorage.setItem(a,n)}catch{}}export{s as m,r as u};
