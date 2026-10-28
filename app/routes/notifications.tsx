@@ -65,6 +65,12 @@ interface Notification {
 
 type NotificationFilter = "all" | "conversation" | "reaction";
 
+interface UnreadCounts {
+  count: number;
+  conversation: number;
+  reaction: number;
+}
+
 const FILTERS: { value: NotificationFilter; label: string }[] = [
   { value: "all", label: "전체" },
   { value: "conversation", label: "답글·멘션" },
@@ -74,6 +80,9 @@ const FILTERS: { value: NotificationFilter; label: string }[] = [
 export default function Notifications() {
   const [isMarkingAllRead, setIsMarkingAllRead] = useState(false);
   const [filter, setFilter] = useState<NotificationFilter>("all");
+  const [newCounts, setNewCounts] = useState<
+    Partial<Record<NotificationFilter, number>>
+  >({});
   const { isAuthenticated, currentProfile, isLoading: authLoading } = useAuth();
   const { refreshUnreadCounts } = useUnreadCount();
   const { instanceSlug } = useCurrentInstance();
@@ -174,11 +183,15 @@ export default function Notifications() {
     let cancelled = false;
     (async () => {
       await refetch();
-      const { count } = await query<{ count: number }>(
+      const { count, conversation, reaction } = await query<UnreadCounts>(
         "notifications:unreadCount",
         { profile_id: currentProfileId },
       );
-      if (cancelled || count === 0) return;
+      if (cancelled) return;
+      // What was new on arriving stays on the tabs for this visit, though
+      // the notifications are marked read right after.
+      setNewCounts({ conversation, reaction });
+      if (count === 0) return;
       await mutate("notifications:markAllRead", {
         profile_id: currentProfileId,
       });
@@ -362,6 +375,11 @@ export default function Notifications() {
                   }`}
                 >
                   {item.label}
+                  {!!newCounts[item.value] && (
+                    <span className="ml-1.5 inline-flex min-w-5 h-5 px-1 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+                      {newCounts[item.value]}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>

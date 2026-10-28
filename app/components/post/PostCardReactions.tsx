@@ -43,6 +43,41 @@ const AVAILABLE_REACTIONS = [
   { emoji: "💤", label: "잠" },
 ];
 
+// The reactions this browser used last, newest first, so the picker puts
+// them at the front. Kept per browser; without storage the order is fixed.
+const RECENT_KEY = "recent-reactions";
+const RECENT_MAX = 6;
+
+function recentReactions(): string[] {
+  try {
+    const value = JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]");
+    return Array.isArray(value) ? value.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberReaction(emoji: string) {
+  try {
+    const recent = [emoji, ...recentReactions().filter((e) => e !== emoji)];
+    localStorage.setItem(
+      RECENT_KEY,
+      JSON.stringify(recent.slice(0, RECENT_MAX)),
+    );
+  } catch {
+    // No storage: the picker keeps its fixed order.
+  }
+}
+
+function reactionsByRecent() {
+  const recent = recentReactions();
+  const rank = (emoji: string) => {
+    const at = recent.indexOf(emoji);
+    return at < 0 ? recent.length : at;
+  };
+  return [...AVAILABLE_REACTIONS].sort((a, b) => rank(a.emoji) - rank(b.emoji));
+}
+
 export function PostCardReactions({
   reactions,
   currentProfileId,
@@ -65,13 +100,20 @@ export function PostCardReactions({
       }
     };
 
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpenReactionSelector(false);
+    };
+
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
     };
   }, [openReactionSelector]);
 
   const handleReactionClick = async (emoji: string) => {
+    rememberReaction(emoji);
     await onAddReaction(emoji);
     setOpenReactionSelector(false);
   };
@@ -110,7 +152,7 @@ export function PostCardReactions({
 
           {openReactionSelector && (
             <div className="reaction-selector basis-full mt-1 bg-popover border-[1.5px] border-[var(--frame)] p-2 flex flex-wrap gap-1">
-              {AVAILABLE_REACTIONS.map(({ emoji, label }) => (
+              {reactionsByRecent().map(({ emoji, label }) => (
                 <button
                   type="button"
                   key={emoji}

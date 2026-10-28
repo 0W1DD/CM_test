@@ -429,6 +429,14 @@ body,
   pointer-events: none;
 }
 
+/* Phones show the page edge to edge with nothing around it, so the photo
+   would never be seen: hidden, the browser does not download it. */
+@media (max-width: 767px) {
+  .bg-photo {
+    display: none;
+  }
+}
+
 /* Scrollbars: thin, square, in the frame colour. */
 * {
   scrollbar-width: thin;

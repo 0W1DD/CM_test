@@ -70,7 +70,7 @@ test("unread count, mark read, unread, all read and delete", async () => {
   const { site, profiles } = await setup();
   const args = { profile_id: profiles.alice };
   const count = () => site.query("notifications:unreadCount", args, as("m-alice"));
-  assert.deepEqual(await count(), { count: 2 });
+  assert.deepEqual(await count(), { count: 2, conversation: 1, reaction: 1 });
   assert.equal(
     await refusal(site.query("notifications:unreadCount", args, as("m-bob"))),
     "not_profile_owner",
@@ -78,16 +78,17 @@ test("unread count, mark read, unread, all read and delete", async () => {
   const [{ id }] = (await site.query("notifications:list", args, as("m-alice"))).data;
   const read = await site.mutate("notifications:markRead", { ...args, notification_id: id }, as("m-alice"));
   assert.equal(read.is_read, true);
-  assert.deepEqual(await count(), { count: 1 });
+  // The newest, read here, is the reaction.
+  assert.deepEqual(await count(), { count: 1, conversation: 1, reaction: 0 });
   assert.equal(
     await refusal(site.mutate("notifications:markRead", { profile_id: profiles.bob, notification_id: id }, as("m-bob"))),
     "not_found",
   );
   await site.mutate("notifications:markUnread", { ...args, notification_id: id }, as("m-alice"));
-  assert.deepEqual(await count(), { count: 2 });
+  assert.deepEqual(await count(), { count: 2, conversation: 1, reaction: 1 });
   const all = await site.mutate("notifications:markAllRead", args, as("m-alice"));
   assert.equal(all.all_read, true);
-  assert.deepEqual(await count(), { count: 0 });
+  assert.deepEqual(await count(), { count: 0, conversation: 0, reaction: 0 });
   await site.mutate("notifications:remove", { ...args, notification_id: id }, as("m-alice"));
   const left = await site.query("notifications:list", args, as("m-alice"));
   assert.equal(left.data.length, 1);

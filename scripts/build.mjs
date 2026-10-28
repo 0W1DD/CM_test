@@ -48,7 +48,13 @@ async function compile(directory) {
 // remove each other's files.
 if (!naruOnly) {
   await rm(out, { recursive: true, force: true });
-  execFileSync("pnpm", ["exec", "react-router", "build"], {
+  // The pnpm running this script (npm_execpath), so it works where pnpm is
+  // not on PATH, as under `corepack pnpm` on Windows.
+  const pnpm = process.env.npm_execpath;
+  const [command, prefix] = pnpm?.endsWith(".cjs") || pnpm?.endsWith(".js")
+    ? [process.execPath, [pnpm]]
+    : ["pnpm", []];
+  execFileSync(command, [...prefix, "exec", "react-router", "build"], {
     cwd: root,
     stdio: "inherit",
   });

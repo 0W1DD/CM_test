@@ -17,7 +17,7 @@ import { Toaster } from "~/components/ui/sonner";
 import { CurrentProfileProvider } from "~/providers/CurrentProfileProvider";
 import type { Route } from "./+types/root";
 import "./app.css";
-import bgForest from "./assets/bg-forest.jpg";
+import bgForest from "./assets/bg-forest.webp";
 
 // Create a client
 const queryClient = new QueryClient({

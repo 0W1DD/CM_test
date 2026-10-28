@@ -85,7 +85,15 @@ export async function unreadCount(ctx, args) {
     const a = argsOf(args);
     const profileId = await recipientProfile(ctx, a.profile_id);
     const { rows } = await ctx.sql `
-    SELECT count(*) AS n FROM notifications
+    SELECT count(*) AS n,
+      coalesce(sum(type IN ('reply', 'mention')), 0) AS conversation,
+      coalesce(sum(type = 'reaction'), 0) AS reaction
+    FROM notifications
     WHERE recipient_id = ${profileId} AND read_at IS NULL`;
-    return { count: rows[0]?.n ?? 0 };
+    // `conversation` and `reaction` split the count as the list's filters do.
+    return {
+        count: rows[0]?.n ?? 0,
+        conversation: rows[0]?.conversation ?? 0,
+        reaction: rows[0]?.reaction ?? 0,
+    };
 }
