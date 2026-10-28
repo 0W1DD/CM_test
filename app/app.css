@@ -467,6 +467,12 @@ body,
   letter-spacing: 0.2em;
 }
 
+/* Search: the searched words marked in the results (search.tsx). */
+::highlight(search-match) {
+  background-color: color-mix(in srgb, var(--accent-color) 28%, transparent);
+  color: inherit;
+}
+
 /* Snow over the background photo and under the page (Snowfall): each flake
    falls the height of the screen, drifting sideways by its own --drift. */
 .snowfall {

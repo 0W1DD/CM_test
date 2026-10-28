@@ -313,7 +313,8 @@ export async function scheduled(ctx: QueryCtx, args: unknown) {
 /**
  * A profile's posts, pinned first, then newest first, with their first
  * replies and, for replies, a summary of the post replied to
- * (GET /app/profiles/:username/posts).
+ * (GET /app/profiles/:username/posts). `kind` "posts" keeps to the posts
+ * that start a thread, "replies" to the replies; both when absent.
  */
 export async function byProfile(ctx: QueryCtx, args: unknown) {
   const a = argsOf(args);
@@ -328,7 +329,13 @@ export async function byProfile(ctx: QueryCtx, args: unknown) {
   const profile = profiles[0];
   if (!profile) notFound(ctx, "프로필을 찾을 수 없습니다");
   const viewer = await viewerProfile(ctx, a.profile_id);
-  const base = `p.author_id = ? AND ${VISIBLE}`;
+  const kind =
+    a.kind === "posts"
+      ? " AND p.depth = 0"
+      : a.kind === "replies"
+        ? " AND p.depth > 0"
+        : "";
+  const base = `p.author_id = ? AND ${VISIBLE}${kind}`;
   let where = base;
   const values: SqlValue[] = [profile.id, ctx.now];
   // Pinned posts come first, so the cursor says which part the last one was in.
@@ -406,8 +413,10 @@ const phrase = (text: string) => `content : "${text.replace(/"/g, '""')}"`;
 /**
  * Posts and replies whose text holds `q` (GET /app/posts/search), newest
  * first: two characters by LIKE, three or more by the trigram index; `#tag`
- * by hashtag. Replies carry a summary of the post they answer, so a
- * conversation can be found without going through profiles.
+ * by hashtag. `@username` in front keeps to that profile's posts (alone,
+ * all of them), and `kind` "posts" or "replies" to one of the two. Replies
+ * carry a summary of the post they answer, so a conversation can be found
+ * without going through profiles.
  */
 export async function search(ctx: QueryCtx, args: unknown) {
   const a = argsOf(args);
@@ -421,26 +430,37 @@ export async function search(ctx: QueryCtx, args: unknown) {
       pagination: { next_cursor: null, has_more: false, total_count: 0 },
     };
   const viewer = await viewerProfile(ctx, a.profile_id);
-  let match: string;
-  let term: string;
-  if (/^#[\p{L}\p{N}_]+$/u.test(q)) {
-    match = "p.id IN (SELECT post_id FROM post_hashtags WHERE tag = ?)";
-    term = q.slice(1).toLowerCase();
-  } else if (q.length >= 3) {
-    match =
-      "p.id IN (SELECT post_id FROM posts_search WHERE posts_search MATCH ?)";
-    term = phrase(q);
-  } else {
-    match = "p.content LIKE ? ESCAPE '\\'";
-    term = `%${q.replace(/[\\%_]/g, "\\$&")}%`;
+  const conditions = [VISIBLE];
+  const values: SqlValue[] = [ctx.now];
+  const author = /^@([A-Za-z0-9_]+)(?:\s+([\s\S]*))?$/.exec(q);
+  const text = author ? (author[2] ?? "").trim() : q;
+  if (author) {
+    conditions.push(
+      "p.author_id IN (SELECT id FROM profiles WHERE lower(username) = lower(?))",
+    );
+    values.push(author[1] ?? "");
   }
-  const base = `${VISIBLE} AND ${match}`;
+  if (a.kind === "posts") conditions.push("p.depth = 0");
+  else if (a.kind === "replies") conditions.push("p.depth > 0");
+  if (/^#[\p{L}\p{N}_]+$/u.test(text)) {
+    conditions.push("p.id IN (SELECT post_id FROM post_hashtags WHERE tag = ?)");
+    values.push(text.slice(1).toLowerCase());
+  } else if (text.length >= 3) {
+    conditions.push(
+      "p.id IN (SELECT post_id FROM posts_search WHERE posts_search MATCH ?)",
+    );
+    values.push(phrase(text));
+  } else if (text) {
+    conditions.push("p.content LIKE ? ESCAPE '\\'");
+    values.push(`%${text.replace(/[\\%_]/g, "\\$&")}%`);
+  }
+  const base = conditions.join(" AND ");
   const { rows: read } = await ctx.sql<PostRow>(
     `SELECT p.* FROM posts p WHERE ${base} ${cursor ? "AND p.id < ?" : ""}
      ORDER BY p.id DESC LIMIT ?`,
-    [ctx.now, term, ...(cursor ? [cursor] : []), limit + 1],
+    [...values, ...(cursor ? [cursor] : []), limit + 1],
   );
-  const total = await countOf(ctx, base, [ctx.now, term]);
+  const total = await countOf(ctx, base, values);
   const { rows, hasMore } = firstOf(read, limit);
   const { posts } = await postsWithReplies(ctx, rows, {
     viewer,

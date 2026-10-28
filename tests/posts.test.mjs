@@ -231,6 +231,13 @@ test("editing keeps history, only by the author; search follows the edit", async
   assert.equal((await search("고친 내")).data.length, 1);
   assert.equal((await search("고친")).data.length, 1); // two characters: LIKE
   assert.equal((await search("#태그")).data.length, 0);
+  // One profile's posts, with or without words, and only replies or posts.
+  assert.equal((await search("@alice 고친")).data.length, 1);
+  assert.equal((await search("@bob 고친")).data.length, 0);
+  assert.equal((await search("@alice")).data.length, 1);
+  const kind = (k) => site.query("posts:search", { q: "고친", kind: k }, as("m-bob"));
+  assert.equal((await kind("posts")).data.length, 1);
+  assert.equal((await kind("replies")).data.length, 0);
   const history = await site.query("posts:history", { post_id: post.id });
   assert.equal(history.length, 1);
   assert.equal(history[0].content, "첫번째 내용 #태그");
@@ -343,6 +350,10 @@ test("a profile's page lists pinned posts first, at most three pinned", async ()
   );
   const replyShown = pages.find((p) => p.id === reply.id);
   assert.equal(replyShown.parent_summary.content_excerpt, "p4");
+  const only = async (kind) =>
+    (await site.query("posts:byProfile", { username: "alice", kind })).data.map((p) => p.content);
+  assert.deepEqual(await only("posts"), ["p1", "p0", "p4", "p3", "p2"]);
+  assert.deepEqual(await only("replies"), ["a reply"]);
   assert.equal(await refusal(site.query("posts:byProfile", { username: "nobody" })), "not_found");
 });
 

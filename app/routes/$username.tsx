@@ -5,7 +5,7 @@ import {
   MessageCircle,
   User,
 } from "lucide-react";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { PostCard } from "~/components/post-card";
 import { ReplyContext } from "~/components/reply-context";
@@ -27,6 +27,13 @@ import { getGradientForUser } from "~/lib/gradient-utils";
 import { getReadOnlyMarkdownInstance } from "~/lib/markdown-utils";
 import type { Page, Post } from "~/types/post";
 import type { Profile } from "~/types/profile";
+
+type PostKind = "posts" | "replies";
+
+const POST_KINDS: { value: PostKind; label: string }[] = [
+  { value: "posts", label: "글" },
+  { value: "replies", label: "답글" },
+];
 
 export default function ProfileProfile() {
   const { username } = useParams();
@@ -79,6 +86,9 @@ export default function ProfileProfile() {
     enabled: !!actualUsername,
   });
 
+  // The profile's own posts, or its replies to others: one tab each.
+  const [kind, setKind] = useState<PostKind>("posts");
+
   // Fetch posts with infinite query
   const {
     data: postsData,
@@ -89,7 +99,7 @@ export default function ProfileProfile() {
     isError: isPostsError,
     isFetchNextPageError,
   } = useInfiniteQuery({
-    queryKey: ["profile-posts", actualUsername, currentProfile?.id],
+    queryKey: ["profile-posts", actualUsername, currentProfile?.id, kind],
     queryFn: async ({
       pageParam,
     }: {
@@ -100,6 +110,7 @@ export default function ProfileProfile() {
       }
       return query<Page<Post>>("posts:byProfile", {
         username: actualUsername,
+        kind,
         limit: POSTS_PER_PAGE,
         ...(pageParam && { cursor: pageParam }),
         ...(currentProfile?.id && { profile_id: currentProfile.id }),
@@ -282,7 +293,28 @@ export default function ProfileProfile() {
 
           {/* Posts Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">게시물</h3>
+            <div
+              role="tablist"
+              aria-label="게시물 종류"
+              className="flex items-center gap-1"
+            >
+              {POST_KINDS.map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={kind === item.value}
+                  onClick={() => setKind(item.value)}
+                  className={`px-3 h-8 text-sm rounded-md border transition-colors ${
+                    kind === item.value
+                      ? "border-primary text-primary bg-primary/10 font-semibold"
+                      : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/40"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
 
             {isPostsLoading ? (
               <div className="bg-card rounded-2xl shadow-sm border border-border p-8 text-center">
@@ -307,9 +339,15 @@ export default function ProfileProfile() {
                   <EmptyMedia variant="icon">
                     <MessageCircle />
                   </EmptyMedia>
-                  <EmptyTitle>아직 게시물이 없습니다</EmptyTitle>
+                  <EmptyTitle>
+                    {kind === "posts"
+                      ? "아직 게시물이 없습니다"
+                      : "아직 답글이 없습니다"}
+                  </EmptyTitle>
                   <EmptyDescription>
-                    {profile.name}님이 작성한 게시물이 없습니다.
+                    {kind === "posts"
+                      ? `${profile.name}님이 작성한 게시물이 없습니다.`
+                      : `${profile.name}님이 단 답글이 없습니다.`}
                   </EmptyDescription>
                 </EmptyHeader>
               </Empty>

@@ -10,6 +10,8 @@ import {
   X,
 } from "lucide-react";
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useRef,
@@ -17,7 +19,6 @@ import {
   type ReactNode,
 } from "react";
 import { Button } from "~/components/ui/button";
-import { DateTimePicker } from "~/components/ui/datetime-picker";
 import { Input } from "~/components/ui/input";
 import { Spinner } from "~/components/ui/spinner";
 import { Textarea } from "~/components/ui/textarea";
@@ -32,6 +33,14 @@ import { MarkdownHelpModal } from "./markdown-help-modal";
 import { ProfileAvatar } from "./profile-avatar";
 
 const MAX_MESSAGE_LENGTH = 500;
+
+// The date picker (with its calendar) only loads when a post is scheduled,
+// so the composer on every page does not carry it.
+const DateTimePicker = lazy(() =>
+  import("~/components/ui/datetime-picker").then((module) => ({
+    default: module.DateTimePicker,
+  })),
+);
 
 export interface MessageComposerProps {
   mode: "create" | "edit";
@@ -716,13 +725,15 @@ export function MessageComposer({
                     게시물 예약
                   </span>
                 </div>
-                <DateTimePicker
-                  value={scheduledAt}
-                  onChange={setScheduledAt}
-                  minDate={schedulingConfig?.minDate || new Date()}
-                  maxDate={schedulingConfig?.maxDate}
-                  disabled={isSubmitting}
-                />
+                <Suspense fallback={<Spinner className="h-5 w-5" />}>
+                  <DateTimePicker
+                    value={scheduledAt}
+                    onChange={setScheduledAt}
+                    minDate={schedulingConfig?.minDate || new Date()}
+                    maxDate={schedulingConfig?.maxDate}
+                    disabled={isSubmitting}
+                  />
+                </Suspense>
                 {scheduledAt && (
                   <p className="mt-3 text-xs text-muted-foreground">
                     이 게시물은 {new Date(scheduledAt).toLocaleString("ko-KR")}
