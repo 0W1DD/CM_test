@@ -117,8 +117,8 @@ function FireArt({ lit }: { lit: boolean }) {
   return (
     <svg
       viewBox="0 0 16 16"
-      width="44"
-      height="44"
+      width="56"
+      height="56"
       shapeRendering="crispEdges"
       aria-hidden="true"
     >

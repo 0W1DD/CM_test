@@ -849,41 +849,34 @@ textarea,
     bottom: calc(env(safe-area-inset-bottom) + 5.5rem);
   }
 }
-/* A framed block like the rest of the page, so it reads as a button even
-   while the fire is out, with its action written under the fireplace. */
+/* The fireplace itself is the button: no frame around it, its action
+   written underneath, and it lifts under the pointer. */
 .campfire-button {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 6px 8px 4px;
-  background: var(--ground-raised);
-  border: 1.5px solid var(--frame);
-  color: var(--foreground);
   image-rendering: pixelated;
   cursor: pointer;
-  box-shadow: 3px 3px 0 color-mix(in srgb, var(--frame) 45%, transparent);
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.3s ease,
-    filter 0.6s ease;
+  color: #fbf1dc;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.45));
+  transition: transform 0.15s ease, filter 0.6s ease;
 }
 .campfire-button:hover {
-  transform: translate(-1px, -1px);
-  border-color: var(--accent-color);
-  box-shadow: 4px 4px 0 color-mix(in srgb, var(--frame) 45%, transparent);
+  transform: translateY(-2px);
 }
 .campfire-button:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 color-mix(in srgb, var(--frame) 45%, transparent);
+  transform: translateY(1px);
 }
 .campfire-label {
   font-size: 11px;
   line-height: 1.2;
   font-weight: 600;
   white-space: nowrap;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
 }
 .fire-lit .campfire-button {
-  border-color: var(--accent-color);
-  filter: drop-shadow(0 0 10px rgb(255 140 40 / 0.6));
+  filter: drop-shadow(0 0 12px rgb(255 140 40 / 0.7));
 }
 .campfire-frame-b {
   animation: campfire-flip 0.5s steps(1) infinite;
