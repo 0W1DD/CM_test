@@ -42,7 +42,7 @@ export function MastodonLayout({
             unreadCount={unreadCount}
             unreadMessageCount={unreadMessageCount}
           />
-          <h1 className="font-display font-bold text-xl text-foreground tracking-tight">
+          <h1 className="community-title font-display font-bold text-xl tracking-tight truncate min-w-0">
             {communityName || "\u00A0"}
           </h1>
         </header>

@@ -130,7 +130,7 @@ export function MobileNavDrawer({
                   strokeWidth={1.75}
                 />
               </Link>
-              <h2 className="font-display font-bold text-2xl text-foreground truncate tracking-tight">
+              <h2 className="community-title font-display font-bold text-xl leading-snug tracking-tight min-w-0">
                 {communityName || "커뮹"}
               </h2>
             </div>
