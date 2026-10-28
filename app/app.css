@@ -496,15 +496,12 @@ body,
 }
 
 /* Phones: the home timeline lets the photo through. The page itself goes
-   clear, and the composer and the posts become one framed column of
-   slightly see-through paper, inset from the edges: the photo and the snow
-   show at the sides and faintly behind the text, while the posts stay
-   joined so the timeline reads as one. */
+   clear, and the composer and the posts become one framed column of paper,
+   inset from the edges: the photo and the snow show at the sides, while the
+   posts stay joined so the timeline reads as one. */
 @media (max-width: 767px) {
   .app-main:has(.home-timeline) {
     background: transparent;
-    --card: color-mix(in srgb, var(--ground-raised) 90%, transparent);
-    --background: color-mix(in srgb, var(--ground) 90%, transparent);
   }
   /* The column's sides and top in the frame colour; between the blocks the
      posts' own light lines, as on wide screens. */
