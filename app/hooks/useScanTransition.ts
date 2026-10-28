@@ -50,10 +50,15 @@ export function useScanTransition(target: RefObject<HTMLElement | null>) {
       ],
       { duration: DURATION, easing: EASING, fill: "forwards" },
     );
-    animation.finished.finally(() => cover.remove());
+    const remove = () => cover.remove();
+    animation.finished.then(remove, remove);
+    // Never leave the page covered, even where animations are held back (a
+    // tab that does not paint).
+    const fallback = window.setTimeout(remove, DURATION + 300);
     return () => {
+      window.clearTimeout(fallback);
       animation.cancel();
-      cover.remove();
+      remove();
     };
   }, [pathname]);
 }
