@@ -1,6 +1,7 @@
 import { Users } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router";
+import { AnnouncementTicker } from "~/components/announcement-ticker";
 import { FrontGate } from "~/components/front-gate";
 import { LoginButton } from "~/components/LoginButton";
 import { MessageSender } from "~/components/message-sender";
@@ -120,6 +121,7 @@ export default function Home() {
 
   return (
     <main className="py-4">
+      <AnnouncementTicker />
       <div className="space-y-0">
         {/* Message Composer */}
         <div className="border-b border-border/70">
