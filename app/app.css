@@ -429,6 +429,28 @@ body,
   pointer-events: none;
 }
 
+/* The page change sweep (useScanTransition): a cover in the page colour
+   below a line in the accent, with a warm wash trailing above the line. */
+.scan-cover {
+  position: fixed;
+  z-index: 30;
+  pointer-events: none;
+  border-top: 2px solid var(--accent-color);
+}
+.scan-cover::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 36px;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--accent-color) 16%, transparent),
+    transparent
+  );
+}
+
 /* Phones show the page edge to edge with nothing around it, so the photo
    would never be seen: hidden, the browser does not download it. */
 @media (max-width: 767px) {
