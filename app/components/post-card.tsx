@@ -40,7 +40,7 @@ const THREAD_LINE = [
 
 export const PostCard = memo(function PostCard({
   post,
-  currentProfileId: suppliedProfileId,
+  currentProfileId,
   onDelete,
   onRefresh,
   isCommunityOwner = false,
@@ -55,10 +55,7 @@ export const PostCard = memo(function PostCard({
 }: PostCardProps) {
   // A folded branch shows its first reply and how many follow it.
   const [branchOpen, setBranchOpen] = useState(false);
-  const { currentProfile, isAuthenticated, belongsToCurrentInstance } =
-    useAuth();
-  const canParticipate = isAuthenticated && belongsToCurrentInstance;
-  const currentProfileId = canParticipate ? suppliedProfileId : undefined;
+  const { currentProfile } = useAuth();
   const { currentInstance, showAllReplies } = useCurrentInstance();
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -161,11 +158,7 @@ export const PostCard = memo(function PostCard({
   const communityNotStarted = currentInstance?.starts_at
     ? now < new Date(currentInstance.starts_at)
     : false;
-  const canInteract =
-    canParticipate &&
-    !!currentProfileId &&
-    !communityEnded &&
-    !communityNotStarted;
+  const canInteract = !communityEnded && !communityNotStarted;
 
   const deletePost = useCallback(async () => {
     const profileIdToUse = currentProfileId;
@@ -268,8 +261,8 @@ export const PostCard = memo(function PostCard({
           isPinned={!!post.pinned_at}
           isReply={isReply}
           currentProfileId={currentProfileId}
-          isModerator={canParticipate && isModerator}
-          isOwner={canParticipate && isCommunityOwner}
+          isModerator={isModerator}
+          isOwner={isCommunityOwner}
           onDelete={deletePost}
           onEdit={() => setShowEditForm(true)}
           onReport={() => setShowReportDialog(true)}
@@ -318,53 +311,44 @@ export const PostCard = memo(function PostCard({
                 isReply ? "gap-2" : "gap-4"
               }`}
             >
-              {currentProfileId ? (
-                <PostCardActions
-                  postId={post.id}
-                  replyCount={
-                    post.reply_count ?? countTotalReplies(post.replies || [])
-                  }
-                  isBookmarked={post.is_bookmarked || false}
-                  isPinned={!!post.pinned_at}
-                  isOwnPost={post.author.id === currentProfileId}
-                  isProfileView={isProfileView}
-                  currentProfileId={currentProfileId}
-                  isReply={isReply}
-                  onToggleReply={() => setShowReplyForm(!showReplyForm)}
-                  showReplyForm={showReplyForm}
-                  onBookmarkChange={() => {}} // Handled internally by PostCardActions
-                  onPinChange={() => {
-                    // Trigger refresh to update the pinned status
-                    (onRefresh || onDelete)?.();
-                  }}
-                  onOpenDMModal={() => setShowDMModal(true)}
-                />
-              ) : (
-                <Link
-                  to={`/@${post.author.username}/${post.id}`}
-                  className="text-sm text-muted-foreground hover:text-primary"
-                >
-                  답글{" "}
-                  {post.reply_count ?? countTotalReplies(post.replies || [])}개
-                  보기
-                </Link>
-              )}
+              <PostCardActions
+                postId={post.id}
+                replyCount={
+                  post.reply_count ?? countTotalReplies(post.replies || [])
+                }
+                isBookmarked={post.is_bookmarked || false}
+                isPinned={!!post.pinned_at}
+                isOwnPost={post.author.id === currentProfileId}
+                isProfileView={isProfileView}
+                currentProfileId={currentProfileId}
+                isReply={isReply}
+                onToggleReply={() => setShowReplyForm(!showReplyForm)}
+                showReplyForm={showReplyForm}
+                onBookmarkChange={() => {}} // Handled internally by PostCardActions
+                onPinChange={() => {
+                  // Trigger refresh to update the pinned status
+                  (onRefresh || onDelete)?.();
+                }}
+                onOpenDMModal={() => setShowDMModal(true)}
+              />
 
               {/* Reaction button and reactions display */}
-              <PostCardReactions
-                reactions={post.reactions || []}
-                currentProfileId={currentProfileId}
-                canInteract={canInteract}
-                onAddReaction={addReaction}
-                onRemoveReaction={removeReaction}
-                isReply={isReply}
-              />
+              {currentProfile && (
+                <PostCardReactions
+                  reactions={post.reactions || []}
+                  currentProfileId={currentProfile.id}
+                  canInteract={canInteract}
+                  onAddReaction={addReaction}
+                  onRemoveReaction={removeReaction}
+                  isReply={isReply}
+                />
+              )}
             </div>
           </div>
         )}
 
         {/* Inline reply form */}
-        {currentProfileId && showReplyForm && !showEditForm && (
+        {showReplyForm && !showEditForm && (
           <div
             className={`${
               isReply ? "mt-2 pl-2" : "mt-4 pl-4"

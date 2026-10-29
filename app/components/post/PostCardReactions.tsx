@@ -113,7 +113,6 @@ export function PostCardReactions({
   }, [openReactionSelector]);
 
   const handleReactionClick = async (emoji: string) => {
-    if (!currentProfileId || !canInteract) return;
     rememberReaction(emoji);
     await onAddReaction(emoji);
     setOpenReactionSelector(false);
@@ -183,9 +182,7 @@ export function PostCardReactions({
               <button
                 type="button"
                 key={emoji}
-                disabled={!currentProfileId || !canInteract}
                 onClick={() => {
-                  if (!currentProfileId || !canInteract) return;
                   if (hasCurrentUserReaction) {
                     onRemoveReaction(emoji);
                   } else {

@@ -21,11 +21,7 @@ export interface PostListRef {
   refresh: () => void;
 }
 
-interface PostListProps {
-  readOnly?: boolean;
-}
-
-export const PostList = forwardRef<PostListRef, PostListProps>((props, ref) => {
+export const PostList = forwardRef<PostListRef>((_props, ref) => {
   const { currentProfile } = useAuth();
   const { isOwner: isCommunityOwner, isModerator } = useCurrentInstance();
   const POSTS_PER_PAGE = 20;
@@ -61,7 +57,7 @@ export const PostList = forwardRef<PostListRef, PostListProps>((props, ref) => {
         : undefined;
     },
     initialPageParam: undefined as string | undefined,
-    enabled: props.readOnly || !!currentProfile?.id,
+    enabled: !!currentProfile?.id,
     staleTime: 2 * 60 * 1000, // 2 minutes - posts are dynamic but can be cached briefly
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache for navigation back
     refetchOnMount: true, // Refetch on mount to get new posts
