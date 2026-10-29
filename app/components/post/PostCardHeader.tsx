@@ -136,7 +136,7 @@ export function PostCardHeader({
             <Link
               to={`/@${author.username}/${postId}`}
               title={createdAt ? new Date(createdAt).toLocaleString("ko-KR") : ""}
-              className="text-xs text-[#f2c94c] hover:text-[#ffe082] transition-colors"
+              className="text-xs text-[#8a6500] hover:text-[#6b4e00] dark:text-[#f2c94c] dark:hover:text-[#ffe082] transition-colors"
             >
               {createdAt ? shortTime(createdAt) : ""}
             </Link>
