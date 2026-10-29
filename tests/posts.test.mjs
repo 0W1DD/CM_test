@@ -5,6 +5,36 @@ import { addProfile, as, community, refusal, VISITOR } from "./helpers.mjs";
 const write = (site, member, profile_id, content, extra = {}) =>
   site.mutate("posts:create", { profile_id, content, ...extra }, as(member));
 
+test("browsing visitors and non-members can read threads but cannot participate", async () => {
+  const { site, profiles } = await community();
+  const post = await write(site, "m-alice", profiles.alice, "둘러보기 글");
+  const reply = await write(site, "m-bob", profiles.bob, "답글", { in_reply_to_id: post.id });
+  const args = { post_id: post.id, profile_id: profiles.bob, emoji: "👍" };
+  await site.mutate("posts:react", args, as("m-bob"));
+  await site.mutate("posts:bookmark", args, as("m-bob"));
+
+  for (const [caller, reason] of [[VISITOR, "signed_out"], [as("m-stranger"), "not_member"]]) {
+    const timeline = await site.query("posts:list", { profile_id: profiles.bob }, caller);
+    assert.equal(timeline.data[0].id, post.id);
+    assert.equal(timeline.data[0].is_bookmarked, false);
+    const detail = await site.query("posts:get", args, caller);
+    assert.equal(detail.content, "둘러보기 글");
+    assert.equal(detail.reactions.length, 1);
+    const replies = await site.query("posts:replies", { post_id: post.id }, caller);
+    assert.equal(replies.data[0].id, reply.id);
+
+    for (const name of ["react", "unreact", "bookmark", "unbookmark", "pin", "unpin", "remove", "update", "report"]) {
+      assert.equal(await refusal(site.mutate(`posts:${name}`, { ...args, content: "변경", reason: "신고" }, caller)), reason, name);
+    }
+    assert.equal(await refusal(site.mutate("posts:create", { profile_id: profiles.bob, content: "답글 시도", in_reply_to_id: post.id }, caller)), reason);
+    assert.equal(await refusal(site.query("posts:bookmarks", args, caller)), reason);
+  }
+  const unchanged = await site.query("posts:get", args, as("m-bob"));
+  assert.equal(unchanged.content, "둘러보기 글");
+  assert.equal(unchanged.reactions.length, 1);
+  assert.equal(unchanged.is_bookmarked, true);
+});
+
 test("members write posts; visitors and non-members cannot", async () => {
   const { site, profiles } = await community();
   assert.equal(
