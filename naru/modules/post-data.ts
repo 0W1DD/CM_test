@@ -9,7 +9,6 @@ export const TIMELINE_REPLY_LIMIT = 5;
 
 export interface PostRow {
   id: string;
-  location: string;
   content: string;
   content_warning: string | null;
   announcement: number;
@@ -188,7 +187,6 @@ const MISSING_AUTHOR: Author = {
 export function postJson(row: PostRow, extras: Extras): PostJson {
   return {
     id: row.id,
-    location: row.location ?? "fireplace",
     content: row.content,
     created_at: iso(row.created_at),
     updated_at: iso(row.updated_at),

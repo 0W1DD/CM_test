@@ -8,7 +8,6 @@ import { useAuth } from "~/hooks/useAuth";
 import { useCurrentInstance } from "~/hooks/useCurrentInstance";
 import { useMarkdownWithMentions } from "~/hooks/useMarkdownWithMentions";
 import { errorMessage, mutate } from "~/lib/naru";
-import { locationOf } from "~/lib/locations";
 import type { Post, PostCardProps } from "~/types/post";
 import { MessageSender } from "./message-sender";
 import { PostEditor } from "./PostEditor";
@@ -18,7 +17,6 @@ import { PostCardContent } from "./post/PostCardContent";
 import { PostCardHeader } from "./post/PostCardHeader";
 import { PostCardImages } from "./post/PostCardImages";
 import { PostCardReactions } from "./post/PostCardReactions";
-import { LocationArt } from "./post/LocationArt";
 
 // Helper function to count total replies recursively
 function countTotalReplies(replies: Post[]): number {
@@ -31,6 +29,14 @@ function countTotalReplies(replies: Post[]): number {
 
 /** How many steps replies indent before they stop moving in. */
 const MAX_INDENT = 4;
+
+/** A thread line per depth, so neighbouring levels are told apart. */
+const THREAD_LINE = [
+  "border-l-primary/60",
+  "border-l-mint-ink/60",
+  "border-l-butter-ink/60",
+  "border-l-lilac-ink/60",
+];
 
 export const PostCard = memo(function PostCard({
   post,
@@ -49,10 +55,6 @@ export const PostCard = memo(function PostCard({
 }: PostCardProps) {
   // A folded branch shows its first reply and how many follow it.
   const [branchOpen, setBranchOpen] = useState(false);
-  const location = locationOf(post.location);
-  // The timeline and detail view can flatten a reply's display depth.
-  // Its actual parent, not that display depth, decides its decoration.
-  const isLocationReply = !!post.in_reply_to_id;
   const { currentProfile } = useAuth();
   const { currentInstance, showAllReplies } = useCurrentInstance();
   const [showReplyForm, setShowReplyForm] = useState(false);
@@ -236,11 +238,6 @@ export const PostCard = memo(function PostCard({
 
   return (
     <div
-      style={
-        isLocationReply
-          ? { borderLeftColor: location.accent, borderLeftWidth: 3 }
-          : undefined
-      }
       className={`${
         post.announcement
           ? "bg-announce border-l-4 border-l-butter"
@@ -248,39 +245,28 @@ export const PostCard = memo(function PostCard({
             ? ""
             : `bg-card ${!hideBorder ? "border-b border-border" : ""}`
       } group/post overflow-hidden ${
-        isLocationReply ? "border-l-[3px]" : ""
+        isReply && !isContinuation
+          ? `border-l-[3px] ${THREAD_LINE[(depth - 1 + branchIndex) % THREAD_LINE.length]}`
+          : ""
       } ${cardSize}`}
     >
       <div className={padding}>
         {/* Header */}
-        <div
-          className={!isLocationReply ? "location-post-header" : undefined}
-          style={
-            !isLocationReply
-              ? {
-                  backgroundColor: location.background,
-                  borderBottomColor: location.accent,
-                }
-              : undefined
-          }
-        >
-          {!isLocationReply && <LocationArt locationId={location.id} />}
-          <PostCardHeader
-            postId={post.id}
-            author={post.author}
-            createdAt={post.created_at}
-            updatedAt={post.updated_at}
-            isAnnouncement={post.announcement}
-            isPinned={!!post.pinned_at}
-            isReply={isReply}
-            currentProfileId={currentProfileId}
-            isModerator={isModerator}
-            isOwner={isCommunityOwner}
-            onDelete={deletePost}
-            onEdit={() => setShowEditForm(true)}
-            onReport={() => setShowReportDialog(true)}
-          />
-        </div>
+        <PostCardHeader
+          postId={post.id}
+          author={post.author}
+          createdAt={post.created_at}
+          updatedAt={post.updated_at}
+          isAnnouncement={post.announcement}
+          isPinned={!!post.pinned_at}
+          isReply={isReply}
+          currentProfileId={currentProfileId}
+          isModerator={isModerator}
+          isOwner={isCommunityOwner}
+          onDelete={deletePost}
+          onEdit={() => setShowEditForm(true)}
+          onReport={() => setShowReportDialog(true)}
+        />
 
         {/* Edit Form */}
         {showEditForm ? (
@@ -371,7 +357,6 @@ export const PostCard = memo(function PostCard({
             <MessageSender
               key={currentProfile?.id || "no-profile"}
               replyToId={post.id}
-              initialLocation={location.id}
               placeholder={`@${post.author.username}님에게 답글을 작성하세요...`}
               initialValue={`@${post.author.username} `}
               onPostSuccess={() => {

@@ -23,7 +23,6 @@ import { ownImages } from "./images.js";
 import { type PostRow, VISIBLE } from "./post-data.js";
 
 export interface NewPost {
-  location?: unknown;
   authorProfileId: string;
   /** The member writing (commung's created_by_user_id); a bot's creator. */
   actorMember: string;
@@ -375,15 +374,6 @@ async function writePost(
   }
 
   const id = uuidv7(ctx.now);
-  const location =
-    post.location === undefined
-      ? (parent?.location ?? "fireplace")
-      : post.location;
-  if (
-    typeof location !== "string" ||
-    !["fireplace", "kitchen", "library", "yard", "attic"].includes(location)
-  )
-    invalid(ctx, "장소를 다시 선택해주세요.", "invalid_location");
   const rootPostId = parent ? (parent.root_post_id ?? parent.id) : null;
   const depth = parent ? parent.depth + 1 : 0;
   const scheduled = scheduledAt !== null;
@@ -392,13 +382,13 @@ async function writePost(
   await ctx.sql`
     INSERT INTO posts (id, content, content_warning, announcement, author_id,
       created_by, in_reply_to_id, root_post_id, depth, scheduled_at,
-      published_at, bumped_at, created_at, updated_at, location)
+      published_at, bumped_at, created_at, updated_at)
     VALUES (${id}, ${content}, ${contentWarning}, ${post.announcement === true},
       ${post.authorProfileId}, ${post.actorMember}, ${inReplyToId},
       ${rootPostId}, ${depth}, ${scheduledAt},
       ${scheduled ? null : ctx.now},
       ${parent ? null : scheduled ? scheduledAt : ctx.now},
-      ${ctx.now}, ${ctx.now}, ${location})`;
+      ${ctx.now}, ${ctx.now})`;
   if (imageIds.length)
     await ctx.sql`
       INSERT INTO post_images (post_id, image_id, position)
