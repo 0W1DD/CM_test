@@ -114,6 +114,7 @@ export async function create(ctx: MutationCtx, args: unknown) {
   const scheduledAt = msOf(ctx, a.scheduled_at, "scheduled_at");
   const inReplyToId = optionalId(ctx, a.in_reply_to_id, "in_reply_to_id");
   const postId = await createPost(ctx, {
+    location: a.location,
     authorProfileId: profile.id,
     actorMember: profile.membership.member,
     content,

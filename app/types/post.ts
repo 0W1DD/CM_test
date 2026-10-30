@@ -34,6 +34,7 @@ export interface PostHistoryEntry {
 // Matches the unified post shape returned by all API endpoints
 export interface Post {
   id: string;
+  location?: string;
   content: string;
   created_at: string | null;
   updated_at: string | null;

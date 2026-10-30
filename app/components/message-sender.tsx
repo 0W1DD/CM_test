@@ -7,6 +7,7 @@ import { errorMessage, mutate } from "~/lib/naru";
 import { MessageComposer } from "./MessageComposer";
 
 interface MessageSenderProps {
+  initialLocation?: string;
   onPostSuccess?: () => void;
   replyToId?: string;
   placeholder?: string;
@@ -14,6 +15,7 @@ interface MessageSenderProps {
 }
 
 export function MessageSender({
+  initialLocation,
   onPostSuccess,
   replyToId,
   placeholder = "무슨 일이 일어나고 있나요?",
@@ -48,6 +50,7 @@ export function MessageSender({
       content_warning?: string;
       announcement?: boolean;
       scheduled_at?: string;
+      location?: string;
     }) => {
       if (!currentProfile) {
         toast.error("프로필를 선택해주세요.");
@@ -114,6 +117,9 @@ export function MessageSender({
   return (
     <MessageComposer
       mode="create"
+      enableLocation
+      initialLocation={initialLocation}
+      rememberLocation={!replyToId}
       initialContent={initialValue}
       placeholder={placeholder}
       onSubmit={handleSubmit}

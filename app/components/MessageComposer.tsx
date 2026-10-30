@@ -27,6 +27,7 @@ import { useImageUpload } from "~/hooks/useImageUpload";
 import { pastedImages } from "~/lib/upload-image";
 import { useMarkdownWithMentions } from "~/hooks/useMarkdownWithMentions";
 import { query } from "~/lib/naru";
+import { LOCATIONS, locationOf, type LocationId } from "~/lib/locations";
 import type { PostImage } from "~/types/post";
 import type { Profile } from "~/types/profile";
 import { MarkdownHelpModal } from "./markdown-help-modal";
@@ -48,6 +49,9 @@ const DateTimePicker = lazy(() =>
 );
 
 export interface MessageComposerProps {
+  enableLocation?: boolean;
+  initialLocation?: string;
+  rememberLocation?: boolean;
   mode: "create" | "edit";
   initialContent?: string;
   initialImages?: PostImage[];
@@ -60,6 +64,7 @@ export interface MessageComposerProps {
     content_warning?: string;
     announcement?: boolean;
     scheduled_at?: string;
+    location?: string;
   }) => Promise<void>;
   onCancel?: () => void;
   submitButtonText?: string;
@@ -75,6 +80,9 @@ export interface MessageComposerProps {
 }
 
 export function MessageComposer({
+  enableLocation = false,
+  initialLocation,
+  rememberLocation = false,
   mode,
   initialContent = "",
   initialImages = [],
@@ -97,6 +105,32 @@ export function MessageComposer({
   const [message, setMessage] = useState(initialContent);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [location, setLocation] = useState<LocationId>(
+    () => locationOf(initialLocation).id,
+  );
+  const selectedLocation = locationOf(location);
+  useEffect(() => {
+    if (!enableLocation || !rememberLocation) return;
+    try {
+      setLocation(locationOf(localStorage.getItem("post-location")).id);
+    } catch {
+      /* Storage is optional. */
+    }
+  }, [enableLocation, rememberLocation]);
+  const selectLocation = (step: number) => {
+    const index = LOCATIONS.findIndex((item) => item.id === location);
+    const next =
+      LOCATIONS[(index + step + LOCATIONS.length) % LOCATIONS.length];
+    if (!next) return;
+    setLocation(next.id);
+    if (rememberLocation) {
+      try {
+        localStorage.setItem("post-location", next.id);
+      } catch {
+        /* Storage is optional. */
+      }
+    }
+  };
 
   // Content warning state
   const [hasContentWarning, setHasContentWarning] = useState(
@@ -254,7 +288,9 @@ export function MessageComposer({
   const [slashPrefix, setSlashPrefix] = useState("");
   const checkForSlashCommand = (text: string, cursorPosition: number) => {
     const beforeCursor = text.slice(0, cursorPosition);
-    const match = beforeCursor.match(/^((?:@[A-Za-z0-9_]+\s+)*)\/([a-z0-9_-]*)$/i);
+    const match = beforeCursor.match(
+      /^((?:@[A-Za-z0-9_]+\s+)*)\/([a-z0-9_-]*)$/i,
+    );
     if (match) {
       setSlashPrefix(match[1] ?? "");
       setSlashQuery(match[2] ?? "");
@@ -289,9 +325,7 @@ export function MessageComposer({
   const [showTagDropdown, setShowTagDropdown] = useState(false);
   const [tagQuery, setTagQuery] = useState("");
   const [tagStart, setTagStart] = useState(0);
-  const [tagSuggestions, setTagSuggestions] = useState<HashtagSuggestion[]>(
-    [],
-  );
+  const [tagSuggestions, setTagSuggestions] = useState<HashtagSuggestion[]>([]);
   const [selectedTagIndex, setSelectedTagIndex] = useState(0);
 
   useEffect(() => {
@@ -438,7 +472,7 @@ export function MessageComposer({
         data.scheduled_at = scheduledAt.toISOString();
       }
 
-      await onSubmit(data);
+      await onSubmit({ ...data, ...(enableLocation ? { location } : {}) });
 
       // Reset form only in create mode
       if (mode === "create") {
@@ -753,6 +787,7 @@ export function MessageComposer({
           )}
           <Button
             onClick={handleSubmit}
+            aria-label={finalSubmitText}
             disabled={!canSubmit}
             size="sm"
             className="h-8 px-2 sm:px-4 ml-1 sm:ml-2"
@@ -865,7 +900,9 @@ export function MessageComposer({
               onCompositionStart={handleCompositionStart}
               onCompositionUpdate={handleCompositionUpdate}
               onCompositionEnd={handleCompositionEnd}
-              placeholder={placeholder}
+              placeholder={
+                enableLocation ? selectedLocation.description : placeholder
+              }
               disabled={isSubmitting}
               className={`resize-none border-0 focus:ring-0 focus:border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent text-base leading-relaxed transition-all ${
                 (showMentionDropdown && mentionProfiles.length > 0) ||
@@ -1041,15 +1078,46 @@ export function MessageComposer({
           <p className="text-xs text-muted-foreground">
             <MarkdownHelpModal /> 문법을 사용할 수 있습니다.
           </p>
-          <div
-            className={`text-xs ${
-              isOverLimit
-                ? "text-destructive font-semibold"
-                : "text-muted-foreground"
-            }`}
-          >
-            {message.length > 0 &&
-              `${message.length} / ${MAX_MESSAGE_LENGTH}자`}
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-3">
+            {enableLocation && (
+              <div
+                className="flex items-center gap-1 text-xs text-muted-foreground"
+                role="group"
+                aria-label="게시물 장소 선택"
+              >
+                <button
+                  type="button"
+                  className="min-h-9 min-w-9 rounded hover:bg-accent disabled:opacity-50"
+                  disabled={isSubmitting}
+                  onClick={() => selectLocation(-1)}
+                  aria-label="이전 장소"
+                >
+                  〈
+                </button>
+                <span className="min-w-20 text-center" aria-live="polite">
+                  {selectedLocation.name}
+                </span>
+                <button
+                  type="button"
+                  className="min-h-9 min-w-9 rounded hover:bg-accent disabled:opacity-50"
+                  disabled={isSubmitting}
+                  onClick={() => selectLocation(1)}
+                  aria-label="다음 장소"
+                >
+                  〉
+                </button>
+              </div>
+            )}
+            <div
+              className={`text-xs ${
+                isOverLimit
+                  ? "text-destructive font-semibold"
+                  : "text-muted-foreground"
+              }`}
+            >
+              {message.length > 0 &&
+                `${message.length} / ${MAX_MESSAGE_LENGTH}자`}
+            </div>
           </div>
         </div>
       </div>

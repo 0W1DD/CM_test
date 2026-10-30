@@ -22,12 +22,14 @@ function useNow(): Date {
   return now;
 }
 
-/** A small clock and this month's calendar for the right-hand rail. */
+/** A live clock beside an unchanging Christmas calendar. */
 export function ClockCalendar() {
   const now = useNow();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const today = now.getDate();
+  // Keep the weekday layout fixed too, even when the real year changes.
+  // The reference year is only for layout and is never displayed.
+  const year = 2026;
+  const month = 11;
+  const today = 25;
   const firstWeekday = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const cells: (number | null)[] = [
@@ -48,7 +50,7 @@ export function ClockCalendar() {
         {mm}
       </p>
       <p className="mt-1 text-sm text-muted-foreground">
-        {year}년 {month + 1}월 {today}일 {WEEKDAYS[now.getDay()]}요일
+        12월 25일
       </p>
 
       <div className="mt-4 border-t border-border pt-3">

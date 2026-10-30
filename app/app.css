@@ -936,3 +936,51 @@ textarea,
     animation: none;
   }
 }
+
+/* Only the author's strip gets a room backdrop; the body keeps its theme. */
+.location-post-header {
+  position: relative;
+  isolation: isolate;
+  margin: -1rem -1.25rem .75rem;
+  padding: .75rem 1.25rem;
+  min-height: 66px;
+  border-bottom: 2px solid;
+  --foreground: #fff6e2;
+  --muted-foreground: #efe4d0;
+}
+.location-post-header > div {
+  position: relative;
+  margin-bottom: 0;
+  gap: .5rem;
+}
+.location-post-header > div > div:first-child {
+  border-radius: 4px;
+  background: inherit;
+}
+.location-post-header .location-art {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  right: 5rem;
+  bottom: 0;
+  width: 168px;
+  max-width: 28%;
+  height: 59px;
+  object-fit: contain;
+  object-position: right bottom;
+  image-rendering: pixelated;
+}
+.location-post-header a[title] {
+  color: #ffde92;
+}
+.location-post-header a[title]:hover {
+  color: #fff0c5;
+}
+@media (max-width: 480px) {
+  .location-post-header .location-art {
+    width: 126px;
+    height: 44px;
+    right: 4rem;
+    opacity: .65;
+  }
+}
