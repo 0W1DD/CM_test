@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "naru-dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["node_modules/@naru-pub/dev/dist/cli.mjs", "dist", "--site", "commung", "--port", "4000", "--state", ".naru-dev"],
+      "port": 4000
+    }
+  ]
+}

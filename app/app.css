@@ -960,10 +960,22 @@ textarea,
   }
 }
 
+/* 온글잎 박다현체 (Ownglyph, via noonnu): a handwritten face for the
+   community's name; its license allows embedding it in a website. */
+@font-face {
+  font-family: "OngleipParkDahyeon";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/2411-3@1.0/Ownglyph_ParkDaHyun.woff2")
+    format("woff2");
+  font-weight: normal;
+  font-display: swap;
+}
+
 /* The community's name: it wraps between words instead of being cut off,
    and a thread of gold runs through it now and then. */
 .community-title {
-  font-family: "Gaegu", var(--font-display);
+  font-family: "OngleipParkDahyeon", var(--font-display);
+  /* The face comes in one weight; no made-up bold over it. */
+  font-weight: 400;
   letter-spacing: 0;
   word-break: keep-all;
   overflow-wrap: anywhere;
