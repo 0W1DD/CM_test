@@ -175,7 +175,10 @@ export function SidebarNav({
         })}
 
         {/* Balance Pill (only renders if currency defined) */}
-        <div className={`mt-4 ${collapsed ? "flex justify-center" : ""}`}>
+        <div
+          data-tour="balance"
+          className={`mt-4 ${collapsed ? "flex justify-center" : ""}`}
+        >
           <BalancePill compact={collapsed} fullWidth={!collapsed} />
         </div>
 

@@ -141,6 +141,7 @@ export function PostCardReactions({
         <>
           <button
             type="button"
+            data-tour="post-react"
             onClick={() => setOpenReactionSelector(!openReactionSelector)}
             className={`reaction-selector inline-flex items-center gap-1 ${
               isReply ? "text-[13px]" : "text-sm"

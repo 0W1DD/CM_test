@@ -107,6 +107,7 @@ export function PostCardActions({
     <div className={`flex items-center ${isReply ? "gap-3" : "gap-5"}`}>
       <button
         type="button"
+        data-tour="post-reply"
         onClick={onToggleReply}
         className={`inline-flex items-center gap-1 ${
           isReply ? "text-[13px]" : "text-sm"
@@ -123,6 +124,7 @@ export function PostCardActions({
       {currentProfileId && (
         <button
           type="button"
+          data-tour="post-bookmark"
           onClick={toggleBookmark}
           disabled={isBookmarkLoading}
           className={`inline-flex items-center gap-1 ${
@@ -146,6 +148,7 @@ export function PostCardActions({
       {currentProfileId && !isOwnPost && onOpenDMModal && (
         <button
           type="button"
+          data-tour="post-message"
           onClick={onOpenDMModal}
           className={`inline-flex items-center gap-1 ${
             isReply ? "text-[13px]" : "text-sm"

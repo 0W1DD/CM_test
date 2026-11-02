@@ -1,4 +1,12 @@
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Sparkles,
+  X,
+} from "lucide-react";
 import {
   type CSSProperties,
   useCallback,
@@ -8,28 +16,53 @@ import {
   useRef,
   useState,
 } from "react";
+import { PostCard } from "~/components/post-card";
 import { Button } from "~/components/ui/button";
+import { useAuth } from "~/hooks/useAuth";
+import type { Post } from "~/types/post";
 
 /** Set once someone finished or skipped the tour, in this browser. */
 const SEEN_KEY = "commung-tour-seen-v1";
 /** Fired (on window) to show the tour again, from the settings page. */
 export const REPLAY_EVENT = "commung:tour";
+/** Fired (on window, detail true or false) to open or close the phone menu. */
+export const MENU_EVENT = "commung:menu";
 
 export function replayTour() {
   window.dispatchEvent(new Event(REPLAY_EVENT));
 }
+
+const setMenu = (open: boolean) =>
+  window.dispatchEvent(new CustomEvent(MENU_EVENT, { detail: open }));
 
 interface Step {
   /** The element to light up: `[data-tour="<target>"]`; none for a centred card. */
   target?: string;
   title: string;
   body: string;
+  /** An example screen shown for this stop, its target inside it. */
+  demo?: "post" | "item";
 }
+
+/** Stops whose element, on phones, is inside the side menu. */
+const MENU_TARGETS = new Set([
+  "profile-switcher",
+  "balance",
+  "nav-shop",
+  "nav-uses",
+  "nav-bookmarks",
+  "nav-search",
+  "nav-profiles",
+  "nav-profile",
+  "nav-settings",
+  "nav-admin",
+]);
 
 /**
  * The stops, in order. A stop whose element is not on screen (another page,
  * the other layout, a menu only the staff have) is passed over, so one list
- * serves phones and computers alike.
+ * serves phones and computers alike. On phones the side menu opens for the
+ * stops inside it, and closes after.
  */
 const STEPS: Step[] = [
   {
@@ -37,19 +70,44 @@ const STEPS: Step[] = [
     body: "처음 오셨네요. 커뮤에서 쓰는 메뉴를 하나씩 짚어 드릴게요. 언제든 '건너뛰기'로 닫을 수 있어요.",
   },
   {
-    target: "profile-switcher",
-    title: "프로필 바꾸기",
-    body: "지금 활동하는 캐릭터 프로필이에요. 눌러서 다른 프로필로 바꿔 글을 쓸 수 있어요.",
-  },
-  {
     target: "composer",
     title: "글쓰기",
     body: "여기에 글을 써서 타임라인에 올려요. 사진을 붙이거나 @아이디로 멘션하고, /명령어도 쓸 수 있어요.",
   },
   {
+    demo: "post",
+    target: "demo-post",
+    title: "게시물",
+    body: "타임라인의 글은 이렇게 보여요. 글을 누르면 답글까지 이어진 상세 보기가 열려요.",
+  },
+  {
+    demo: "post",
+    target: "post-reply",
+    title: "답글",
+    body: "글에 답글을 달아요. 숫자는 지금까지 달린 답글 수예요.",
+  },
+  {
+    demo: "post",
+    target: "post-bookmark",
+    title: "북마크",
+    body: "나중에 다시 볼 글을 모아 둬요. 북마크 메뉴에서 볼 수 있어요.",
+  },
+  {
+    demo: "post",
+    target: "post-message",
+    title: "메시지 보내기",
+    body: "이 글을 쓴 사람에게 1:1 메시지를 보내요.",
+  },
+  {
+    demo: "post",
+    target: "post-react",
+    title: "반응",
+    body: "이모지로 가볍게 반응을 남겨요. 누른 반응은 글 아래에 모여요.",
+  },
+  {
     target: "nav-home",
     title: "홈",
-    body: "모두의 글이 올라오는 타임라인이에요. 글을 누르면 답글까지 이어진 상세 보기가 열려요.",
+    body: "모두의 글이 올라오는 타임라인이에요.",
   },
   {
     target: "nav-notifications",
@@ -74,22 +132,32 @@ const STEPS: Step[] = [
   {
     target: "menu",
     title: "전체 메뉴",
-    body: "프로필 바꾸기, 상점, 사용 로그, 북마크, 검색, 멤버 목록, 내 프로필, 설정은 여기서 열 수 있어요.",
+    body: "나머지 메뉴는 여기에 있어요. 열어서 하나씩 볼게요.",
+  },
+  {
+    target: "profile-switcher",
+    title: "프로필 바꾸기",
+    body: "지금 활동하는 캐릭터 프로필이에요. 눌러서 다른 프로필로 바꿔 글을 쓸 수 있어요.",
+  },
+  {
+    target: "balance",
+    title: "잔액",
+    body: "지금 가진 커뮤 화폐예요. 상점에서 아이템을 살 때 써요.",
   },
   {
     target: "nav-shop",
     title: "상점",
-    body: "커뮤 화폐로 아이템을 사고, 가진 아이템을 확인해요.",
+    body: "화폐로 아이템을 사고, 가진 아이템을 확인해요.",
   },
   {
     target: "nav-uses",
     title: "사용 로그",
-    body: "아이템을 쓰거나 다른 멤버에게 넘긴 기록이에요. 운영진이 확인하면 '승인됨'으로 바뀌어요.",
+    body: "아이템을 쓰거나 다른 멤버에게 넘긴 기록이 모여요.",
   },
   {
     target: "nav-bookmarks",
     title: "북마크",
-    body: "글의 북마크 버튼을 누르면 여기에 모아 둘 수 있어요.",
+    body: "북마크한 글이 모여 있어요.",
   },
   {
     target: "nav-search",
@@ -117,6 +185,24 @@ const STEPS: Step[] = [
     body: "운영진 전용 메뉴예요. 가입 신청, 멤버, 상점, 한꺼번에 지우기 등을 관리해요.",
   },
   {
+    demo: "item",
+    target: "demo-item-buy",
+    title: "아이템 사기",
+    body: "상점에는 이렇게 상품이 있어요. 가진 화폐로 '구매'를 누르면 내 보유 상품에 들어가요.",
+  },
+  {
+    demo: "item",
+    target: "demo-item-use",
+    title: "아이템 쓰기 · 넘기기",
+    body: "보유 상품에서 '사용'하거나, 다른 멤버에게 '양도'할 수 있어요. 비밀로 쓸 수도 있어요.",
+  },
+  {
+    demo: "item",
+    target: "demo-item-log",
+    title: "사용 로그와 승인",
+    body: "쓰거나 넘긴 아이템은 사용 로그에 남아요. 운영진이 확인하면 '승인됨'으로 바뀌고 알림이 와요.",
+  },
+  {
     target: "calendar",
     title: "커뮤 속 시간",
     body: "커뮤 안의 날짜는 늘 12월 25일이에요. 시계만 흘러가요.",
@@ -132,9 +218,13 @@ const STEPS: Step[] = [
   },
 ];
 
-/** The first element for `target` that is actually shown. */
-function findTarget(target: string): HTMLElement | null {
-  for (const el of document.querySelectorAll<HTMLElement>(
+/** The first element for `target` that is shown, inside `scope` when given. */
+function findTarget(target: string, scope?: string): HTMLElement | null {
+  const root = scope
+    ? document.querySelector(`[data-tour-scope="${scope}"]`)
+    : document;
+  if (!root) return null;
+  for (const el of root.querySelectorAll<HTMLElement>(
     `[data-tour="${target}"]`,
   )) {
     const rect = el.getBoundingClientRect();
@@ -143,7 +233,158 @@ function findTarget(target: string): HTMLElement | null {
   return null;
 }
 
-const visible = (step: Step) => !step.target || !!findTarget(step.target);
+/** A stop as shown here: where to look for its element. */
+interface Stop extends Step {
+  /** Inside the phone's side menu, opened for it. */
+  inMenu?: boolean;
+}
+
+/**
+ * The stops for this screen. A stop in the side menu is kept on phones (the
+ * menu opens for it; if it is not there after all, it is passed over then).
+ */
+function stopsHere(): Stop[] {
+  const phoneMenu = !!findTarget("menu");
+  return STEPS.flatMap((step): Stop[] => {
+    if (!step.target || step.demo) return [step];
+    if (phoneMenu && MENU_TARGETS.has(step.target))
+      return [{ ...step, inMenu: true }];
+    return findTarget(step.target) ? [step] : [];
+  });
+}
+
+const DEMO_AUTHOR = {
+  id: "tour-demo-author",
+  name: "산타",
+  username: "santa",
+  profile_picture_url: null,
+};
+
+/** A made-up post, for the example screen only. */
+const DEMO_POST: Post = {
+  id: "tour-demo-post",
+  content: "메리 크리스마스! 🎄 오늘 밤 벽난로 앞에서 핫초코 한 잔 어때요?",
+  created_at: new Date(Date.now() - 5 * 60_000).toISOString(),
+  updated_at: null,
+  announcement: false,
+  content_warning: null,
+  pinned_at: null,
+  author: DEMO_AUTHOR,
+  images: [],
+  in_reply_to_id: null,
+  depth: 0,
+  root_post_id: null,
+  is_bookmarked: false,
+  replies: [],
+  reply_count: 2,
+  has_more_replies: false,
+  reactions: [
+    { emoji: "🎄", user: { id: "a", username: "rudolph", name: "루돌프" } },
+    { emoji: "☕", user: { id: "b", username: "elf", name: "요정" } },
+  ],
+};
+
+/** The example screens, shown above the dimmed page and taken away after. */
+function TourDemo({ kind }: { kind: "post" | "item" }) {
+  const { currentProfile } = useAuth();
+  return (
+    <div
+      className="tour-demo absolute inset-x-0 top-[8vh] mx-auto px-3"
+      style={{ maxWidth: 560 }}
+      data-tour-scope="demo"
+      // Only to look at: nothing in it can be pressed.
+      inert
+    >
+      <div
+        data-tour={kind === "post" ? "demo-post" : undefined}
+        className="rounded-2xl"
+      >
+        <p className="mb-2 flex items-center justify-center gap-1.5 text-sm font-bold text-primary-foreground">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 shadow-marsh">
+            <Sparkles className="h-4 w-4" />
+            지금은 예시 화면이에요!
+          </span>
+        </p>
+        {kind === "post" ? (
+          <div className="framed overflow-hidden">
+            <PostCard
+              post={DEMO_POST}
+              currentProfileId={currentProfile?.id}
+              noFold
+            />
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div
+              data-tour="demo-item-buy"
+              className="framed bg-card p-4 flex items-center gap-3"
+            >
+              <span className="text-3xl" aria-hidden>
+                ☕
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-foreground">핫초코</p>
+                <p className="text-xs text-muted-foreground">
+                  몸이 따뜻해지는 한 잔
+                </p>
+                <p className="mt-0.5 text-sm text-foreground">30 코인</p>
+              </div>
+              <Button size="sm" tabIndex={-1}>
+                구매
+              </Button>
+            </div>
+            <div
+              data-tour="demo-item-use"
+              className="framed bg-card p-4 flex items-center gap-3"
+            >
+              <span className="text-2xl" aria-hidden>
+                ☕
+              </span>
+              <p className="min-w-0 flex-1 text-sm text-foreground">
+                <strong>핫초코</strong> ×1
+                <span className="block text-xs text-muted-foreground">
+                  보유 상품
+                </span>
+              </p>
+              <Button size="sm" variant="outline" tabIndex={-1}>
+                양도
+              </Button>
+              <Button size="sm" tabIndex={-1}>
+                사용
+              </Button>
+            </div>
+            <div
+              data-tour="demo-item-log"
+              className="framed bg-card p-4 flex items-start gap-3 text-sm"
+            >
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <p className="text-foreground">
+                  <strong>{currentProfile?.name ?? "나"}</strong> ·{" "}
+                  <strong>핫초코</strong>을(를) 사용했습니다.
+                </p>
+                <p className="text-foreground inline-flex flex-wrap items-center gap-1">
+                  <strong>핫초코</strong>
+                  <ArrowRight className="h-3.5 w-3.5 text-primary" />
+                  <strong>산타</strong>님에게 양도했습니다.
+                </p>
+              </div>
+              <div className="shrink-0 space-y-2 text-xs">
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Clock className="h-3.5 w-3.5" />
+                  승인 대기
+                </span>
+                <span className="flex items-center gap-1 font-semibold text-primary">
+                  <Check className="h-3.5 w-3.5" />
+                  승인됨
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 const PAD = 6;
 const GAP = 12;
@@ -151,26 +392,33 @@ const EDGE = 12;
 
 /**
  * A first-visit tour: the page dims, each menu in turn is lit with a ring,
- * and a card beside it says what it is for. Shown once per browser; the
- * settings page can show it again (replayTour).
+ * and a card beside it says what it is for. Things a newcomer has none of
+ * yet (a post, an item) are shown on example screens, gone again after.
+ * Shown once per browser; the settings page can show it again (replayTour).
  */
 export function OnboardingTour() {
-  const [steps, setSteps] = useState<Step[] | null>(null);
+  const [steps, setSteps] = useState<Stop[] | null>(null);
   const [index, setIndex] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [cardStyle, setCardStyle] = useState<CSSProperties>({});
   const card = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  // Which way the last move went, to pass over a stop that is not there.
+  const direction = useRef<1 | -1>(1);
+  const usedMenu = useRef(false);
 
   const start = useCallback(() => {
     // Phones hide the top bar on scroll; start from the top so it is there.
     window.scrollTo({ top: 0 });
-    setSteps(STEPS.filter(visible));
+    direction.current = 1;
+    setSteps(stopsHere());
     setIndex(0);
   }, []);
 
   const close = useCallback(() => {
     setSteps(null);
+    if (usedMenu.current) setMenu(false);
+    usedMenu.current = false;
     try {
       localStorage.setItem(SEEN_KEY, "1");
     } catch {}
@@ -192,20 +440,73 @@ export function OnboardingTour() {
 
   const step = steps?.[index];
 
-  // Where the lit element is, kept up to date while the page moves.
+  const next = useCallback(() => {
+    if (!steps) return;
+    direction.current = 1;
+    if (index >= steps.length - 1) close();
+    else setIndex(index + 1);
+  }, [steps, index, close]);
+  const back = useCallback(() => {
+    direction.current = -1;
+    setIndex((i) => Math.max(0, i - 1));
+  }, []);
+
+  // Open the phone menu for the stops in it and close it for the rest;
+  // then find the lit element and keep its place up to date. A stop whose
+  // element never shows up is passed over, the way the last move went.
   useEffect(() => {
-    if (!step) return;
-    const el = step.target ? findTarget(step.target) : null;
-    el?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    if (!step || !steps) return;
+    if (step.inMenu) {
+      usedMenu.current = true;
+      setMenu(true);
+    } else if (usedMenu.current) {
+      usedMenu.current = false;
+      setMenu(false);
+    }
+    const scope = step.demo ? "demo" : step.inMenu ? "menu" : undefined;
+    let el: HTMLElement | null = null;
+    let tries = 0;
+    let timer: ReturnType<typeof setTimeout>;
     const measure = () => setRect(el ? el.getBoundingClientRect() : null);
-    measure();
+    const look = () => {
+      el = step.target ? findTarget(step.target, scope) : null;
+      if (step.target && !el) {
+        // The menu or the example screen may still be coming in.
+        if (++tries < 8) {
+          timer = setTimeout(look, 60);
+          return;
+        }
+        // Taken out of the list, so the count stays true; going back, the
+        // one before it is shown, going forward the one after takes its place.
+        const back = direction.current === -1;
+        if ((back && index === 0) || (!back && index === steps.length - 1))
+          close();
+        else {
+          setSteps(steps.filter((_, i) => i !== index));
+          if (back) setIndex(index - 1);
+        }
+        return;
+      }
+      el?.scrollIntoView({ block: "nearest", inline: "nearest" });
+      // Follow it for a moment, while the menu slides in.
+      const until = performance.now() + 900;
+      const follow = () => {
+        measure();
+        if (performance.now() < until) frame = requestAnimationFrame(follow);
+      };
+      follow();
+    };
+    let frame = 0;
+    look();
     window.addEventListener("resize", measure);
     window.addEventListener("scroll", measure, true);
     return () => {
+      clearTimeout(timer);
+      cancelAnimationFrame(frame);
       window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", measure, true);
     };
-  }, [step]);
+  }, [step, steps, index, close]);
 
   // The card goes below the lit element, or above when there is no room,
   // kept inside the screen; with nothing lit it sits in the middle.
@@ -241,13 +542,6 @@ export function OnboardingTour() {
     setCardStyle({ width, left, top });
   }, [step, rect]);
 
-  const next = useCallback(() => {
-    if (!steps) return;
-    if (index >= steps.length - 1) close();
-    else setIndex(index + 1);
-  }, [steps, index, close]);
-  const back = useCallback(() => setIndex((i) => Math.max(0, i - 1)), []);
-
   useEffect(() => {
     if (!step) return;
     const onKey = (e: KeyboardEvent) => {
@@ -265,10 +559,13 @@ export function OnboardingTour() {
   return (
     <div
       className="tour-root fixed inset-0 z-[80]"
+      // The open menu makes the rest of the page unclickable; not the tour.
+      style={{ pointerEvents: "auto" }}
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
     >
+      {step.demo && <TourDemo kind={step.demo} />}
       {rect ? (
         <div
           className="tour-spotlight"
@@ -334,7 +631,7 @@ export function OnboardingTour() {
         <div className="mt-3 flex justify-center gap-1" aria-hidden>
           {steps.map((s, i) => (
             <span
-              key={s.title}
+              key={`${s.title}-${s.target ?? i}`}
               className={`h-1.5 rounded-full transition-all ${
                 i === index ? "w-4 bg-primary" : "w-1.5 bg-border"
               }`}

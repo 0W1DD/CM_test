@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Bell,
   Bookmark,
@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { BalancePill } from "~/components/balance-pill";
+import { MENU_EVENT } from "~/components/onboarding-tour";
 import { ProfileSwitcher } from "~/components/profile-switcher";
 import { ThemeToggle } from "~/components/ThemeToggle";
 import { Button } from "~/components/ui/button";
@@ -39,6 +40,12 @@ export function MobileNavDrawer({
   unreadMessageCount,
 }: MobileNavDrawerProps) {
   const [open, setOpen] = useState(false);
+  // The first-visit tour opens and closes the menu to show what is in it.
+  useEffect(() => {
+    const onMenu = (e: Event) => setOpen((e as CustomEvent<boolean>).detail);
+    window.addEventListener(MENU_EVENT, onMenu);
+    return () => window.removeEventListener(MENU_EVENT, onMenu);
+  }, []);
   const location = useLocation();
   const { currentProfile, logout } = useAuth();
   const { isModerator } = useCurrentInstance();
@@ -60,42 +67,58 @@ export function MobileNavDrawer({
   };
 
   const navigationItems = [
-    { to: "/", icon: Home, label: "홈" },
+    { tour: "nav-home", to: "/", icon: Home, label: "홈" },
     {
+      tour: "nav-notifications",
       to: "/notifications",
       icon: Bell,
       label: "알림",
       badge: unreadCount,
     },
     {
+      tour: "nav-messages",
       to: "/messages",
       icon: MessageCircle,
       label: "메시지",
       badge: unreadMessageCount,
     },
     {
+      tour: "nav-announcements",
       to: "/announcements",
       icon: Megaphone,
       label: "공지사항",
     },
-    { to: "/boards", icon: LayoutList, label: "게시판" },
-    { to: "/shop", icon: ShoppingBag, label: "상점" },
-    { to: "/uses", icon: ScrollText, label: "사용 로그" },
-    { to: "/bookmarks", icon: Bookmark, label: "북마크" },
-    { to: "/search", icon: Search, label: "검색" },
-    { to: "/profiles", icon: UserCheck, label: "멤버" },
+    { tour: "nav-boards", to: "/boards", icon: LayoutList, label: "게시판" },
+    { tour: "nav-shop", to: "/shop", icon: ShoppingBag, label: "상점" },
+    { tour: "nav-uses", to: "/uses", icon: ScrollText, label: "사용 로그" },
+    {
+      tour: "nav-bookmarks",
+      to: "/bookmarks",
+      icon: Bookmark,
+      label: "북마크",
+    },
+    { tour: "nav-search", to: "/search", icon: Search, label: "검색" },
+    { tour: "nav-profiles", to: "/profiles", icon: UserCheck, label: "멤버" },
     ...(currentProfile
       ? [
           {
+            tour: "nav-profile",
             to: `/@${currentProfile.username}`,
             icon: User,
             label: "프로필",
           },
         ]
       : []),
-    { to: "/settings", icon: Settings, label: "설정" },
+    { tour: "nav-settings", to: "/settings", icon: Settings, label: "설정" },
     ...(isModerator
-      ? [{ to: "/admin", icon: ShieldCheck, label: "커뮤 관리" }]
+      ? [
+          {
+            tour: "nav-admin",
+            to: "/admin",
+            icon: ShieldCheck,
+            label: "커뮤 관리",
+          },
+        ]
       : []),
   ];
 
@@ -115,9 +138,17 @@ export function MobileNavDrawer({
         <SheetContent
           side="left"
           className="w-[290px] p-0 border-r border-border/70 bg-sidebar"
+          // The tour's own buttons sit outside the menu; using them keeps it open.
+          onInteractOutside={(e) => {
+            if ((e.target as Element | null)?.closest?.(".tour-root"))
+              e.preventDefault();
+          }}
         >
           <SheetTitle className="sr-only">메뉴</SheetTitle>
-          <div className="flex flex-col h-full py-3 px-3">
+          <div
+            data-tour-scope="menu"
+            className="flex flex-col h-full py-3 px-3"
+          >
             {/* Community Logo/Name */}
             <div className="flex items-center gap-3 py-3 px-2">
               <Link
@@ -137,12 +168,12 @@ export function MobileNavDrawer({
             </div>
 
             {/* Profile Switcher */}
-            <div className="mt-2 px-2">
+            <div data-tour="profile-switcher" className="mt-2 px-2">
               <ProfileSwitcher compact={false} />
             </div>
 
             {/* Balance Pill */}
-            <div className="mt-2 px-2">
+            <div data-tour="balance" className="mt-2 px-2">
               <BalancePill fullWidth />
             </div>
 
@@ -154,6 +185,7 @@ export function MobileNavDrawer({
                   <Link
                     key={item.to}
                     to={item.to}
+                    data-tour={item.tour}
                     className={getNavLinkClasses(item.to)}
                     onClick={() => setOpen(false)}
                   >
