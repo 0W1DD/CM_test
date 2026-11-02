@@ -521,7 +521,8 @@ export default function Messages() {
 
       {/* Floating Action Buttons - shown when there are conversations */}
       {(conversations.length > 0 || groupChats.length > 0) && (
-        <div className="fixed bottom-6 right-6 flex flex-col gap-3">
+        // On phones, above the bottom navigation bar (md:hidden) instead of under it
+        <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] md:bottom-6 right-4 md:right-6 z-40 flex flex-col gap-3">
           <Link
             to="/profiles"
             className="inline-flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-colors"
