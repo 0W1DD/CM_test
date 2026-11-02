@@ -20,6 +20,7 @@ import { LoadingState } from "~/components/shared/LoadingState";
 import { Button } from "~/components/ui/button";
 import { useAuth } from "~/hooks/useAuth";
 import { errorMessage, mutate, query } from "~/lib/naru";
+import { demoUses, isDemo, useTourDemo } from "~/lib/tour-demo";
 
 export function meta() {
   return [
@@ -163,7 +164,12 @@ export default function UsesPage() {
       initialPageParam: undefined as string | undefined,
     });
 
-  const uses = data?.pages.flatMap((page) => page.data) ?? [];
+  // The tour's examples go first while it stands here (only to look at).
+  const showDemo = useTourDemo("uses");
+  const uses: ItemUse[] = [
+    ...(showDemo ? demoUses(currentProfile) : []),
+    ...(data?.pages.flatMap((page) => page.data) ?? []),
+  ];
   const staff = data?.pages[0]?.staff ?? false;
   const pendingCount = data?.pages[0]?.pending_count ?? 0;
 
@@ -264,7 +270,7 @@ export default function UsesPage() {
         </div>
       )}
 
-      {isLoading ? (
+      {isLoading && !showDemo ? (
         <LoadingState message="사용 로그를 불러오는 중..." />
       ) : uses.length === 0 ? (
         <div className="framed p-8 text-center text-muted-foreground">
@@ -275,7 +281,12 @@ export default function UsesPage() {
       ) : (
         <ul className="framed divide-y divide-border">
           {uses.map((use) => (
-            <li key={use.id} className="flex gap-3 px-4 py-3">
+            <li
+              key={use.id}
+              data-tour={isDemo(use.id) ? `demo-${use.id}` : undefined}
+              inert={isDemo(use.id) || undefined}
+              className="flex gap-3 px-4 py-3"
+            >
               {use.profile && (
                 <Link to={`/@${use.profile.username}`} className="shrink-0">
                   <ProfileAvatar

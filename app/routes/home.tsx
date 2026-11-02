@@ -5,6 +5,7 @@ import { AnnouncementTicker } from "~/components/announcement-ticker";
 import { FrontGate } from "~/components/front-gate";
 import { LoginButton } from "~/components/LoginButton";
 import { MessageSender } from "~/components/message-sender";
+import { PostCard } from "~/components/post-card";
 import { PostList, type PostListRef } from "~/components/post-list";
 import {
   ScheduledPostsList,
@@ -14,6 +15,7 @@ import { EmptyState } from "~/components/shared/EmptyState";
 import { useAuth } from "~/hooks/useAuth";
 import { useCurrentInstance } from "~/hooks/useCurrentInstance";
 import { subscribe } from "~/lib/naru";
+import { DEMO_POST, useTourDemo } from "~/lib/tour-demo";
 
 export default function Home() {
   const postListRef = useRef<PostListRef>(null);
@@ -27,6 +29,7 @@ export default function Home() {
     currentProfile,
   } = useAuth();
   const { currentInstance } = useCurrentInstance();
+  const showDemo = useTourDemo("post");
 
   const handlePostSuccess = () => {
     postListRef.current?.refresh();
@@ -133,6 +136,22 @@ export default function Home() {
             onPostSuccess={handlePostSuccess}
           />
         </div>
+
+        {/* The tour's example post: only to look at */}
+        {showDemo && (
+          <div
+            data-tour-scope="demo"
+            data-tour="demo-post"
+            className="timeline-item bg-card border-b border-border"
+            inert
+          >
+            <PostCard
+              post={DEMO_POST}
+              currentProfileId={currentProfile?.id}
+              noFold
+            />
+          </div>
+        )}
 
         {/* Scheduled Posts */}
         <ScheduledPostsList ref={scheduledPostsRef} />

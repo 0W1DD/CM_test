@@ -15,6 +15,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useAuth } from "~/hooks/useAuth";
+import { DEMO_SHOP_ITEM, useTourDemo } from "~/lib/tour-demo";
 import { useCommunityProfilesQuery } from "~/hooks/useCommunityProfiles";
 import {
   type ShopInventoryEntry,
@@ -109,6 +110,8 @@ export default function ShopPage() {
   const { currentProfile } = useAuth();
   const { data, isLoading, refetch } = useShopSummary();
   const queryClient = useQueryClient();
+  // The tour's example product and held item (only to look at).
+  const showDemo = useTourDemo("shop");
 
   const buy = useMutation({
     mutationFn: async (item: ShopItem) => {
@@ -280,15 +283,31 @@ export default function ShopPage() {
       {/* Items grid */}
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">상품</h2>
+        {showDemo && (
+          <ul
+            data-tour="demo-shop-item"
+            className="framed divide-y divide-border"
+            inert
+          >
+            <ItemRow
+              item={DEMO_SHOP_ITEM}
+              balance={DEMO_SHOP_ITEM.priceAmount}
+              onBuy={() => {}}
+              pending={false}
+            />
+          </ul>
+        )}
         {!data.has_items ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Sparkles className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">
-                상점이 아직 준비 중입니다.
-              </p>
-            </CardContent>
-          </Card>
+          !showDemo && (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Sparkles className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
+                <p className="text-muted-foreground">
+                  상점이 아직 준비 중입니다.
+                </p>
+              </CardContent>
+            </Card>
+          )
         ) : (
           <ul className="framed divide-y divide-border">
             {data.items.map((item) => (
@@ -305,7 +324,7 @@ export default function ShopPage() {
       </section>
 
       {/* Inventory */}
-      {data.inventory.length > 0 && (
+      {(data.inventory.length > 0 || showDemo) && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">보유 상품</h2>
@@ -319,6 +338,34 @@ export default function ShopPage() {
           </div>
           <Card>
             <CardContent className="p-4 space-y-2">
+              {showDemo && (
+                <div
+                  data-tour="demo-shop-owned"
+                  className="border-b last:border-b-0"
+                  inert
+                >
+                  <div className="flex items-center justify-between gap-3 py-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <Package className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="font-medium truncate">
+                        {DEMO_SHOP_ITEM.name}
+                      </span>
+                      <Badge variant="outline" className="text-xs">
+                        소모품
+                      </Badge>
+                    </div>
+                    <span className="text-sm tabular-nums whitespace-nowrap">
+                      ×1
+                    </span>
+                    <Button size="sm" variant="outline">
+                      사용
+                    </Button>
+                    <Button size="sm" variant="outline">
+                      양도
+                    </Button>
+                  </div>
+                </div>
+              )}
               {data.inventory.map((entry) => (
                 <div key={entry.itemId} className="border-b last:border-b-0">
                   <div className="flex items-center justify-between gap-3 py-2">

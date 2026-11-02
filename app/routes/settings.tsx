@@ -7,7 +7,7 @@ import {
   User,
   Users,
 } from "lucide-react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { replayTour } from "~/components/onboarding-tour";
 import { Spinner } from "~/components/ui/spinner";
 import { useAuth } from "~/hooks/useAuth";
@@ -15,6 +15,7 @@ import { useCurrentInstance } from "~/hooks/useCurrentInstance";
 
 export default function Settings() {
   const { user, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const {
     isModerator,
     isOwner,
@@ -136,7 +137,11 @@ export default function Settings() {
             ))}
             <button
               type="button"
-              onClick={replayTour}
+              onClick={() => {
+                // The tour runs on the home timeline, so go there first.
+                replayTour();
+                navigate("/");
+              }}
               className="block w-full text-left group"
             >
               <div className="bg-card rounded-2xl shadow-sm border border-border p-6 transition-all hover:shadow-md hover:border-primary/30">

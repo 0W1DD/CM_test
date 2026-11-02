@@ -28,6 +28,7 @@ import { useUnreadCount } from "~/contexts/UnreadCountContext";
 import { useAuth } from "~/hooks/useAuth";
 import { useCurrentInstance } from "~/hooks/useCurrentInstance";
 import { mutate, query, subscribe } from "~/lib/naru";
+import { DEMO_NOTIFICATIONS, isDemo, useTourDemo } from "~/lib/tour-demo";
 import type { Page } from "~/types/post";
 import type { Route } from "./+types/notifications";
 
@@ -134,7 +135,12 @@ export default function Notifications() {
     enabled: isAuthenticated && !!instanceSlug && !!currentProfile,
   });
 
-  const notifications = data?.pages.flatMap((page) => page.data) ?? [];
+  // The tour's examples go first while it stands here (only to look at).
+  const showDemo = useTourDemo("notifications");
+  const notifications: (Notification & { tour?: string })[] = [
+    ...(showDemo ? DEMO_NOTIFICATIONS : []),
+    ...(data?.pages.flatMap((page) => page.data) ?? []),
+  ];
 
   const markAllAsRead = async () => {
     if (!currentProfile) return;
@@ -353,7 +359,7 @@ export default function Notifications() {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-4">
         <div className="max-w-2xl mx-auto">
-          {isLoading && (
+          {isLoading && !showDemo && (
             <div className="flex items-center justify-center min-h-64">
               <div className="flex items-center gap-3">
                 <Spinner className="h-6 w-6" />
@@ -496,7 +502,11 @@ export default function Notifications() {
                 );
 
                 return (
-                  <li key={notification.id}>
+                  <li
+                    key={notification.id}
+                    data-tour={notification.tour}
+                    inert={isDemo(notification.id) || undefined}
+                  >
                     {notificationLink ? (
                       <Link
                         to={notificationLink}
