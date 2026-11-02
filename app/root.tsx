@@ -54,6 +54,11 @@ export const links: Route.LinksFunction = () => [
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap",
   },
+  // Gaegu: a handwritten face for the community title only.
+  {
+    rel: "stylesheet",
+    href: "https://fonts.googleapis.com/css2?family=Gaegu:wght@700&display=swap",
+  },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {

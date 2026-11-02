@@ -911,6 +911,8 @@ textarea,
 /* The community's name: it wraps between words instead of being cut off,
    and a thread of gold runs through it now and then. */
 .community-title {
+  font-family: "Gaegu", var(--font-display);
+  letter-spacing: 0;
   word-break: keep-all;
   overflow-wrap: anywhere;
   text-wrap: balance;
