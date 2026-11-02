@@ -113,12 +113,12 @@ function startFire(ctx: AudioContext) {
 
 /** The pixel fireplace: a mantel over stone, logs in the hearth, and two
  * frames of flame (or a few embers when it is out). */
-function FireArt({ lit }: { lit: boolean }) {
+function FireArt({ lit, size = 56 }: { lit: boolean; size?: number }) {
   return (
     <svg
       viewBox="0 0 16 16"
-      width="56"
-      height="56"
+      width={size}
+      height={size}
       shapeRendering="crispEdges"
       aria-hidden="true"
     >
@@ -249,14 +249,14 @@ function useFire() {
  * A little fireplace in the corner. Pressed, it catches: the fire crackles,
  * calm classical music plays, and the warm light over the page grows and
  * flickers. Pressed again, it all fades out. Nothing plays on its own. On
- * phones it sits small at the right of the top bar instead (app.css).
+ * phones with the top bar, CampfireHeaderButton stands in for it.
  */
 export function Campfire() {
   const { lit, track } = useFire();
   return (
     <>
       <div className="cozy-filter" aria-hidden />
-      <div className="campfire">
+      <div className="campfire" data-tour="campfire">
         {lit && (
           <span className="campfire-track">♪ {TRACKS[track]?.title}</span>
         )}
@@ -274,5 +274,27 @@ export function Campfire() {
         </button>
       </div>
     </>
+  );
+}
+
+/**
+ * The same fire, small, inside the phone's top bar, so it comes and goes
+ * with the bar; the corner fireplace hides while this is on the page.
+ */
+export function CampfireHeaderButton() {
+  const { lit } = useFire();
+  return (
+    <button
+      type="button"
+      data-campfire-header
+      data-tour="campfire"
+      onClick={toggleFire}
+      className="campfire-header-button ml-auto shrink-0 flex items-center gap-1 text-xs font-semibold text-foreground"
+      aria-pressed={lit}
+      title={lit ? "벽난로 끄기" : "벽난로 피우기 (소리가 나요)"}
+    >
+      <FireArt lit={lit} size={32} />
+      {lit ? "불 끄기" : "불 피우기"}
+    </button>
   );
 }

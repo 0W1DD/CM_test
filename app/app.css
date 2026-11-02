@@ -843,34 +843,62 @@ textarea,
   align-items: center;
   gap: 0.5rem;
 }
-/* On phones the fireplace is pinned small at the right of the top bar
-   (mastodon-layout's h-14 header), staying put while the bar slides away. */
+/* On phones with the top bar the fire sits inside it (CampfireHeaderButton)
+   and the corner one goes; the warm light glows from the top-left there. */
 @media (max-width: 767px) {
-  .campfire {
-    top: 0;
-    right: 0.75rem;
-    bottom: auto;
-    height: 3.5rem;
-  }
-  .campfire-track {
+  body:has([data-campfire-header]) .campfire {
     display: none;
   }
-  .campfire-button {
-    flex-direction: row;
-    gap: 4px;
-    color: var(--foreground);
-    filter: none;
+  .cozy-filter {
+    background:
+      radial-gradient(
+        circle at 0% 0%,
+        rgb(255 140 50 / 0.35),
+        transparent 55%
+      ),
+      rgb(255 170 90 / 0.18);
   }
-  .campfire-button svg {
-    width: 32px;
-    height: 32px;
+  .fire-lit .cozy-filter {
+    background:
+      radial-gradient(
+        circle at 0% 0%,
+        rgb(255 130 40 / 0.6),
+        transparent 65%
+      ),
+      rgb(255 160 80 / 0.25);
   }
-  .campfire-label {
-    font-size: 12px;
-    text-shadow: none;
-  }
-  .fire-lit .campfire-button {
-    filter: drop-shadow(0 0 6px rgb(255 140 40 / 0.7));
+}
+.campfire-header-button {
+  image-rendering: pixelated;
+}
+.fire-lit .campfire-header-button svg {
+  filter: drop-shadow(0 0 6px rgb(255 140 40 / 0.7));
+}
+/* The first-visit tour (onboarding-tour.tsx): the page dims around the lit
+   element, which a pulsing ring outlines. */
+.tour-spotlight {
+  position: absolute;
+  border-radius: 14px;
+  box-shadow: 0 0 0 9999px rgb(0 0 0 / 0.7);
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+  transition: top 0.3s ease, left 0.3s ease, width 0.3s ease, height 0.3s ease;
+  animation: tour-pulse 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes tour-pulse {
+  0%, 100% { outline-color: var(--primary); outline-offset: 2px; }
+  50% { outline-color: color-mix(in srgb, var(--primary) 40%, transparent); outline-offset: 6px; }
+}
+.tour-card {
+  transition: top 0.3s ease, left 0.3s ease;
+  animation: timeline-in 0.3s ease-out backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tour-spotlight,
+  .tour-card {
+    animation: none;
+    transition: none;
   }
 }
 /* The fireplace itself is the button: no frame around it, its action

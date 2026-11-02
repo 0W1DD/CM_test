@@ -1,4 +1,6 @@
 import { type ReactNode, useRef } from "react";
+import { CampfireHeaderButton } from "~/components/campfire";
+import { OnboardingTour } from "~/components/onboarding-tour";
 import { usePageTransition } from "~/hooks/usePageTransition";
 import { useScrollDirection } from "~/hooks/useScrollDirection";
 import { ClockCalendar } from "./clock-calendar";
@@ -35,7 +37,7 @@ export function MastodonLayout({
       {/* Mobile Header */}
       {showAuthenticatedLayout && (
         <header
-          className={`sticky top-0 z-40 bg-card border-b-[1.5px] border-[var(--frame)] pl-4 pr-28 h-14 flex items-center gap-3 md:hidden transition-transform duration-300 ${headerHidden ? "-translate-y-full" : "translate-y-0"}`}
+          className={`sticky top-0 z-40 bg-card border-b-[1.5px] border-[var(--frame)] px-4 h-14 flex items-center gap-3 md:hidden transition-transform duration-300 ${headerHidden ? "-translate-y-full" : "translate-y-0"}`}
         >
           <MobileNavDrawer
             communityName={communityName}
@@ -45,6 +47,7 @@ export function MastodonLayout({
           <h1 className="community-title font-display font-bold text-xl tracking-tight truncate min-w-0">
             {communityName || "\u00A0"}
           </h1>
+          <CampfireHeaderButton />
         </header>
       )}
 
@@ -93,11 +96,17 @@ export function MastodonLayout({
 
         {/* Wide screens: clock and calendar on the right */}
         {showAuthenticatedLayout && (
-          <aside className="hidden xl:block sticky top-6 self-start my-6">
+          <aside
+            data-tour="calendar"
+            className="hidden xl:block sticky top-6 self-start my-6"
+          >
             <ClockCalendar />
           </aside>
         )}
       </div>
+
+      {/* First visit: a tour of the menus */}
+      {showAuthenticatedLayout && <OnboardingTour />}
 
       {/* Mobile Bottom Navigation */}
       {showAuthenticatedLayout && (

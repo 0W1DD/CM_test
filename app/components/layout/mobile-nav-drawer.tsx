@@ -104,6 +104,7 @@ export function MobileNavDrawer({
       <button
         type="button"
         onClick={() => setOpen(true)}
+        data-tour="menu"
         className="p-2 -ml-2 rounded-full text-foreground hover:bg-accent/60 transition-colors"
         aria-label="메뉴 열기"
       >

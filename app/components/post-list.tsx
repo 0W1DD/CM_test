@@ -189,11 +189,14 @@ export const PostList = forwardRef<PostListRef>((_props, ref) => {
   return (
     <div>
       {allPosts.length === 0 ? (
-        <EmptyState
-          iconElement={<span className="text-2xl">📝</span>}
-          title="아직 게시물이 없습니다"
-          description="첫 번째 게시물을 작성해보세요!"
-        />
+        // In the timeline's column, so phones keep it framed like the posts
+        <div className="timeline-item bg-card border-b-[1.5px] border-[var(--frame)] md:border-b-0">
+          <EmptyState
+            iconElement={<span className="text-2xl">📝</span>}
+            title="아직 게시물이 없습니다"
+            description="첫 번째 게시물을 작성해보세요!"
+          />
+        </div>
       ) : (
         <>
           <div>

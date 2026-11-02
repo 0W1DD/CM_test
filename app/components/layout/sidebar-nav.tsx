@@ -59,42 +59,58 @@ export function SidebarNav({
   };
 
   const navigationItems = [
-    { to: "/", icon: Home, label: "홈" },
+    { tour: "nav-home", to: "/", icon: Home, label: "홈" },
     {
+      tour: "nav-notifications",
       to: "/notifications",
       icon: Bell,
       label: "알림",
       badge: unreadCount,
     },
     {
+      tour: "nav-messages",
       to: "/messages",
       icon: MessageCircle,
       label: "메시지",
       badge: unreadMessageCount,
     },
     {
+      tour: "nav-announcements",
       to: "/announcements",
       icon: Megaphone,
       label: "공지사항",
     },
-    { to: "/boards", icon: LayoutList, label: "게시판" },
-    { to: "/shop", icon: ShoppingBag, label: "상점" },
-    { to: "/uses", icon: ScrollText, label: "사용 로그" },
-    { to: "/bookmarks", icon: Bookmark, label: "북마크" },
-    { to: "/search", icon: Search, label: "검색" },
-    { to: "/profiles", icon: UserCheck, label: "멤버" },
+    { tour: "nav-boards", to: "/boards", icon: LayoutList, label: "게시판" },
+    { tour: "nav-shop", to: "/shop", icon: ShoppingBag, label: "상점" },
+    { tour: "nav-uses", to: "/uses", icon: ScrollText, label: "사용 로그" },
+    {
+      tour: "nav-bookmarks",
+      to: "/bookmarks",
+      icon: Bookmark,
+      label: "북마크",
+    },
+    { tour: "nav-search", to: "/search", icon: Search, label: "검색" },
+    { tour: "nav-profiles", to: "/profiles", icon: UserCheck, label: "멤버" },
     ...(currentProfile
       ? [
           {
+            tour: "nav-profile",
             to: `/@${currentProfile.username}`,
             icon: User,
             label: "프로필",
           },
         ]
       : []),
-    { to: "/settings", icon: Settings, label: "설정" },
+    { tour: "nav-settings", to: "/settings", icon: Settings, label: "설정" },
     ...(isModerator
-      ? [{ to: "/admin", icon: ShieldCheck, label: "커뮤 관리" }]
+      ? [
+          {
+            tour: "nav-admin",
+            to: "/admin",
+            icon: ShieldCheck,
+            label: "커뮤 관리",
+          },
+        ]
       : []),
   ];
 
@@ -124,7 +140,10 @@ export function SidebarNav({
       </div>
 
       {/* Profile Switcher */}
-      <div className={`${collapsed ? "mt-2" : "mt-3 px-1"}`}>
+      <div
+        data-tour="profile-switcher"
+        className={`${collapsed ? "mt-2" : "mt-3 px-1"}`}
+      >
         <ProfileSwitcher compact={collapsed} />
       </div>
 
@@ -136,6 +155,7 @@ export function SidebarNav({
             <Link
               key={item.to}
               to={item.to}
+              data-tour={item.tour}
               className={getNavLinkClasses(item.to)}
               title={item.label}
             >

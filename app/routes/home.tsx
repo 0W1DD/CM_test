@@ -124,7 +124,10 @@ export default function Home() {
       <AnnouncementTicker />
       <div className="space-y-0">
         {/* Message Composer */}
-        <div className="timeline-item border-b border-border/70">
+        <div
+          data-tour="composer"
+          className="timeline-item border-b border-border/70"
+        >
           <MessageSender
             key={currentProfile?.id || "no-profile"}
             onPostSuccess={handlePostSuccess}

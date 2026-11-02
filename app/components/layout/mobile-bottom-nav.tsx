@@ -18,16 +18,23 @@ export function MobileBottomNav({
     (path !== "/" && location.pathname.startsWith(path));
 
   const navItems = [
-    { to: "/", icon: Home, label: "홈" },
-    { to: "/boards", icon: LayoutGrid, label: "게시판" },
-    { to: "/announcements", icon: Megaphone, label: "공지" },
+    { tour: "nav-home", to: "/", icon: Home, label: "홈" },
+    { tour: "nav-boards", to: "/boards", icon: LayoutGrid, label: "게시판" },
     {
+      tour: "nav-announcements",
+      to: "/announcements",
+      icon: Megaphone,
+      label: "공지",
+    },
+    {
+      tour: "nav-notifications",
       to: "/notifications",
       icon: Bell,
       label: "알림",
       badge: unreadCount,
     },
     {
+      tour: "nav-messages",
       to: "/messages",
       icon: MessageCircle,
       label: "메시지",
@@ -45,6 +52,7 @@ export function MobileBottomNav({
             <Link
               key={item.to}
               to={item.to}
+              data-tour={item.tour}
               aria-label={item.label}
               className={`relative flex items-center justify-center flex-1 h-11 mx-0.5 rounded-full transition-all duration-200 ${
                 active

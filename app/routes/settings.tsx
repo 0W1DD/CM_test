@@ -1,4 +1,5 @@
 import {
+  Compass,
   FileText,
   Palette,
   Settings as SettingsIcon,
@@ -7,6 +8,7 @@ import {
   Users,
 } from "lucide-react";
 import { Link } from "react-router";
+import { replayTour } from "~/components/onboarding-tour";
 import { Spinner } from "~/components/ui/spinner";
 import { useAuth } from "~/hooks/useAuth";
 import { useCurrentInstance } from "~/hooks/useCurrentInstance";
@@ -132,6 +134,25 @@ export default function Settings() {
                 </div>
               </Link>
             ))}
+            <button
+              type="button"
+              onClick={replayTour}
+              className="block w-full text-left group"
+            >
+              <div className="bg-card rounded-2xl shadow-sm border border-border p-6 transition-all hover:shadow-md hover:border-primary/30">
+                <div className="flex items-center gap-4 mb-3">
+                  <div className="flex-shrink-0 w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
+                    <Compass className="h-6 w-6 text-primary-foreground" />
+                  </div>
+                  <h2 className="text-xl font-bold text-foreground">
+                    사용법 다시 보기
+                  </h2>
+                </div>
+                <p className="text-muted-foreground ml-16">
+                  처음 접속했을 때 나온 메뉴 안내를 다시 봅니다
+                </p>
+              </div>
+            </button>
           </div>
         </div>
       </main>
