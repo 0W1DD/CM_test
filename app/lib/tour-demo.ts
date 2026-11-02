@@ -56,7 +56,7 @@ const RUDOLPH = {
 
 export const DEMO_POST: Post = {
   id: `${DEMO_ID}post`,
-  content: "메리 크리스마스! 🎄 오늘 밤 벽난로 앞에서 핫초코 한 잔 어때요?",
+  content: "호호호, 메리 크리스마스! 벽난로 앞에서 핫초코 한 잔 하게나!!",
   created_at: minutesAgo(5),
   updated_at: null,
   announcement: false,
@@ -126,7 +126,7 @@ export const DEMO_NOTIFICATIONS = [
     sender: RUDOLPH,
     related_post: {
       id: DEMO_POST.id,
-      content: "좋아요! 썰매 끌고 갈게요 🦌",
+      content: "이히힝~ (빨리 마신다.)",
       author: RUDOLPH,
     },
     related_use: null,
@@ -160,7 +160,7 @@ export function demoUses(me: { name: string; username: string } | null) {
       target: null,
       item_name: "핫초코",
       qty: 1,
-      note: "벽난로 앞에서 천천히 마셨다.",
+      note: "(벽난로 앞에서 마신다.)",
       comments: [],
       secret: false,
       hidden: false,

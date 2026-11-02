@@ -149,7 +149,7 @@ const STEPS: Step[] = [
   {
     target: "nav-boards",
     title: "게시판",
-    body: "타임라인과는 별개로 주제별로 글을 모아 두는 곳입니다.",
+    body: "게시판 기능을 이용할 수 있습니다.",
   },
   {
     target: "menu",
@@ -164,12 +164,12 @@ const STEPS: Step[] = [
   {
     target: "balance",
     title: "잔액",
-    body: "지금 가진 커뮤 화폐입니다. 상점에서 아이템을 살 때 씁니다.",
+    body: "지금 가진 코인입니다. 상점에서 아이템을 살 때 씁니다.",
   },
   {
     target: "nav-shop",
     title: "상점",
-    body: "화폐로 아이템을 사고, 가진 아이템을 확인할 수 있습니다.",
+    body: "코인으로 아이템을 사고, 가진 아이템을 확인할 수 있습니다.",
   },
   {
     target: "nav-uses",
@@ -202,16 +202,11 @@ const STEPS: Step[] = [
     body: "프로필과 계정을 관리합니다. 이 안내도 설정에서 다시 볼 수 있습니다.",
   },
   {
-    target: "nav-admin",
-    title: "커뮤 관리",
-    body: "운영진 전용 메뉴입니다. 가입 신청, 멤버, 상점, 한꺼번에 지우기 등을 관리합니다.",
-  },
-  {
     page: "/shop",
     demo: "shop",
     target: "demo-shop-item",
     title: "아이템 사기",
-    body: "상점의 상품입니다. 가진 화폐로 '구매'를 누르면 보유 상품에 들어갑니다.",
+    body: "상점의 상품입니다. 가진 코인으로 '구매'를 누르면 보유 상품에 들어갑니다.",
   },
   {
     page: "/shop",
@@ -225,7 +220,7 @@ const STEPS: Step[] = [
     demo: "uses",
     target: "demo-tour-demo-use",
     title: "사용 기록",
-    body: "아이템을 쓰면 사용 로그에 이렇게 남습니다. 운영진이 확인하기 전까지는 '승인 대기'입니다.",
+    body: "아이템을 쓰면 사용 로그에 남습니다. 운영진이 확인하기 전까지는 '승인 대기'입니다.",
   },
   {
     page: "/uses",
