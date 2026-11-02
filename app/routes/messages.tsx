@@ -263,25 +263,37 @@ export default function Messages() {
             </div>
           ) : (
             <>
-              {/* Mark All as Read Button */}
-              {conversations.length > 0 &&
-                conversations.some(
-                  (conv) => parseInt(conv.unread_count || "0", 10) > 0,
-                ) && (
-                  <div className="mb-4">
+              {/* New chat buttons, and mark-all-read when something is unread */}
+              {(conversations.length > 0 || groupChats.length > 0) && (
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  <Link
+                    to="/profiles"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-sm font-medium rounded hover:bg-primary/90 transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />새 1:1 메시지
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleOpenCreateModal}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-secondary-foreground text-sm font-medium rounded hover:bg-secondary/90 transition-colors"
+                  >
+                    <Users className="h-4 w-4" />새 그룹 만들기
+                  </button>
+                  {conversations.some(
+                    (conv) => parseInt(conv.unread_count || "0", 10) > 0,
+                  ) && (
                     <button
                       type="button"
                       onClick={markAllAsRead}
                       disabled={isMarkingAllRead}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-sm font-medium rounded hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      <CheckCheck className="h-3 w-3" />
-                      {isMarkingAllRead
-                        ? "처리 중..."
-                        : "모든 메시지 읽음 처리"}
+                      <CheckCheck className="h-4 w-4" />
+                      {isMarkingAllRead ? "처리 중..." : "모두 읽음"}
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
+              )}
 
               {/* All Conversations */}
               {conversations.length === 0 && groupChats.length === 0 ? (
@@ -518,30 +530,6 @@ export default function Messages() {
           )}
         </div>
       </main>
-
-      {/* Floating Action Buttons - shown when there are conversations */}
-      {(conversations.length > 0 || groupChats.length > 0) && (
-        // On phones, above the bottom navigation bar (md:hidden) instead of under it
-        <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] md:bottom-6 right-4 md:right-6 z-40 flex flex-col gap-3">
-          <Link
-            to="/profiles"
-            className="inline-flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-colors"
-            title="새 1:1 메시지"
-          >
-            <MessageCircle className="h-5 w-5" />
-            <span className="hidden sm:inline">새 1:1 메시지</span>
-          </Link>
-          <button
-            type="button"
-            onClick={handleOpenCreateModal}
-            className="inline-flex items-center gap-2 px-4 py-3 bg-secondary text-secondary-foreground rounded-full shadow-lg hover:bg-secondary/90 transition-colors"
-            title="새 그룹"
-          >
-            <Users className="h-5 w-5" />
-            <span className="hidden sm:inline">새 그룹</span>
-          </button>
-        </div>
-      )}
 
       {/* Create Group Modal */}
       {showCreateModal && (
