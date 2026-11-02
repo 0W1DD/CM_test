@@ -1,9 +1,9 @@
 // Slash commands in posts (commung's builtin-commands and their dispatch),
-// built in and always on: a post that is just `/name args` runs the command
-// inside the posting mutation, so the shop commands change balances in the
-// same transaction, and answers the reply the community's bot profile
-// (@bot) posts. The posts area calls `commandReply` after a post is
-// published and writes the reply.
+// built in, each on until the owner turns it off: a post that is just
+// `/name args` runs the command inside the posting mutation, so the shop
+// commands change balances in the same transaction, and answers the reply
+// the community's bot profile (@bot) posts. The posts area calls
+// `commandReply` after a post is published and writes the reply.
 //
 // Each command is a file in commands/ (see command-kit.ts and
 // docs/commands.md); to add one, write its file and list it here.
@@ -18,7 +18,7 @@ import items from "./commands/items.js";
 import roll from "./commands/roll.js";
 import use from "./commands/use.js";
 import type { Command, CommandRole, CommandTrigger } from "./command-kit.js";
-import { type MutationCtx, uuidv7 } from "./core.js";
+import { type Ctx, type MutationCtx, uuidv7 } from "./core.js";
 
 export type { CommandTrigger };
 
@@ -35,6 +35,14 @@ export const BUILTIN_COMMANDS: readonly Command[] = [
   use,
   grant,
 ];
+
+/** The built-in commands the owner has not turned off. */
+export async function enabledCommands(ctx: Ctx): Promise<readonly Command[]> {
+  const { rows } = await ctx.sql<{ name: string }>`
+    SELECT name FROM disabled_commands`;
+  const disabled = new Set(rows.map((row) => row.name));
+  return BUILTIN_COMMANDS.filter((cmd) => !disabled.has(cmd.name));
+}
 
 const SLASH_COMMAND_PATTERN = /^\/([a-z][a-z0-9_-]{0,30})(?:\s+([\s\S]*))?$/i;
 
@@ -93,8 +101,8 @@ async function botProfileId(ctx: MutationCtx): Promise<string> {
 
 /**
  * The reply a command in `trigger` answers with, as the community's bot
- * profile, or null when the post holds no built-in command. The caller
- * writes the reply as a post in reply to `trigger.id`.
+ * profile, or null when the post holds no built-in command that is on. The
+ * caller writes the reply as a post in reply to `trigger.id`.
  */
 export async function commandReply(
   ctx: MutationCtx,
@@ -102,7 +110,8 @@ export async function commandReply(
 ): Promise<{ authorProfileId: string; content: string } | null> {
   const parsed = parseSlashCommand(trigger.content);
   if (!parsed) return null;
-  const command = BUILTIN_COMMANDS.find((cmd) => cmd.name === parsed.name);
+  const commands = await enabledCommands(ctx);
+  const command = commands.find((cmd) => cmd.name === parsed.name);
   if (!command) return null;
   const authorProfileId = await botProfileId(ctx);
 
@@ -125,7 +134,7 @@ export async function commandReply(
     content: await command.run(ctx, {
       args: parsed.args,
       trigger,
-      commands: BUILTIN_COMMANDS,
+      commands,
     }),
   };
 }

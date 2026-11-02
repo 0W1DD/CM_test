@@ -3,7 +3,7 @@
 // is made; the site keeps only ctx.passwords.hash(secret) and checks it with
 // ctx.passwords.verify under the key `bot-token:<token id>`, which Naru
 // allows ten wrong secrets an hour.
-import { BUILTIN_COMMANDS, parseSlashCommand } from "./commands.js";
+import { enabledCommands, parseSlashCommand } from "./commands.js";
 import { settingsOf } from "./community.js";
 import { hostWord } from "./random.js";
 import { denied, invalid, iso, list, notFound, uuidv7, } from "./core.js";
@@ -323,7 +323,7 @@ export async function botMentions(ctx, caller, limit, since) {
      WHERE po.id IN (SELECT value FROM json_each(?)) AND ${SHOWN}
        AND po.author_id <> ? AND (? IS NULL OR shown_at >= ?)
      ORDER BY shown_at DESC, po.id DESC`, [ctx.now, list([...reasons.keys()]), ctx.now, bot, since, since]);
-    const builtin = new Set(BUILTIN_COMMANDS.map((command) => command.name));
+    const builtin = new Set((await enabledCommands(ctx)).map((command) => command.name));
     const wanted = [];
     for (const row of rows) {
         const why = reasons.get(row.id) ?? new Set();

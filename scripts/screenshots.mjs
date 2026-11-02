@@ -7,18 +7,13 @@
 // template.
 //
 //   pnpm build
-//   NARU_DEV=~/Git/naru-pub/naru-dev PLAYWRIGHT_MODULE=…/playwright/index.mjs \
-//     node scripts/screenshots.mjs
+//   PLAYWRIGHT_MODULE=…/playwright/index.mjs node scripts/screenshots.mjs
 import { readFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { startNaru } from "@naru-pub/dev/testing";
 
-const { startNaru } = await import(
-  process.env.NARU_DEV
-    ? join(process.env.NARU_DEV, "dist/testing.mjs")
-    : "@naru-pub/dev/testing"
-);
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
 
 const root = fileURLToPath(new URL("../", import.meta.url));

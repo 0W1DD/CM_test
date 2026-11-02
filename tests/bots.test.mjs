@@ -14,7 +14,7 @@ async function post(site, member, profile, content) {
   return replies[0] ?? null;
 }
 
-test("the built-in commands are listed for members, and always on", async () => {
+test("the built-in commands are listed for members, on by default", async () => {
   const { site } = await community();
   assert.equal(await refusal(site.query("commands:list", null, VISITOR)), "signed_out");
   const names = (await site.query("commands:list", null, as("m-bob"))).map((c) => c.name);
@@ -30,6 +30,36 @@ test("the built-in commands are listed for members, and always on", async () => 
     "use",
     "grant",
   ]);
+});
+
+test("the owner turns a command off and on again", async () => {
+  const { site, profiles } = await community();
+  const setEnabled = (name, enabled, member = "m-owner") =>
+    site.mutate("commands:setEnabled", { name, enabled }, as(member));
+  const listed = async () => (await site.query("commands:list", null, as("m-bob"))).map((c) => c.name);
+
+  assert.equal(await refusal(setEnabled("coin", false, "m-alice")), "not_owner");
+  assert.equal(await refusal(site.query("commands:settings", null, as("m-alice"))), "not_owner");
+  assert.ok(await refusal(setEnabled("unknown", false)));
+  assert.ok(await refusal(setEnabled("coin", "no")));
+
+  assert.deepEqual(await setEnabled("coin", false), { name: "coin", enabled: false });
+  await setEnabled("coin", false); // Turning it off twice is fine.
+  assert.equal((await listed()).includes("coin"), false);
+  const settings = await site.query("commands:settings", null, as("m-owner"));
+  assert.equal(settings.length, 10);
+  assert.equal(settings.find((c) => c.name === "coin").enabled, false);
+  assert.equal(settings.find((c) => c.name === "roll").enabled, true);
+
+  // Off, it is an ordinary post, /help leaves it out, and others still answer.
+  assert.equal(await post(site, "m-alice", profiles.alice, "/coin"), null);
+  const help = await post(site, "m-alice", profiles.alice, "/help");
+  assert.doesNotMatch(help.content, /`\/coin`/);
+  assert.match(help.content, /`\/roll`/);
+
+  await setEnabled("coin", true);
+  assert.equal((await listed()).includes("coin"), true);
+  assert.match((await post(site, "m-alice", profiles.alice, "/coin")).content, /^🪙/);
 });
 
 test("one bot profile replies to every command, made when first needed", async () => {
@@ -277,5 +307,13 @@ test("bot:mentions: posts that mention the bot, reply to it, or hold a command f
   assert.deepEqual(
     (await site.query("bot:mentions", { token }, VISITOR)).data.map((post) => post.id),
     [command.id, mention.id],
+  );
+
+  // A built-in command the owner turned off is the bots' to answer.
+  await site.mutate("commands:setEnabled", { name: "roll", enabled: false }, as("m-owner"));
+  const off = await site.query("bot:mentions", { token }, VISITOR);
+  assert.deepEqual(
+    off.data.map((post) => post.command),
+    [{ name: "weather", args: "부산" }, { name: "roll", args: "1d6" }, null],
   );
 });

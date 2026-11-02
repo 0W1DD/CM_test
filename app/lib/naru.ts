@@ -2,8 +2,8 @@
 // member when there is one and as a visitor otherwise, live queries, and
 // sign-in. Every call to the site's code goes through here.
 //
-// The SDK is a URL import Naru serves, loaded on first use in the browser:
-// the build renders index.html in Node, which cannot import it.
+// The SDK is loaded on first use in the browser, from Naru (vite.config.ts),
+// as the build renders index.html in Node.
 import type {
   Admin,
   Json,
@@ -11,12 +11,11 @@ import type {
   Member,
   NaruClient,
   NaruError,
-} from "https://sdk.naru.pub/sdk/1.1.0/naru.js";
+} from "@naru-pub/sdk";
 
 export type { NaruError };
 
-const SDK = "https://sdk.naru.pub/sdk/1.1.0/naru.js";
-type Sdk = typeof import("https://sdk.naru.pub/sdk/1.1.0/naru.js");
+type Sdk = typeof import("@naru-pub/sdk");
 
 let sdk: Promise<Sdk> | null = null;
 let client: Promise<NaruClient> | null = null;
@@ -24,7 +23,7 @@ let client: Promise<NaruClient> | null = null;
 let loaded: Sdk | null = null;
 
 function loadSdk(): Promise<Sdk> {
-  sdk ??= (import(/* @vite-ignore */ SDK) as Promise<Sdk>).then((module) => {
+  sdk ??= import("@naru-pub/sdk").then((module) => {
     loaded = module;
     return module;
   });

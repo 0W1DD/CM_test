@@ -3,7 +3,7 @@
 // is made; the site keeps only ctx.passwords.hash(secret) and checks it with
 // ctx.passwords.verify under the key `bot-token:<token id>`, which Naru
 // allows ten wrong secrets an hour.
-import { BUILTIN_COMMANDS, parseSlashCommand } from "./commands.js";
+import { enabledCommands, parseSlashCommand } from "./commands.js";
 import { settingsOf } from "./community.js";
 import { hostWord } from "./random.js";
 import {
@@ -489,7 +489,9 @@ export async function botMentions(
      ORDER BY shown_at DESC, po.id DESC`,
     [ctx.now, list([...reasons.keys()]), ctx.now, bot, since, since],
   );
-  const builtin = new Set(BUILTIN_COMMANDS.map((command) => command.name));
+  const builtin = new Set(
+    (await enabledCommands(ctx)).map((command) => command.name),
+  );
   const wanted: {
     row: PostRow;
     reasons: string[];

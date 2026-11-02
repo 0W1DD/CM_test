@@ -5,7 +5,7 @@ import {
   type ProfileRow,
   requireMembership,
 } from "./access.js";
-import type { ErrorCode } from "../../types/functions";
+import type { ErrorCode } from "@naru-pub/sdk/functions";
 import { type Ctx, id, invalid } from "./core.js";
 
 /** A username as commung's usernameSchema took it: 1–50 of [a-zA-Z0-9_], lowercased. */

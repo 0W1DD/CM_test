@@ -37,6 +37,7 @@ export default [
   route("/admin/analytics", "routes/admin.analytics.tsx"),
   route("/admin/boards", "routes/admin.boards.tsx"),
   route("/admin/shop", "routes/admin.shop.tsx"),
+  route("/admin/commands", "routes/admin.commands.tsx"),
   route("/admin/bots", "routes/admin.bots.tsx"),
   route("/admin/messages", "routes/admin.messages.tsx"),
   route("/:username/:post_id", "routes/$username.$post_id.tsx"),

@@ -3,17 +3,11 @@
 // the real SDK; Chromium drives the real pages. Not part of `pnpm test`.
 //
 //   pnpm build
-//   NARU_DEV=~/Git/naru-pub/naru-dev PLAYWRIGHT_MODULE=…/playwright/index.mjs \
-//     node tests/e2e.mjs
+//   PLAYWRIGHT_MODULE=…/playwright/index.mjs node tests/e2e.mjs
 import assert from "node:assert/strict";
-import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { startNaru } from "@naru-pub/dev/testing";
 
-const { startNaru } = await import(
-  process.env.NARU_DEV
-    ? join(process.env.NARU_DEV, "dist/testing.mjs")
-    : "@naru-pub/dev/testing"
-);
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
 
 const SITE = "commung";

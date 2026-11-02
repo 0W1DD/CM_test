@@ -12,7 +12,6 @@
       "**/*.json",
       "**/*.css",
       "!app/components/ui/**/*",
-      "!types/**/*",
       "!dist/**/*",
       "!build/**/*"
     ],

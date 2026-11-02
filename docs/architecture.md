@@ -13,15 +13,13 @@ storage (R2), push notifications and hosting.
 | `app/`               | commung's React Router app (SPA, `ssr: false`), built by Vite into the site files |
 | `app/lib/naru.ts`    | The page's Naru client: `query`, `mutate`, `subscribe`, sign-in, errors          |
 | `naru/`              | The site's code, published as `_naru/` (below)                                    |
-| `types/`             | Naru's SDK 1.1.0 declarations: `naru.d.ts` (pages), `functions.d.ts` (site code) |
 | `scripts/build.mjs`  | Builds `dist/`, what Naru publishes                                               |
 | `tests/`             | `node --test` over the site's code on node:sqlite (`sql-ctx.mjs`)                 |
 
 `pnpm build` writes `dist/`: the app's `build/client` and `naru/` compiled
 to `dist/_naru/` (TypeScript to JavaScript, file by file, imports kept).
 `pnpm test` compiles `naru/` alone and runs the tests. Try it locally with
-naru-dev, from a Naru checkout's `control-plane/`:
-`pnpm naru-dev <this checkout>/dist --site commung`.
+naru-dev: `pnpm naru-dev dist --site commung`.
 
 ## The site's code (`naru/`)
 
@@ -42,7 +40,8 @@ naru-dev, from a Naru checkout's `control-plane/`:
     `requireUnmuted`, `membersOfProfiles` (for `ctx.notify`).
   - `community.ts` (the settings row), `profiles.ts` (`profileJson`,
     `profilesById`), `images.ts` (`imageJson`, `ownImages`, `imagesById`).
-- Slash commands are built in and always on: one file each in
+- Slash commands are built in, each on until the owner turns it off
+  (`disabled_commands`, `/admin/commands`): one file each in
   `modules/commands/`, listed in `modules/commands.ts`. A post that is just
   `/name args` gets a reply from the community's bot profile
   (`settings.command_bot_profile_id`, made at the first command). Bot

@@ -27,10 +27,9 @@ pnpm typecheck
 pnpm build       # dist/: what Naru publishes
 ```
 
-Try it on a local Naru from a Naru checkout's `control-plane/`:
-`pnpm naru-dev <this checkout>/dist --site commung`. The end-to-end
+Try it on a local Naru: `pnpm naru-dev dist --site commung`. The end-to-end
 smoke test runs the built site there with Chromium:
-`NARU_DEV=<naru checkout>/naru-dev PLAYWRIGHT_MODULE=<playwright>/index.mjs node tests/e2e.mjs`.
+`PLAYWRIGHT_MODULE=<playwright>/index.mjs node tests/e2e.mjs`.
 
 `landing/` is commung.naru.pub, the landing page and installation guide.
 Pushes to the `naru` branch of `commu-ng/web` publish the app as the 커뮹!

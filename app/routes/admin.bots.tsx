@@ -538,7 +538,7 @@ function CommunityBots() {
                 <code className="font-mono">
                   createNaru({"{"} site: "{slug}" {"}"})
                 </code>{" "}
-                (https://sdk.naru.pub/sdk/1.1.0/naru.js)
+                (npm의 @naru-pub/sdk)
               </p>
               <div className="space-y-1 text-sm text-muted-foreground font-mono">
                 {BOT_CALLS.map((call) => (

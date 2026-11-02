@@ -4,7 +4,7 @@ import type {
   MutationCtx,
   QueryCtx,
   SqlValue,
-} from "../../types/functions";
+} from "@naru-pub/sdk/functions";
 import { randomInt } from "./random.js";
 
 export type { MutationCtx, QueryCtx, SqlValue };

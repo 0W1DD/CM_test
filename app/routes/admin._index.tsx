@@ -16,6 +16,7 @@ import {
   Settings,
   ShieldCheck,
   ShoppingBag,
+  SquareSlash,
   UserCog,
   Users,
   XCircle,
@@ -107,6 +108,13 @@ const SECTIONS: {
     icon: ShoppingBag,
     title: "상점",
     description: "화폐와 상품을 관리합니다",
+  },
+  {
+    to: "/admin/commands",
+    icon: SquareSlash,
+    title: "명령어",
+    description: "슬래시 명령어를 켜고 끕니다",
+    ownerOnly: true,
   },
   {
     to: "/admin/bots",

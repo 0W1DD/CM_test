@@ -12,5 +12,5 @@
     "skipLibCheck": true,
     "isolatedModules": true
   },
-  "include": ["**/*.ts", "../types/functions.d.ts"]
+  "include": ["**/*.ts"]
 }

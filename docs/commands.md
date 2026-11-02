@@ -5,6 +5,10 @@ a built-in command, which is site code and runs inside the post that holds
 it, and a bot program, which runs anywhere and talks to the site with a bot
 token.
 
+The owner can turn any built-in command off at `/admin/commands`. It then
+leaves the composer's suggestions and `/help`, and a post that holds it is an
+ordinary post that bot programs hear, so a bot can answer in its place.
+
 ## Writing a built-in command
 
 A built-in command is one file in `naru/modules/commands/`, named after the
@@ -61,12 +65,11 @@ own included, so a command should use a handful.
 
 A bot is made by the owner at `/admin/bots`, with its own profile and a
 token shown once. A program uses the token with the Naru SDK, as a visitor
-(20 calls a minute from one address). Node (22 or later, for its built-in
-WebSocket) cannot import a URL, so save the SDK beside the program first:
-`curl -o naru.mjs https://sdk.naru.pub/sdk/1.1.0/naru.js`.
+(20 calls a minute from one address), on Node 22 or later (for its built-in
+WebSocket) after `npm install @naru-pub/sdk`.
 
 ```js
-import { createNaru } from "./naru.mjs";
+import { createNaru } from "@naru-pub/sdk";
 
 const naru = createNaru({ site: "commung" });
 const token = process.env.BOT_TOKEN;
