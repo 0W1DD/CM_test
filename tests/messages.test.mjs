@@ -411,3 +411,40 @@ test("group members are added, removed by the creator, and leave", async () => {
   await site.mutate("groupChats:leave", { group_chat_id: chat.id, profile_id: profiles.alice }, alice);
   assert.equal(site.rows("SELECT deleted_at FROM group_chats WHERE id = ?", chat.id)[0].deleted_at, site.now);
 });
+
+test("the owner reads two profiles' messages, each opening logged; nobody else may", async () => {
+  const { site, profiles } = await setup();
+  site.run("UPDATE members SET role = 'moderator' WHERE member = 'm-carol'");
+  await dm(site, alice, profiles.alice, profiles.bob, "안녕");
+  await dm(site, bob, profiles.bob, profiles.alice, "반가워");
+  const gone = await dm(site, alice, profiles.alice, profiles.bob, "지운 말");
+  await site.mutate("messages:remove", { profile_id: profiles.alice, message_id: gone.id, mode: "for_all" }, alice);
+  await dm(site, carol, profiles.carol, profiles.alice, "따로");
+
+  const pairs = await site.query("moderation:messagePairs", null, as("m-owner"));
+  assert.equal(pairs.data.length, 2);
+  const ab = await site.query("moderation:messagePairs", { username: "@bob" }, as("m-owner"));
+  assert.equal(ab.data.length, 1);
+  const [pair] = ab.data;
+  assert.deepEqual([pair.profile_a.username, pair.profile_b.username].sort(), ["alice", "bob"]);
+
+  const read = (member, profile_id, extra = {}) =>
+    site.mutate("moderation:readMessages", { profile_id, profile_a: profiles.alice, profile_b: profiles.bob, ...extra }, as(member));
+  // Moderators and members may not; nothing is logged for them.
+  assert.equal(await refusal(read("m-carol", profiles.carol)), "not_owner");
+  assert.equal(await refusal(site.query("moderation:messagePairs", null, as("m-carol"))), "not_owner");
+  assert.equal(site.rows("SELECT count(*) AS n FROM message_views")[0].n, 0);
+
+  // Newest page first; a message deleted for everyone is not there.
+  const page = await read("m-owner", profiles.owner, { limit: 1 });
+  assert.deepEqual(page.messages.map((m) => [m.sender.username, m.content]), [["bob", "반가워"]]);
+  assert.equal(page.pagination.has_more, true);
+  const older = await read("m-owner", profiles.owner, { limit: 1, cursor: page.pagination.next_cursor });
+  assert.deepEqual(older.messages.map((m) => m.content), ["안녕"]);
+  assert.equal(older.pagination.has_more, false);
+  // Only the first page of an opening is logged.
+  const views = await site.query("moderation:messageViews", null, as("m-owner"));
+  assert.equal(views.length, 1);
+  assert.equal(views[0].viewer.username, "owner");
+  assert.deepEqual([views[0].profile_a.username, views[0].profile_b.username], ["alice", "bob"]);
+});

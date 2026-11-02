@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 /** Calm public-domain (or CC0) recordings on Wikimedia Commons. */
 const TRACKS = [
@@ -171,79 +171,88 @@ function FireArt({ lit }: { lit: boolean }) {
   );
 }
 
+// The fire is one for the whole page: its state lives here, outside React.
+let lit = false;
+let track = 0;
+let audioCtx: AudioContext | null = null;
+let stopFire: (() => void) | null = null;
+let audio: HTMLAudioElement | null = null;
+const listeners = new Set<() => void>();
+let snapshot = { lit, track };
+
+function publish() {
+  snapshot = { lit, track };
+  document.documentElement.classList.toggle("fire-lit", lit);
+  for (const listener of listeners) listener();
+}
+
+function playTrack(index: number) {
+  if (!audio) return;
+  track = index;
+  audio.src = TRACKS[index]?.src ?? "";
+  audio.volume = MUSIC_VOLUME;
+  audio.play().catch(() => {});
+}
+
+function toggleFire() {
+  if (lit) {
+    stopFire?.();
+    stopFire = null;
+    audio?.pause();
+    lit = false;
+    publish();
+    return;
+  }
+  if (!audioCtx) audioCtx = new AudioContext();
+  audioCtx.resume();
+  stopFire = startFire(audioCtx);
+  if (!audio) {
+    const player = new Audio();
+    player.crossOrigin = "anonymous";
+    audio = player;
+    // Next piece when one ends or cannot be played, giving up once every
+    // piece has failed in a row.
+    let failures = 0;
+    player.addEventListener("playing", () => {
+      failures = 0;
+    });
+    const next = () => {
+      playTrack((track + 1) % TRACKS.length);
+      publish();
+    };
+    player.addEventListener("ended", next);
+    player.addEventListener("error", () => {
+      failures += 1;
+      if (failures < TRACKS.length) next();
+    });
+    playTrack(Math.floor(Math.random() * TRACKS.length));
+  } else audio.play().catch(() => {});
+  lit = true;
+  publish();
+}
+
+const subscribeFire = (listener: () => void) => {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+};
+const unlit = { lit: false, track: 0 };
+
+function useFire() {
+  return useSyncExternalStore(
+    subscribeFire,
+    () => snapshot,
+    () => unlit,
+  );
+}
+
 /**
  * A little fireplace in the corner. Pressed, it catches: the fire crackles,
  * calm classical music plays, and the warm light over the page grows and
- * flickers. Pressed again, it all fades out. Nothing plays on its own.
+ * flickers. Pressed again, it all fades out. Nothing plays on its own. On
+ * phones it sits small at the right of the top bar instead (app.css).
  */
 export function Campfire() {
-  const [lit, setLit] = useState(false);
-  const [track, setTrack] = useState(0);
-  const ctxRef = useRef<AudioContext | null>(null);
-  const stopFireRef = useRef<(() => void) | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("fire-lit", lit);
-  }, [lit]);
-
-  useEffect(
-    () => () => {
-      stopFireRef.current?.();
-      audioRef.current?.pause();
-      ctxRef.current?.close();
-    },
-    [],
-  );
-
-  const playTrack = (index: number) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    setTrack(index);
-    audio.src = TRACKS[index]?.src ?? "";
-    audio.volume = MUSIC_VOLUME;
-    audio.play().catch(() => {});
-  };
-
-  const toggle = () => {
-    if (lit) {
-      stopFireRef.current?.();
-      stopFireRef.current = null;
-      audioRef.current?.pause();
-      setLit(false);
-      return;
-    }
-    if (!ctxRef.current) ctxRef.current = new AudioContext();
-    const ctx = ctxRef.current;
-    ctx.resume();
-    stopFireRef.current = startFire(ctx);
-    if (!audioRef.current) {
-      const audio = new Audio();
-      audio.crossOrigin = "anonymous";
-      // Next piece when one ends or cannot be played, giving up once every
-      // piece has failed in a row.
-      let failures = 0;
-      audio.addEventListener("playing", () => {
-        failures = 0;
-      });
-      const next = () =>
-        setTrack((current) => {
-          const following = (current + 1) % TRACKS.length;
-          audio.src = TRACKS[following]?.src ?? "";
-          audio.play().catch(() => {});
-          return following;
-        });
-      audio.addEventListener("ended", next);
-      audio.addEventListener("error", () => {
-        failures += 1;
-        if (failures < TRACKS.length) next();
-      });
-      audioRef.current = audio;
-      playTrack(Math.floor(Math.random() * TRACKS.length));
-    } else audioRef.current.play().catch(() => {});
-    setLit(true);
-  };
-
+  const { lit, track } = useFire();
   return (
     <>
       <div className="cozy-filter" aria-hidden />
@@ -253,7 +262,7 @@ export function Campfire() {
         )}
         <button
           type="button"
-          onClick={toggle}
+          onClick={toggleFire}
           className="campfire-button"
           aria-pressed={lit}
           title={lit ? "벽난로 끄기" : "벽난로 피우기 (소리가 나요)"}

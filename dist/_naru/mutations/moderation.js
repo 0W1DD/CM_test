@@ -1,8 +1,10 @@
 // Muting and unmuting profiles (commung's moderation.service), by the
-// owner and moderators, each logged in moderation_log.
-import { requireMembership } from "../modules/access.js";
+// owner and moderators, each logged in moderation_log; and the owner's
+// reading of direct messages, logged in message_views.
+import { actingProfile, requireMembership } from "../modules/access.js";
 import { logModeration, moderatorProfileId } from "../modules/admin.js";
-import { argsOf, denied, id, invalid, notFound, optionalText, } from "../modules/core.js";
+import { argsOf, denied, id, invalid, iso, limitOf, notFound, optionalId, optionalText, uuidv7, } from "../modules/core.js";
+import { briefsById, imagesByMessage, reactionsByMessage, } from "../modules/messages.js";
 /** The moderator's profile and the target profile, checked as commung did. */
 async function moderate(ctx, args) {
     const me = await requireMembership(ctx);
@@ -57,4 +59,64 @@ export async function unmute(ctx, args) {
         target_profile_id: profile.id,
     });
     return { message: "프로필 음소거가 성공적으로 해제되었습니다" };
+}
+/**
+ * Reads two profiles' direct messages (the owner only; the community tells
+ * its members beforehand): a page of `limit` (50) before `cursor`, oldest first,
+ * with images and reactions, messages deleted for everyone left out. The
+ * first page is written to message_views as `profile_id` (the owner's
+ * acting profile), so each opening is on record.
+ */
+export async function readMessages(ctx, args) {
+    const a = argsOf(args);
+    const viewer = await actingProfile(ctx, a.profile_id);
+    if (viewer.membership.role !== "owner")
+        denied(ctx, "커뮤 소유자만 접근할 수 있습니다.", "not_owner");
+    const profileA = id(ctx, a.profile_a, "profile_a");
+    const profileB = id(ctx, a.profile_b, "profile_b");
+    const limit = limitOf(a.limit, 50, 100);
+    const cursor = optionalId(ctx, a.cursor, "cursor");
+    const briefs = await briefsById(ctx, [profileA, profileB]);
+    if (!briefs.get(profileA) || !briefs.get(profileB))
+        notFound(ctx, "프로필을 찾을 수 없습니다");
+    if (!cursor)
+        await ctx.sql `
+      INSERT INTO message_views (id, viewer_profile_id, viewer_member, profile_a, profile_b, created_at)
+      VALUES (${uuidv7(ctx.now)}, ${viewer.id}, ${viewer.membership.member},
+        ${profileA}, ${profileB}, ${ctx.now})`;
+    const values = [profileA, profileB, profileB, profileA];
+    let before = "";
+    if (cursor) {
+        before = `AND (d.created_at, d.id) < (SELECT created_at, id FROM direct_messages WHERE id = ?)`;
+        values.push(cursor);
+    }
+    const { rows: fetched } = await ctx.sql(`SELECT d.id, d.content, d.sender_id, d.read_at, d.created_at
+     FROM direct_messages d
+     WHERE ((d.sender_id = ? AND d.receiver_id = ?) OR (d.sender_id = ? AND d.receiver_id = ?))
+       AND d.deleted_at IS NULL ${before}
+     ORDER BY d.created_at DESC, d.id DESC LIMIT ?`, [...values, limit + 1]);
+    const hasMore = fetched.length > limit;
+    const rows = fetched.slice(0, limit);
+    const ids = rows.map((row) => row.id);
+    const reactions = await reactionsByMessage(ctx, "direct_message_reactions", ids);
+    const images = await imagesByMessage(ctx, "direct_message_images", ids);
+    return {
+        profile_a: briefs.get(profileA),
+        profile_b: briefs.get(profileB),
+        messages: rows
+            .map((row) => ({
+            id: row.id,
+            content: row.content,
+            created_at: iso(row.created_at),
+            read_at: iso(row.read_at),
+            sender: briefs.get(row.sender_id),
+            reactions: reactions.get(row.id) ?? [],
+            images: images.get(row.id) ?? [],
+        }))
+            .reverse(),
+        pagination: {
+            next_cursor: hasMore ? (rows[rows.length - 1]?.id ?? null) : null,
+            has_more: hasMore,
+        },
+    };
 }

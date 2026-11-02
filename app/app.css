@@ -843,10 +843,34 @@ textarea,
   align-items: center;
   gap: 0.5rem;
 }
+/* On phones the fireplace is pinned small at the right of the top bar
+   (mastodon-layout's h-14 header), staying put while the bar slides away. */
 @media (max-width: 767px) {
   .campfire {
+    top: 0;
     right: 0.75rem;
-    bottom: calc(env(safe-area-inset-bottom) + 5.5rem);
+    bottom: auto;
+    height: 3.5rem;
+  }
+  .campfire-track {
+    display: none;
+  }
+  .campfire-button {
+    flex-direction: row;
+    gap: 4px;
+    color: var(--foreground);
+    filter: none;
+  }
+  .campfire-button svg {
+    width: 32px;
+    height: 32px;
+  }
+  .campfire-label {
+    font-size: 12px;
+    text-shadow: none;
+  }
+  .fire-lit .campfire-button {
+    filter: drop-shadow(0 0 6px rgb(255 140 40 / 0.7));
   }
 }
 /* The fireplace itself is the button: no frame around it, its action

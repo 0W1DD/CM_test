@@ -12,6 +12,7 @@ import {
   Link as LinkIcon,
   LogIn,
   type LucideIcon,
+  MessagesSquare,
   Settings,
   ShieldCheck,
   ShoppingBag,
@@ -112,6 +113,13 @@ const SECTIONS: {
     icon: Bot,
     title: "봇",
     description: "커뮤의 봇을 관리합니다",
+  },
+  {
+    to: "/admin/messages",
+    icon: MessagesSquare,
+    title: "메시지 열람",
+    description: "멤버 간 1:1 메시지를 열람하고 열람 기록을 봅니다",
+    ownerOnly: true,
   },
 ];
 

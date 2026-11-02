@@ -38,6 +38,7 @@ export default [
   route("/admin/boards", "routes/admin.boards.tsx"),
   route("/admin/shop", "routes/admin.shop.tsx"),
   route("/admin/bots", "routes/admin.bots.tsx"),
+  route("/admin/messages", "routes/admin.messages.tsx"),
   route("/:username/:post_id", "routes/$username.$post_id.tsx"),
   route("/:username", "routes/$username.tsx"),
 ] satisfies RouteConfig;

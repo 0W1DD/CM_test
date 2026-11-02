@@ -35,7 +35,7 @@ export function MastodonLayout({
       {/* Mobile Header */}
       {showAuthenticatedLayout && (
         <header
-          className={`sticky top-0 z-40 bg-card border-b-[1.5px] border-[var(--frame)] px-4 h-14 flex items-center gap-3 md:hidden transition-transform duration-300 ${headerHidden ? "-translate-y-full" : "translate-y-0"}`}
+          className={`sticky top-0 z-40 bg-card border-b-[1.5px] border-[var(--frame)] pl-4 pr-28 h-14 flex items-center gap-3 md:hidden transition-transform duration-300 ${headerHidden ? "-translate-y-full" : "translate-y-0"}`}
         >
           <MobileNavDrawer
             communityName={communityName}
