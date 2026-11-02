@@ -702,6 +702,11 @@ textarea:focus-visible {
   outline: 2px solid var(--accent-color);
   outline-offset: 2px;
 }
+/* But not the post and reply box: it fills its frame, which cuts the
+   outline down to a stray line along the edge. */
+textarea.composer-input:focus-visible {
+  outline: none;
+}
 
 /* The UI kit's primary buttons: solid accent with a frame, no glow. */
 button.bg-primary,

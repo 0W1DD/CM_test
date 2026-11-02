@@ -867,7 +867,7 @@ export function MessageComposer({
               onCompositionEnd={handleCompositionEnd}
               placeholder={placeholder}
               disabled={isSubmitting}
-              className={`resize-none border-0 focus:ring-0 focus:border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent text-base leading-relaxed transition-all ${
+              className={`resize-none border-0 focus:ring-0 focus:border-0 focus-visible:ring-0 focus-visible:ring-offset-0 composer-input bg-transparent text-base leading-relaxed transition-all ${
                 (showMentionDropdown && mentionProfiles.length > 0) ||
                 (showSlashDropdown && slashCommands.length > 0) ||
                 (showTagDropdown && tagSuggestions.length > 0)

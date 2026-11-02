@@ -44,7 +44,7 @@ export function MastodonLayout({
             unreadCount={unreadCount}
             unreadMessageCount={unreadMessageCount}
           />
-          <h1 className="community-title font-display font-bold text-xl tracking-tight truncate min-w-0">
+          <h1 className="community-title font-display font-bold text-2xl tracking-tight truncate min-w-0">
             {communityName || "\u00A0"}
           </h1>
           <CampfireHeaderButton />

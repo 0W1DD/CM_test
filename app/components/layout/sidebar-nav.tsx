@@ -133,7 +133,7 @@ export function SidebarNav({
           />
         </Link>
         {!collapsed && (
-          <h1 className="community-title font-display font-bold text-xl leading-snug tracking-tight min-w-0">
+          <h1 className="community-title font-display font-bold text-2xl leading-snug tracking-tight min-w-0">
             {communityName || "커뮹"}
           </h1>
         )}
