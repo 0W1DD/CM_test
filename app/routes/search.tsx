@@ -94,7 +94,11 @@ export default function SearchPage() {
     isLoading: authLoading,
     consoleUrl,
   } = useAuth();
-  const { currentInstance } = useCurrentInstance();
+  const {
+    currentInstance,
+    isOwner: isCommunityOwner,
+    isModerator,
+  } = useCurrentInstance();
   const POSTS_PER_PAGE = 20;
 
   // Get query from URL or empty string
@@ -502,6 +506,8 @@ export default function SearchPage() {
                     post={post}
                     currentProfileId={currentProfile?.id}
                     onDelete={() => refetch()}
+                    isCommunityOwner={isCommunityOwner}
+                    isModerator={isModerator}
                   />
                 </div>
               ))}

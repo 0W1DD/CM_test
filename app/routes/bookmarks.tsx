@@ -14,6 +14,7 @@ import {
   EmptyMedia,
 } from "~/components/ui/empty";
 import { useAuth } from "~/hooks/useAuth";
+import { useCurrentInstance } from "~/hooks/useCurrentInstance";
 import { query } from "~/lib/naru";
 import type { Page, Post } from "~/types/post";
 
@@ -26,6 +27,7 @@ export function meta() {
 
 export default function Bookmarks() {
   const { user, currentProfile, isLoading: authLoading } = useAuth();
+  const { isOwner: isCommunityOwner, isModerator } = useCurrentInstance();
   const BOOKMARKS_PER_PAGE = 20;
 
   // Fetch bookmarks with infinite query
@@ -229,6 +231,8 @@ export default function Bookmarks() {
                   }
                   currentProfileId={currentProfile.id}
                   onDelete={() => refetch()} // Refresh bookmarks when a post is deleted/unbookmarked
+                  isCommunityOwner={isCommunityOwner}
+                  isModerator={isModerator}
                 />
               ))}
 

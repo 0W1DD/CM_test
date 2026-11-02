@@ -4,7 +4,7 @@
 import {
   actingProfile,
   requireMembership,
-  requireOwner,
+  requireStaff,
 } from "../modules/access.js";
 import { settingsOf } from "../modules/community.js";
 import {
@@ -16,8 +16,6 @@ import {
   notFound,
   type QueryCtx,
   type SqlValue,
-  invalid,
-  msOf,
 } from "../modules/core.js";
 import { imagesById } from "../modules/images.js";
 import { purgeWhere } from "../modules/posts.js";
@@ -492,15 +490,12 @@ export async function search(ctx: QueryCtx, args: unknown) {
 }
 
 /**
- * How many posts a timeline clean-up before `before` would take, replies
- * under them included (the owner, before confirming).
+ * How many posts a timeline clean-up would take, replies under them
+ * included (the staff, before confirming).
  */
 export async function purgeCount(ctx: QueryCtx, args: unknown) {
-  await requireOwner(ctx);
-  const a = argsOf(args);
-  const before = msOf(ctx, a.before, "before");
-  if (before === null) invalid(ctx, "날짜를 골라 주세요.");
-  const { where, values } = purgeWhere(before, a.keep_announcements !== false);
+  await requireStaff(ctx);
+  const { where, values } = purgeWhere(ctx, argsOf(args));
   const { rows } = await ctx.sql<{ n: number }>(
     `SELECT count(*) AS n FROM posts WHERE ${where}`,
     values,

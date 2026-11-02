@@ -5,12 +5,14 @@ import { Link } from "react-router";
 import { PostCard } from "~/components/post-card";
 import { Spinner } from "~/components/ui/spinner";
 import { useAuth } from "~/hooks/useAuth";
+import { useCurrentInstance } from "~/hooks/useCurrentInstance";
 import { markAnnouncementsSeen } from "~/lib/announcements-seen";
 import { query } from "~/lib/naru";
 import type { Post } from "~/types/post";
 
 export default function Announcements() {
   const { currentProfile } = useAuth();
+  const { isOwner: isCommunityOwner, isModerator } = useCurrentInstance();
   const queryClient = useQueryClient();
   const currentProfileId = currentProfile?.id;
 
@@ -85,6 +87,8 @@ export default function Announcements() {
                 post={announcement}
                 currentProfileId={currentProfileId}
                 onDelete={handleAnnouncementDelete}
+                isCommunityOwner={isCommunityOwner}
+                isModerator={isModerator}
               />
             ))}
           </div>

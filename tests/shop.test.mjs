@@ -315,3 +315,66 @@ test("transfers move items to another profile and log them; entries take comment
   assert.deepEqual(carol.comments, []);
   assert.equal(await refusal(comment("m-bob", profiles.bob, sent.id, "")), "invalid");
 });
+
+test("the use log notifies: a gift to its receiver, a new entry to the staff, a confirmation to its writer", async () => {
+  const { site, profiles, potion } = await withShop({ members: ["alice", "bob", "mod"] });
+  site.run("UPDATE members SET role = 'moderator' WHERE member = 'm-mod'");
+  await site.mutate("shop:adminGrant", { kind: "item", profile_id: profiles.alice, item_id: potion.id, qty: 3 }, as("m-owner"));
+  const notes = async (member, profile, filter) =>
+    (await site.query("notifications:list", { profile_id: profile, ...(filter && { filter }) }, as(member))).data;
+
+  site.now += 1;
+  const sent = await site.mutate("uses:transfer", { profile_id: profiles.alice, item_id: potion.id, to_username: "bob", qty: 2 }, as("m-alice"));
+  const [gift] = await notes("m-bob", profiles.bob, "uses");
+  assert.equal(gift.type, "gift");
+  assert.equal(gift.content, "ALICE님이 보낸 포션 2개가 도착했습니다");
+  assert.equal(gift.related_use.id, sent.id);
+  // The owner and the moderator are asked to confirm; the writer is not.
+  for (const [member, profile] of [["m-owner", profiles.owner], ["m-mod", profiles.mod]]) {
+    const [request] = await notes(member, profile, "uses");
+    assert.equal(request.type, "use_request");
+    assert.equal(request.sender.username, "alice");
+  }
+  assert.deepEqual(await notes("m-alice", profiles.alice, "uses"), []);
+  // Use notifications stay out of the other tabs, and count apart.
+  assert.deepEqual(await notes("m-bob", profiles.bob, "conversation"), []);
+  const unread = await site.query("notifications:unreadCount", { profile_id: profiles.bob }, as("m-bob"));
+  assert.equal(unread.uses, 1);
+
+  await site.mutate("uses:approve", { use_id: sent.id, profile_id: profiles.mod }, as("m-mod"));
+  await site.mutate("uses:approve", { use_id: sent.id }, as("m-owner")); // twice: told once
+  const approved = await notes("m-alice", profiles.alice, "uses");
+  assert.deepEqual(approved.map((n) => [n.type, n.sender.username, n.content]), [
+    ["use_approved", "mod", "포션 2개 양도가 승인되었습니다"],
+  ]);
+});
+
+test("the staff delete use log entries one by one or in bulk, with their comments and notifications", async () => {
+  const { site, profiles, potion } = await withShop({ members: ["alice", "bob"] });
+  await site.mutate("shop:adminGrant", { kind: "item", profile_id: profiles.alice, item_id: potion.id, qty: 5 }, as("m-owner"));
+  const use = () => site.mutate("uses:use", { profile_id: profiles.alice, item_id: potion.id }, as("m-alice"));
+  site.now += 1;
+  const first = await use();
+  await site.mutate("uses:comment", { profile_id: profiles.bob, use_id: first.id, content: "오" }, as("m-bob"));
+  site.now += 1;
+  const second = await use();
+  await site.mutate("uses:approve", { use_id: second.id }, as("m-owner"));
+  site.now += 1;
+  await site.mutate("uses:transfer", { profile_id: profiles.alice, item_id: potion.id, to_username: "bob" }, as("m-alice"));
+  const left = async () => (await site.query("uses:list", null, as("m-owner"))).data.length;
+
+  assert.equal(await refusal(site.mutate("uses:remove", { use_ids: [first.id] }, as("m-alice"))), "not_moderator");
+  assert.deepEqual(await site.mutate("uses:remove", { use_ids: [first.id] }, as("m-owner")), { deleted: 1 });
+  assert.equal(site.rows("SELECT count(*) AS n FROM item_use_comments")[0].n, 0);
+  assert.equal(site.rows("SELECT count(*) AS n FROM notifications WHERE use_id = ?", first.id)[0].n, 0);
+  assert.equal(await left(), 2);
+
+  const count = (args) => site.query("uses:purgeCount", args, as("m-owner"));
+  assert.deepEqual(await count({ status: "approved" }), { count: 1 });
+  assert.deepEqual(await count({ username: "@bob" }), { count: 1 }); // bob received one
+  assert.deepEqual(await count({}), { count: 2 });
+  assert.deepEqual(await site.mutate("uses:purge", { status: "pending" }, as("m-owner")), { deleted: 1 });
+  assert.equal(await left(), 1);
+  // What was used stays used.
+  assert.equal(site.rows("SELECT count(*) AS n FROM item_uses")[0].n, 1);
+});

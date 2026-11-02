@@ -40,7 +40,7 @@ export default function ProfileProfile() {
   const navigate = useNavigate();
   const { user, currentProfile } = useAuth();
 
-  const { isOwner: isCommunityOwner } = useCurrentInstance();
+  const { isOwner: isCommunityOwner, isModerator } = useCurrentInstance();
   const POSTS_PER_PAGE = 10;
   const md = getReadOnlyMarkdownInstance();
 
@@ -362,6 +362,7 @@ export default function ProfileProfile() {
                           post={post as unknown as Post}
                           currentProfileId={currentProfile?.id}
                           isCommunityOwner={isCommunityOwner}
+                          isModerator={isModerator}
                           isProfileView={true}
                         />
                       </div>

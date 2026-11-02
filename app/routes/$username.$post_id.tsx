@@ -23,7 +23,7 @@ export default function PostDetail() {
   const [error, setError] = useState<string | null>(null);
 
   // Check if user is community owner using data from useAuth
-  const { isOwner: isCommunityOwner } = useCurrentInstance();
+  const { isOwner: isCommunityOwner, isModerator } = useCurrentInstance();
 
   // Fetch post information (without replies — those come from the separate query)
   const fetchPost = useCallback(async () => {
@@ -239,6 +239,7 @@ export default function PostDetail() {
                     onDelete={handleRefresh}
                     onRefresh={handleRefresh}
                     isCommunityOwner={isCommunityOwner}
+                    isModerator={isModerator}
                   />
                 ))}
               </div>
@@ -257,6 +258,7 @@ export default function PostDetail() {
               onDelete={handleMainPostDelete}
               onRefresh={handleRefresh}
               isCommunityOwner={isCommunityOwner}
+              isModerator={isModerator}
               hideBorder
               noFold
             />

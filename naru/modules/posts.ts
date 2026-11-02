@@ -12,11 +12,14 @@ import { membersOfProfiles } from "./access.js";
 import { type CommandTrigger, commandReply } from "./commands.js";
 import { settingsOf } from "./community.js";
 import {
+  type Ctx,
   denied,
   invalid,
   list,
+  msOf,
   type MutationCtx,
   notFound,
+  type SqlValue,
   uuidv7,
 } from "./core.js";
 import { ownImages } from "./images.js";
@@ -37,6 +40,9 @@ export interface NewPost {
 const ellipsis = (text: string, max: number) =>
   text.length > max ? `${text.slice(0, max)}...` : text;
 
+/** The use log, opened from a use notification. */
+export const usesPath = "/uses";
+
 /** The page of a post, opened from a notification. */
 export const postPath = (username: string, postId: string) =>
   `/@${username}/${postId}`;
@@ -53,15 +59,24 @@ export async function notifyProfiles(
     message,
     sender,
     postId,
+    useId = null,
     recipients,
     path,
     actorMember,
   }: {
-    type: "reply" | "mention" | "reaction";
+    type:
+      | "reply"
+      | "mention"
+      | "reaction"
+      | "gift"
+      | "use_approved"
+      | "use_request";
     title: string;
     message: string;
     sender: string;
     postId: string | null;
+    /** The use log entry a use notification is about. */
+    useId?: string | null;
     recipients: readonly string[];
     path: string;
     actorMember: string | null;
@@ -71,9 +86,9 @@ export async function notifyProfiles(
   if (!unique.length) return;
   const rows = unique.map((recipient) => [uuidv7(ctx.now), recipient]);
   await ctx.sql`
-    INSERT INTO notifications (id, type, title, message, recipient_id, profile_id, post_id, created_at)
+    INSERT INTO notifications (id, type, title, message, recipient_id, profile_id, post_id, use_id, created_at)
     SELECT json_extract(value, '$[0]'), ${type}, ${title}, ${message},
-      json_extract(value, '$[1]'), ${sender}, ${postId}, ${ctx.now}
+      json_extract(value, '$[1]'), ${sender}, ${postId}, ${useId}, ${ctx.now}
     FROM json_each(${JSON.stringify(rows)})`;
   const members = (await membersOfProfiles(ctx, unique)).filter(
     (member) => member !== actorMember,
@@ -126,18 +141,51 @@ export async function unindexPost(ctx: MutationCtx, postId: string) {
 }
 
 /**
- * The posts a timeline clean-up takes, as a WHERE clause and its values:
- * the live posts written before `before` (announcements kept unless asked)
- * and every reply under them, so no reply is left without its thread. A
- * few set-wide statements, since a call may make only so many.
+ * The posts a timeline clean-up takes, as a WHERE clause and its values.
+ * Picked first: the live posts written before `before` (everything until
+ * now when absent) and from `after`, by `scope` ("all", "posts" for the
+ * posts that start a thread, "replies"), only one profile's by `username`.
+ * Then every reply under a picked one goes too, so no reply is left without
+ * its thread. A thread under an announcement is kept whole unless
+ * `keep_announcements` is false. One statement, since a call may make only
+ * so many.
  */
-export function purgeWhere(before: number, keepAnnouncements: boolean) {
-  const roots = `SELECT id FROM posts WHERE deleted_at IS NULL AND created_at < ?
-    AND (? = 0 OR announcement = 0)`;
-  const keep = keepAnnouncements ? 1 : 0;
+export function purgeWhere(ctx: Ctx, a: Record<string, unknown>) {
+  const before = msOf(ctx, a.before, "before") ?? ctx.now + 1;
+  const after = msOf(ctx, a.after, "after");
+  const scope = a.scope === "posts" || a.scope === "replies" ? a.scope : "all";
+  const username =
+    typeof a.username === "string" ? a.username.trim().replace(/^@/, "") : "";
+  const keep = a.keep_announcements !== false;
+  const conditions = [
+    "p.deleted_at IS NULL",
+    "(p.published_at IS NOT NULL OR p.scheduled_at <= ?)",
+    "p.created_at < ?",
+  ];
+  const values: SqlValue[] = [ctx.now, before];
+  if (after !== null) {
+    conditions.push("p.created_at >= ?");
+    values.push(after);
+  }
+  if (scope === "posts") conditions.push("p.depth = 0");
+  if (scope === "replies") conditions.push("p.depth > 0");
+  if (username) {
+    conditions.push(
+      "p.author_id IN (SELECT id FROM profiles WHERE lower(username) = lower(?))",
+    );
+    values.push(username);
+  }
+  if (keep)
+    conditions.push(`NOT EXISTS (SELECT 1 FROM posts r
+      WHERE r.id = coalesce(p.root_post_id, p.id) AND r.announcement = 1)`);
   return {
-    where: `deleted_at IS NULL AND (id IN (${roots}) OR root_post_id IN (${roots}))`,
-    values: [before, keep, before, keep],
+    where: `deleted_at IS NULL AND id IN (
+      WITH RECURSIVE gone(id) AS (
+        SELECT p.id FROM posts p WHERE ${conditions.join(" AND ")}
+        UNION
+        SELECT c.id FROM posts c JOIN gone g ON c.in_reply_to_id = g.id
+      ) SELECT id FROM gone)`,
+    values,
   };
 }
 

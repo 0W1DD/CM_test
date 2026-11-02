@@ -1,7 +1,7 @@
 // Writing posts: commung's POST/PATCH/DELETE /app/posts/:id and its
 // bookmark, reactions, pin and report. Each first publishes scheduled posts
 // whose time has come (publishDue, modules/posts.ts).
-import { actingProfile, isStaff, requireOwner } from "../modules/access.js";
+import { actingProfile, isStaff, requireStaff } from "../modules/access.js";
 import { settingsOf } from "../modules/community.js";
 import {
   argsOf,
@@ -412,19 +412,16 @@ export async function report(ctx: MutationCtx, args: unknown) {
 }
 
 /**
- * Clears the timeline (the owner): deletes every live post written before
- * `before`, with the replies under them, keeping announcements unless
- * `keep_announcements` is false. Deleted as one post is (hidden, out of
- * search), and logged once as the acting profile. Answers how many went.
+ * Clears the timeline (the owner or a moderator): deletes the posts
+ * purgeWhere picks, with the replies under them. Deleted as one post is
+ * (hidden, out of search), and logged once as the acting profile. Answers
+ * how many went.
  */
 export async function adminPurge(ctx: MutationCtx, args: unknown) {
-  await requireOwner(ctx);
+  await requireStaff(ctx);
   const a = argsOf(args);
   const profile = await actingProfile(ctx, a.profile_id);
-  const before = msOf(ctx, a.before, "before");
-  if (before === null) invalid(ctx, "날짜를 골라 주세요.");
-  const keep = a.keep_announcements !== false;
-  const { where, values } = purgeWhere(before, keep);
+  const { where, values } = purgeWhere(ctx, a);
   await ctx.sql(
     `DELETE FROM posts_search WHERE post_id IN (SELECT id FROM posts WHERE ${where})`,
     values,
@@ -434,11 +431,27 @@ export async function adminPurge(ctx: MutationCtx, args: unknown) {
     [ctx.now, ...values],
   );
   if (changes) {
-    const day = new Date(before).toISOString().slice(0, 10);
+    const day = (value: unknown) =>
+      typeof value === "string" && value ? value.slice(0, 10) : null;
+    const range = [day(a.after), day(a.before)];
+    const when =
+      range[0] && range[1]
+        ? `${range[0]}~${range[1]} `
+        : range[1]
+          ? `${range[1]} 이전 `
+          : range[0]
+            ? `${range[0]} 이후 `
+            : "";
+    const whose =
+      typeof a.username === "string" && a.username.trim()
+        ? `@${a.username.trim().replace(/^@/, "")}의 `
+        : "";
+    const what =
+      a.scope === "replies" ? "답글" : a.scope === "posts" ? "글" : "게시물";
     await ctx.sql`
       INSERT INTO moderation_log (id, action, description, moderator, created_at)
       VALUES (${uuidv7(ctx.now)}, 'delete_post',
-        ${`타임라인 정리: ${day} 이전 게시물 ${changes}개를 삭제했습니다${keep ? " (공지사항 제외)" : ""}`},
+        ${`타임라인 정리: ${when}${whose}${what} ${changes}개를 삭제했습니다${a.keep_announcements !== false ? " (공지사항 제외)" : ""}`},
         ${profile.id}, ${ctx.now})`;
   }
   return { deleted: changes };

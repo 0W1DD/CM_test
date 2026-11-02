@@ -5,7 +5,10 @@ import {
   BellOff,
   Check,
   CheckCheck,
+  ClipboardCheck,
+  Gift,
   MessageCircle,
+  PackageCheck,
   RotateCcw,
   Smile,
 } from "lucide-react";
@@ -57,24 +60,32 @@ interface Notification {
       profile_picture_url: string | null;
     };
   } | null;
+  related_use?: {
+    id: string;
+    item_name: string;
+    kind: "use" | "transfer";
+    qty: number;
+  } | null;
   directMessage?: {
     id: string;
     content: string;
   } | null;
 }
 
-type NotificationFilter = "all" | "conversation" | "reaction";
+type NotificationFilter = "all" | "conversation" | "reaction" | "uses";
 
 interface UnreadCounts {
   count: number;
   conversation: number;
   reaction: number;
+  uses: number;
 }
 
 const FILTERS: { value: NotificationFilter; label: string }[] = [
   { value: "all", label: "전체" },
   { value: "conversation", label: "답글·멘션" },
   { value: "reaction", label: "반응" },
+  { value: "uses", label: "사용 로그" },
 ];
 
 export default function Notifications() {
@@ -183,14 +194,14 @@ export default function Notifications() {
     let cancelled = false;
     (async () => {
       await refetch();
-      const { count, conversation, reaction } = await query<UnreadCounts>(
+      const { count, conversation, reaction, uses } = await query<UnreadCounts>(
         "notifications:unreadCount",
         { profile_id: currentProfileId },
       );
       if (cancelled) return;
       // What was new on arriving stays on the tabs for this visit, though
       // the notifications are marked read right after.
-      setNewCounts({ conversation, reaction });
+      setNewCounts({ conversation, reaction, uses });
       if (count === 0) return;
       await mutate("notifications:markAllRead", {
         profile_id: currentProfileId,
@@ -270,12 +281,22 @@ export default function Notifications() {
         return <Smile className="h-4 w-4 text-butter-ink" />;
       case "message":
         return <MessageCircle className="h-4 w-4 text-lilac-ink" />;
+      case "gift":
+        return <Gift className="h-4 w-4 text-primary" />;
+      case "use_approved":
+        return <PackageCheck className="h-4 w-4 text-mint-ink" />;
+      case "use_request":
+        return <ClipboardCheck className="h-4 w-4 text-lilac-ink" />;
       default:
         return <Bell className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
   const getNotificationLink = (notification: Notification) => {
+    if (notification.related_use) {
+      // Use log notifications open the log
+      return "/uses";
+    }
     if (notification.related_post) {
       // For post notifications (replies, mentions), link to the post
       return `/@${notification.related_post.author.username}/${notification.related_post.id}`;
@@ -359,7 +380,7 @@ export default function Notifications() {
             <div
               role="tablist"
               aria-label="알림 종류"
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 flex-wrap"
             >
               {FILTERS.map((item) => (
                 <button
@@ -404,7 +425,9 @@ export default function Notifications() {
                 </EmptyMedia>
                 <EmptyTitle>새로운 알림이 없습니다</EmptyTitle>
                 <EmptyDescription>
-                  새로운 답글이나 멘션이 있으면 여기에 표시됩니다.
+                  {filter === "uses"
+                    ? "선물을 받거나 사용이 승인되면 여기에 표시됩니다."
+                    : "새로운 답글이나 멘션이 있으면 여기에 표시됩니다."}
                 </EmptyDescription>
               </EmptyHeader>
             </Empty>
@@ -459,7 +482,9 @@ export default function Notifications() {
                       }}
                       className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 text-muted-foreground hover:text-foreground rounded transition-opacity"
                       title={unread ? "읽음으로 표시" : "읽지 않음으로 표시"}
-                      aria-label={unread ? "읽음으로 표시" : "읽지 않음으로 표시"}
+                      aria-label={
+                        unread ? "읽음으로 표시" : "읽지 않음으로 표시"
+                      }
                     >
                       {unread ? (
                         <Check className="h-3.5 w-3.5" />

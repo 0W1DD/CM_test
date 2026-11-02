@@ -10,10 +10,13 @@ import {
 import {
   argsOf,
   id,
+  ids,
   invalid,
+  list,
   type MutationCtx,
   notFound,
   optionalText,
+  type SqlValue,
   text,
   uuidv7,
 } from "../modules/core.js";
@@ -21,8 +24,10 @@ import {
   hiddenFrom,
   type ItemUseRow,
   useJson,
+  usesPurgeWhere,
   viewerOf,
 } from "../modules/item-uses.js";
+import { notifyProfiles, usesPath } from "../modules/posts.js";
 import {
   consumeItem,
   failShop,
@@ -31,6 +36,38 @@ import {
   transferItem,
   validateItemExists,
 } from "../modules/shop.js";
+
+const entryName = (row: ItemUseRow) =>
+  row.qty > 1 ? `${row.item_name} ${row.qty}개` : row.item_name;
+
+/**
+ * Tells the staff a new entry waits for them: each owner's and moderator's
+ * main profile, but the member who wrote it.
+ */
+async function notifyStaff(
+  ctx: MutationCtx,
+  entry: ItemUseRow,
+  sender: { id: string; name: string; member: string },
+) {
+  const { rows } = await ctx.sql<{ id: string }>`
+    SELECT p.id FROM members m
+    JOIN profile_owners o ON o.member = m.member AND o.role = 'owner'
+    JOIN profiles p ON p.id = o.profile_id
+    WHERE m.role IN ('owner', 'moderator') AND m.member != ${sender.member}
+      AND p.is_primary = 1 AND p.activated_at IS NOT NULL AND p.deleted_at IS NULL`;
+  const what = entry.kind === "transfer" ? "양도" : "사용";
+  await notifyProfiles(ctx, {
+    type: "use_request",
+    title: `${what} 승인 요청`,
+    message: `${sender.name}님이 ${entryName(entry)} ${what} 승인을 요청했습니다`,
+    sender: sender.id,
+    postId: null,
+    useId: entry.id,
+    recipients: rows.map((row) => row.id),
+    path: usesPath,
+    actorMember: sender.member,
+  });
+}
 
 /**
  * Uses an item the acting profile holds: a consumable is spent, anything
@@ -71,20 +108,57 @@ export async function use(ctx: MutationCtx, args: unknown) {
     VALUES (${uuidv7(ctx.now)}, ${profile.id}, ${itemId}, ${item.name}, ${note},
       ${secret ? 1 : 0}, ${item.consumable ? 1 : 0}, ${ctx.now})
     RETURNING *`;
+  if (rows[0])
+    await notifyStaff(ctx, rows[0], {
+      id: profile.id,
+      name: profile.name,
+      member: profile.membership.member,
+    });
   const viewer = await viewerOf(ctx, profile.membership.member, false);
   return (await useJson(ctx, rows, viewer))[0];
 }
 
-/** Confirms a use (the owner or a moderator); confirming twice keeps the first. */
+/**
+ * Confirms a use (the owner or a moderator); confirming twice keeps the
+ * first. The one who wrote it is told, from `profile_id` when given (the
+ * staff member's profile), or else from their main profile.
+ */
 export async function approve(ctx: MutationCtx, args: unknown) {
   const membership = await requireStaff(ctx);
-  const useId = id(ctx, argsOf(args).use_id, "use_id");
-  await ctx.sql`
+  const a = argsOf(args);
+  const useId = id(ctx, a.use_id, "use_id");
+  const { changes } = await ctx.sql`
     UPDATE item_uses SET approved_at = ${ctx.now}, approved_by = ${membership.member}
     WHERE id = ${useId} AND approved_at IS NULL`;
   const { rows } = await ctx.sql<ItemUseRow>`
     SELECT * FROM item_uses WHERE id = ${useId}`;
-  if (!rows[0]) notFound(ctx, "사용 기록을 찾을 수 없습니다.");
+  const entry = rows[0];
+  if (!entry) notFound(ctx, "사용 기록을 찾을 수 없습니다.");
+  if (changes) {
+    let senderId: string | null = null;
+    if (a.profile_id !== undefined && a.profile_id !== null)
+      senderId = (await actingProfile(ctx, a.profile_id)).id;
+    else {
+      const { rows: own } = await ctx.sql<{ id: string }>`
+        SELECT p.id FROM profile_owners o JOIN profiles p ON p.id = o.profile_id
+        WHERE o.member = ${membership.member} AND o.role = 'owner'
+          AND p.deleted_at IS NULL
+        ORDER BY p.is_primary DESC, p.created_at LIMIT 1`;
+      senderId = own[0]?.id ?? null;
+    }
+    const what = entry.kind === "transfer" ? "양도" : "사용";
+    await notifyProfiles(ctx, {
+      type: "use_approved",
+      title: `${what} 승인`,
+      message: `${entryName(entry)} ${what}${entry.kind === "transfer" ? "가" : "이"} 승인되었습니다`,
+      sender: senderId ?? entry.profile_id,
+      postId: null,
+      useId: entry.id,
+      recipients: [entry.profile_id],
+      path: usesPath,
+      actorMember: membership.member,
+    });
+  }
   const viewer = await viewerOf(ctx, membership.member, true);
   return (await useJson(ctx, rows, viewer))[0];
 }
@@ -133,6 +207,25 @@ export async function transfer(ctx: MutationCtx, args: unknown) {
     VALUES (${uuidv7(ctx.now)}, ${profile.id}, ${itemId}, ${item.name}, ${note},
       ${secret ? 1 : 0}, 0, 'transfer', ${target.id}, ${qty}, ${ctx.now})
     RETURNING *`;
+  const entry = rows[0];
+  if (entry) {
+    await notifyProfiles(ctx, {
+      type: "gift",
+      title: "선물이 도착했습니다",
+      message: `${profile.name}님이 보낸 ${entry.item_name} ${entry.qty}개가 도착했습니다`,
+      sender: profile.id,
+      postId: null,
+      useId: entry.id,
+      recipients: [target.id],
+      path: usesPath,
+      actorMember: profile.membership.member,
+    });
+    await notifyStaff(ctx, entry, {
+      id: profile.id,
+      name: profile.name,
+      member: profile.membership.member,
+    });
+  }
   const viewer = await viewerOf(ctx, profile.membership.member, false);
   return (await useJson(ctx, rows, viewer))[0];
 }
@@ -162,4 +255,52 @@ export async function comment(ctx: MutationCtx, args: unknown) {
     INSERT INTO item_use_comments (id, use_id, profile_id, content, created_at)
     VALUES (${uuidv7(ctx.now)}, ${useId}, ${profile.id}, ${content}, ${ctx.now})`;
   return (await useJson(ctx, [entry], viewer))[0];
+}
+
+/** Deletes the entries `where` picks, with their comments and notifications. */
+async function deleteEntries(
+  ctx: MutationCtx,
+  where: string,
+  values: SqlValue[],
+) {
+  const picked = `SELECT id FROM item_uses WHERE ${where}`;
+  await ctx.sql(
+    `DELETE FROM item_use_comments WHERE use_id IN (${picked})`,
+    values,
+  );
+  await ctx.sql(
+    `DELETE FROM notifications WHERE use_id IN (${picked})`,
+    values,
+  );
+  const { changes } = await ctx.sql(
+    `DELETE FROM item_uses WHERE ${where}`,
+    values,
+  );
+  return changes;
+}
+
+/**
+ * Deletes use log entries by ID (`use_ids`; the owner or a moderator), with
+ * their comments. What was used or handed over stays as it is.
+ */
+export async function remove(ctx: MutationCtx, args: unknown) {
+  await requireStaff(ctx);
+  const useIds = ids(ctx, argsOf(args).use_ids, "use_ids");
+  if (!useIds.length) invalid(ctx, "지울 기록을 골라 주세요.");
+  const deleted = await deleteEntries(
+    ctx,
+    "id IN (SELECT value FROM json_each(?))",
+    [list(useIds)],
+  );
+  return { deleted };
+}
+
+/**
+ * Clears the use log (the owner or a moderator), as usesPurgeWhere picks.
+ * Answers how many went.
+ */
+export async function purge(ctx: MutationCtx, args: unknown) {
+  await requireStaff(ctx);
+  const { where, values } = usesPurgeWhere(ctx, argsOf(args));
+  return { deleted: await deleteEntries(ctx, where, values) };
 }

@@ -268,10 +268,10 @@ test("the owner clears the timeline before a day, threads whole, announcements k
   const fresh = await write(site, "m-bob", profiles.bob, "새 글");
   const count = (args) => site.query("posts:purgeCount", args, as("m-owner"));
 
-  assert.equal(await refusal(site.query("posts:purgeCount", { before: cut }, as("m-alice"))), "not_owner");
+  assert.equal(await refusal(site.query("posts:purgeCount", { before: cut }, as("m-alice"))), "not_moderator");
   assert.equal(
     await refusal(site.mutate("posts:adminPurge", { before: cut, profile_id: profiles.alice }, as("m-alice"))),
-    "not_owner",
+    "not_moderator",
   );
   // The old post and the reply under it, written later; the announcement stays unless asked.
   assert.deepEqual(await count({ before: cut }), { count: 2 });
@@ -283,6 +283,39 @@ test("the owner clears the timeline before a day, threads whole, announcements k
   assert.equal((await site.query("posts:search", { q: "#정리" }, as("m-bob"))).data.length, 0);
   assert.equal(site.rows("SELECT deleted_at FROM posts WHERE id = ?", lateReply.id)[0].deleted_at !== null, true);
   assert.deepEqual(await count({ before: cut }), { count: 0 });
+});
+
+test("the clean-up: everything until now, by scope and by author, announcement threads kept", async () => {
+  const { site, profiles } = await community({ members: ["alice", "bob", "mod"] });
+  site.run("UPDATE members SET role = 'moderator' WHERE member = 'm-mod'");
+  const notice = await write(site, "m-owner", profiles.owner, "공지", { announcement: true });
+  const noticeReply = await write(site, "m-alice", profiles.alice, "공지 답글", { in_reply_to_id: notice.id });
+  const alicePost = await write(site, "m-alice", profiles.alice, "앨리스 글");
+  const bobReply = await write(site, "m-bob", profiles.bob, "밥 답글", { in_reply_to_id: alicePost.id });
+  const underBob = await write(site, "m-alice", profiles.alice, "밥에게 답글", { in_reply_to_id: bobReply.id });
+  site.now += 60_000; // a minute ago, not a day
+  const bobPost = await write(site, "m-bob", profiles.bob, "밥 글");
+  const count = (args) => site.query("posts:purgeCount", args, as("m-mod"));
+  const live = (id) => site.rows("SELECT deleted_at FROM posts WHERE id = ?", id)[0].deleted_at === null;
+
+  // Announcement threads stay whole: their replies are not taken either.
+  assert.deepEqual(await count({}), { count: 4 });
+  assert.deepEqual(await count({ keep_announcements: false }), { count: 6 });
+  assert.deepEqual(await count({ scope: "posts" }), { count: 4 });
+  // Only replies: bob's and the one under it.
+  assert.deepEqual(await count({ scope: "replies" }), { count: 2 });
+  // One author: bob's post, and his reply with the answer under it.
+  assert.deepEqual(await count({ username: "@bob" }), { count: 3 });
+  assert.deepEqual(await count({ username: "bob", scope: "replies" }), { count: 2 });
+  // A stretch of time.
+  assert.deepEqual(await count({ after: new Date(site.now).toISOString() }), { count: 1 });
+
+  const done = await site.mutate("posts:adminPurge", { profile_id: profiles.mod, scope: "replies" }, as("m-mod"));
+  assert.equal(done.deleted, 2);
+  assert.equal(live(bobReply.id) || live(underBob.id), false);
+  assert.equal(live(alicePost.id) && live(noticeReply.id) && live(bobPost.id), true);
+  const [log] = site.rows("SELECT description FROM moderation_log");
+  assert.equal(log.description, "타임라인 정리: 답글 2개를 삭제했습니다 (공지사항 제외)");
 });
 
 test("authors delete their posts; moderators delete others' and it is logged", async () => {

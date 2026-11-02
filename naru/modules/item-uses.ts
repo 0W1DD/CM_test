@@ -1,7 +1,7 @@
 // The use log (item_uses): how a use or a transfer reads to the one looking,
 // with the comments under it. A secret entry keeps its item, note, receiver
 // and comments from everyone but the profiles in it and the staff.
-import { type Ctx, iso, list, type SqlValue } from "./core.js";
+import { type Ctx, iso, list, msOf, type SqlValue } from "./core.js";
 import { authorsById } from "./post-data.js";
 
 export interface ItemUseRow {
@@ -102,4 +102,36 @@ export async function useJson(
             })),
     };
   });
+}
+
+/**
+ * The entries a use log clean-up takes, as a WHERE clause and its values:
+ * written before `before` (all until now when absent) and from `after`,
+ * only confirmed or waiting ones by `status` ("approved", "pending"), and
+ * only those a profile wrote or received by `username`.
+ */
+export function usesPurgeWhere(
+  ctx: Ctx,
+  a: Record<string, unknown>,
+): { where: string; values: SqlValue[] } {
+  const before = msOf(ctx, a.before, "before") ?? ctx.now + 1;
+  const after = msOf(ctx, a.after, "after");
+  const conditions = ["created_at < ?"];
+  const values: SqlValue[] = [before];
+  if (after !== null) {
+    conditions.push("created_at >= ?");
+    values.push(after);
+  }
+  if (a.status === "approved") conditions.push("approved_at IS NOT NULL");
+  else if (a.status === "pending") conditions.push("approved_at IS NULL");
+  const username =
+    typeof a.username === "string" ? a.username.trim().replace(/^@/, "") : "";
+  if (username) {
+    const profile = "SELECT id FROM profiles WHERE lower(username) = lower(?)";
+    conditions.push(
+      `(profile_id IN (${profile}) OR target_profile_id IN (${profile}))`,
+    );
+    values.push(username, username);
+  }
+  return { where: conditions.join(" AND "), values };
 }

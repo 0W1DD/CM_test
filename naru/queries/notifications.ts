@@ -11,12 +11,16 @@ import {
 import { recipientProfile } from "../modules/post-notifications.js";
 import { authorsById } from "../modules/post-data.js";
 
+/** Notification types about the use log (migration 0014). */
+const USE_TYPES = ["gift", "use_approved", "use_request"];
+
 interface NotificationRow {
   id: string;
   type: string;
   message: string;
   profile_id: string;
   post_id: string | null;
+  use_id: string | null;
   read_at: number | null;
   created_at: number;
 }
@@ -30,14 +34,17 @@ export async function list(ctx: QueryCtx, args: unknown) {
   const profileId = await recipientProfile(ctx, a.profile_id);
   const limit = limitOf(a.limit);
   const cursor = typeof a.cursor === "string" && a.cursor ? a.cursor : null;
-  // `filter`: "conversation" (replies and mentions) or "reaction"; all when
-  // absent, so a burst of reactions does not bury the replies.
+  // `filter`: "conversation" (replies and mentions), "reaction" or "uses"
+  // (the use log's); all when absent, so a burst of reactions does not bury
+  // the replies.
   const types =
     a.filter === "conversation"
       ? ["reply", "mention"]
       : a.filter === "reaction"
         ? ["reaction"]
-        : null;
+        : a.filter === "uses"
+          ? USE_TYPES
+          : null;
   const typeWhere = types
     ? " AND type IN (SELECT value FROM json_each(?))"
     : "";
@@ -46,7 +53,7 @@ export async function list(ctx: QueryCtx, args: unknown) {
   if (cursor) values.push(cursor);
   values.push(limit + 1);
   const { rows: read } = await ctx.sql<NotificationRow>(
-    `SELECT id, type, message, profile_id, post_id, read_at, created_at
+    `SELECT id, type, message, profile_id, post_id, use_id, read_at, created_at
      FROM notifications WHERE recipient_id = ?${typeWhere} ${cursor ? "AND id < ?" : ""}
      ORDER BY id DESC LIMIT ?`,
     values,
@@ -69,6 +76,18 @@ export async function list(ctx: QueryCtx, args: unknown) {
          WHERE id IN (SELECT value FROM json_each(${jsonList(postIds)}))`
     : { rows: [] };
   const postsById = new Map(posts.map((post) => [post.id, post]));
+  const useIds = [...new Set(rows.flatMap((row) => row.use_id ?? []))];
+  const { rows: uses } = useIds.length
+    ? await ctx.sql<{
+        id: string;
+        item_name: string;
+        kind: string;
+        qty: number;
+      }>`
+        SELECT id, item_name, kind, qty FROM item_uses
+        WHERE id IN (SELECT value FROM json_each(${jsonList(useIds)}))`
+    : { rows: [] };
+  const usesById = new Map(uses.map((use) => [use.id, use]));
   const senderIds = rows.map((row) => row.profile_id);
   const { rows: deleted } = await ctx.sql<{ id: string }>`
     SELECT id FROM profiles
@@ -83,6 +102,8 @@ export async function list(ctx: QueryCtx, args: unknown) {
   const data = rows
     .filter((row) => {
       if (deletedSenders.has(row.profile_id)) return false;
+      // A use notification whose entry was deleted goes with it.
+      if (row.use_id && !usesById.has(row.use_id)) return false;
       const post = row.post_id ? postsById.get(row.post_id) : undefined;
       return !post || post.deleted_at === null;
     })
@@ -100,6 +121,7 @@ export async function list(ctx: QueryCtx, args: unknown) {
           post && author
             ? { id: post.id, content: post.content, author }
             : null,
+        related_use: row.use_id ? (usesById.get(row.use_id) ?? null) : null,
       };
     });
   return {
@@ -120,16 +142,20 @@ export async function unreadCount(ctx: QueryCtx, args: unknown) {
     n: number;
     conversation: number;
     reaction: number;
+    uses: number;
   }>`
     SELECT count(*) AS n,
       coalesce(sum(type IN ('reply', 'mention')), 0) AS conversation,
-      coalesce(sum(type = 'reaction'), 0) AS reaction
+      coalesce(sum(type = 'reaction'), 0) AS reaction,
+      coalesce(sum(type IN ('gift', 'use_approved', 'use_request')), 0) AS uses
     FROM notifications
     WHERE recipient_id = ${profileId} AND read_at IS NULL`;
-  // `conversation` and `reaction` split the count as the list's filters do.
+  // `conversation`, `reaction` and `uses` split the count as the list's
+  // filters do.
   return {
     count: rows[0]?.n ?? 0,
     conversation: rows[0]?.conversation ?? 0,
     reaction: rows[0]?.reaction ?? 0,
+    uses: rows[0]?.uses ?? 0,
   };
 }

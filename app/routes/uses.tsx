@@ -3,7 +3,14 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { ArrowRight, Check, Clock, Lock, ScrollText } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Clock,
+  Lock,
+  ScrollText,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
@@ -138,6 +145,7 @@ function UseComments({ use }: { use: ItemUse }) {
 export default function UsesPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const queryClient = useQueryClient();
+  const { currentProfile } = useAuth();
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useInfiniteQuery({
@@ -162,13 +170,31 @@ export default function UsesPage() {
   const approve = useMutation({
     mutationFn: async (useId: string) => {
       try {
-        await mutate("uses:approve", { use_id: useId });
+        await mutate("uses:approve", {
+          use_id: useId,
+          ...(currentProfile && { profile_id: currentProfile.id }),
+        });
       } catch (error) {
         throw new Error(errorMessage(error, "승인하지 못했습니다"));
       }
     },
     onSuccess: () => {
       toast.success("승인했습니다");
+      queryClient.invalidateQueries({ queryKey: ["item-uses"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (useId: string) => {
+      try {
+        await mutate("uses:remove", { use_ids: [useId] });
+      } catch (error) {
+        throw new Error(errorMessage(error, "지우지 못했습니다"));
+      }
+    },
+    onSuccess: () => {
+      toast.success("기록을 지웠습니다");
       queryClient.invalidateQueries({ queryKey: ["item-uses"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -196,33 +222,45 @@ export default function UsesPage() {
       </div>
 
       {staff && (
-        <div role="tablist" aria-label="사용 로그 범위" className="flex gap-1">
-          {(
-            [
-              ["all", "전체"],
-              ["pending", "승인 대기"],
-            ] as const
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              role="tab"
-              aria-selected={filter === value}
-              onClick={() => setFilter(value)}
-              className={`px-3 h-8 text-sm rounded-md border transition-colors ${
-                filter === value
-                  ? "border-primary text-primary bg-primary/10 font-semibold"
-                  : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/40"
-              }`}
-            >
-              {label}
-              {value === "pending" && pendingCount > 0 && (
-                <span className="ml-1.5 inline-flex min-w-5 h-5 px-1 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-                  {pendingCount}
-                </span>
-              )}
-            </button>
-          ))}
+        <div className="flex items-center justify-between gap-3">
+          <div
+            role="tablist"
+            aria-label="사용 로그 범위"
+            className="flex gap-1"
+          >
+            {(
+              [
+                ["all", "전체"],
+                ["pending", "승인 대기"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={filter === value}
+                onClick={() => setFilter(value)}
+                className={`px-3 h-8 text-sm rounded-md border transition-colors ${
+                  filter === value
+                    ? "border-primary text-primary bg-primary/10 font-semibold"
+                    : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/40"
+                }`}
+              >
+                {label}
+                {value === "pending" && pendingCount > 0 && (
+                  <span className="ml-1.5 inline-flex min-w-5 h-5 px-1 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+                    {pendingCount}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          <Link
+            to="/admin#cleanup"
+            className="text-xs text-muted-foreground hover:text-foreground hover:underline whitespace-nowrap"
+          >
+            한꺼번에 지우기 →
+          </Link>
         </div>
       )}
 
@@ -315,6 +353,25 @@ export default function UsesPage() {
                   >
                     확인
                   </Button>
+                )}
+                {staff && (
+                  <button
+                    type="button"
+                    disabled={remove.isPending}
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          "이 기록을 댓글까지 지울까요? 아이템은 돌아오지 않습니다.",
+                        )
+                      )
+                        remove.mutate(use.id);
+                    }}
+                    className="text-muted-foreground hover:text-destructive p-1 rounded-md hover:bg-destructive/10 transition-colors"
+                    title="기록 삭제"
+                    aria-label="기록 삭제"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 )}
               </div>
             </li>

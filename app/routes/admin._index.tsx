@@ -340,7 +340,7 @@ function StaffSections() {
           ),
         )}
       </div>
-      {isOwner && <TimelineCleanup />}
+      <TimelineCleanup />
     </div>
   );
 }

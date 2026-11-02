@@ -1,7 +1,7 @@
 // The use log, newest first, for members (mutations/uses.ts writes it).
-import { isStaff, requireMembership } from "../modules/access.js";
+import { isStaff, requireMembership, requireStaff } from "../modules/access.js";
 import { argsOf, limitOf, optionalId, } from "../modules/core.js";
-import { useJson, viewerOf } from "../modules/item-uses.js";
+import { useJson, usesPurgeWhere, viewerOf, } from "../modules/item-uses.js";
 /**
  * A page of the use log before `cursor`; `pending: true` keeps to the uses
  * not yet confirmed. The staff also get how many wait (`pending_count`).
@@ -40,4 +40,11 @@ export async function list(ctx, args) {
         staff,
         pending_count: pendingCount,
     };
+}
+/** How many entries a use log clean-up would take (the staff, before confirming). */
+export async function purgeCount(ctx, args) {
+    await requireStaff(ctx);
+    const { where, values } = usesPurgeWhere(ctx, argsOf(args));
+    const { rows } = await ctx.sql(`SELECT count(*) AS n FROM item_uses WHERE ${where}`, values);
+    return { count: rows[0]?.n ?? 0 };
 }
