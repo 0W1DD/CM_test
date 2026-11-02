@@ -729,32 +729,18 @@ textarea,
   caret-color: var(--accent-color);
 }
 
-/* Timeline posts: a bar slides in at the left edge under the pointer, and
-   the block gives a little when pressed. New posts drop in from above. */
+/* Timeline posts: the block gives a little when pressed (not where something
+   is being written). New posts drop in from above. */
 .timeline-item {
   position: relative;
   animation: timeline-in 0.35s ease-out backwards;
   transition: transform 0.1s ease-out;
 }
-.timeline-item::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background: var(--accent-color);
-  transform: scaleY(0);
-  transform-origin: top;
-  transition: transform 0.2s ease-out;
-  pointer-events: none;
-  z-index: 1;
-}
-@media (hover: hover) {
-  .timeline-item:hover::before {
-    transform: scaleY(1);
-  }
-}
 .timeline-item:active {
   transform: translateY(1px);
+}
+.timeline-item:has(textarea.composer-input):active {
+  transform: none;
 }
 @keyframes timeline-in {
   from {
