@@ -1,6 +1,12 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { memo, useCallback, useMemo, useState } from "react";
-import { Link } from "react-router";
+import {
+  type MouseEvent,
+  memo,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
+import { Link, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { DirectMessageModal } from "~/components/DirectMessageModal";
 import { ReportDialog } from "~/components/ReportDialog";
@@ -67,6 +73,35 @@ export const PostCard = memo(function PostCard({
   } | null>(null);
   const [showDMModal, setShowDMModal] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const detailPath = `/@${post.author.username}/${post.id}`;
+
+  // Like a timeline elsewhere: a click on the post's empty space or text
+  // opens it, while links, buttons, images and selecting text work as usual.
+  const openDetail = useCallback(
+    (e: MouseEvent<HTMLDivElement>) => {
+      const target = e.target as HTMLElement;
+      // Clicks from portals (menus, dialogs) bubble here too; skip them.
+      if (!e.currentTarget.contains(target)) return;
+      // A nested reply handles its own click.
+      if (target.closest("[data-post-card]") !== e.currentTarget) return;
+      if (
+        target.closest(
+          "a, button, input, textarea, select, label, img, video, [role='button'], [data-no-open]",
+        )
+      )
+        return;
+      if (window.getSelection()?.toString()) return;
+      if (decodeURIComponent(location.pathname) === detailPath) return;
+      if (e.ctrlKey || e.metaKey) {
+        window.open(detailPath, "_blank");
+        return;
+      }
+      navigate(detailPath);
+    },
+    [detailPath, location.pathname, navigate],
+  );
 
   // Check if current user is part of the conversation thread
   const currentUsername = currentProfile?.username;
@@ -250,7 +285,12 @@ export const PostCard = memo(function PostCard({
           : ""
       } ${cardSize}`}
     >
-      <div className={padding}>
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the time link is the keyboard route to the same page */}
+      <div
+        data-post-card
+        onClick={showEditForm ? undefined : openDetail}
+        className={`${padding} ${showEditForm ? "" : "cursor-pointer"}`}
+      >
         {/* Header */}
         <PostCardHeader
           postId={post.id}
@@ -350,6 +390,7 @@ export const PostCard = memo(function PostCard({
         {/* Inline reply form */}
         {showReplyForm && !showEditForm && (
           <div
+            data-no-open
             className={`${
               isReply ? "mt-2 pl-2" : "mt-4 pl-4"
             } border-l-2 border-primary/40`}

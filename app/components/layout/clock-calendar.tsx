@@ -22,12 +22,17 @@ function useNow(): Date {
   return now;
 }
 
-/** A small clock and this month's calendar for the right-hand rail. */
+/** The in-world date: always Christmas, only the clock moves. */
+const FIXED_MONTH = 11;
+const FIXED_DAY = 25;
+
+/** A small clock and the in-world calendar for the right-hand rail. */
 export function ClockCalendar() {
   const now = useNow();
   const year = now.getFullYear();
-  const month = now.getMonth();
-  const today = now.getDate();
+  const month = FIXED_MONTH;
+  const today = FIXED_DAY;
+  const todayWeekday = new Date(year, month, today).getDay();
   const firstWeekday = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const cells: (number | null)[] = [
@@ -48,7 +53,7 @@ export function ClockCalendar() {
         {mm}
       </p>
       <p className="mt-1 text-sm text-muted-foreground">
-        {year}년 {month + 1}월 {today}일 {WEEKDAYS[now.getDay()]}요일
+        {year}년 {month + 1}월 {today}일 {WEEKDAYS[todayWeekday]}요일
       </p>
 
       <div className="mt-4 border-t border-border pt-3">
