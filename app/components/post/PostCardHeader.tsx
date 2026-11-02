@@ -79,8 +79,9 @@ export function PostCardHeader({
   const canDelete =
     (currentProfileId && author.id === currentProfileId) || isModerator;
   const isOwnPost = currentProfileId && author.id === currentProfileId;
-  // Allow editing own posts. For announcements, only owners can edit.
-  const canEdit = isOwnPost && (!isAnnouncement || isOwner) && onEdit;
+  // Allow editing own posts. Announcements: only the owner and moderators.
+  const canEdit =
+    isOwnPost && (!isAnnouncement || isOwner || isModerator) && onEdit;
   const canReport = currentProfileId && !isOwnPost && onReport;
   const isEdited =
     updatedAt && createdAt && new Date(updatedAt) > new Date(createdAt);

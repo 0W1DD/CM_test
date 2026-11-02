@@ -315,7 +315,8 @@ export const PostCard = memo(function PostCard({
               post={post}
               onSaveSuccess={handleEditSuccess}
               onCancel={() => setShowEditForm(false)}
-              isOwner={isCommunityOwner}
+              // The owner and moderators may set or clear an announcement.
+              isOwner={isCommunityOwner || isModerator}
             />
           </div>
         ) : (

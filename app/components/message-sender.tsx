@@ -36,7 +36,7 @@ export function MessageSender({
   const isOwnerOrModerator = isOwner || isModerator;
 
   // Announcements cannot be replies
-  const canBeAnnouncement = isOwner && !replyToId;
+  const canBeAnnouncement = isOwnerOrModerator && !replyToId;
 
   // Scheduling is only available to owners/moderators and cannot be used for replies
   const canSchedule = isOwnerOrModerator && !replyToId;

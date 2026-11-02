@@ -180,16 +180,29 @@ test("only staff schedule posts; scheduled posts stay hidden until due, then pub
   assert.deepEqual(site.notifications.map((n) => n.members), [["m-alice"]]);
 });
 
-test("only the owner writes announcements; they are listed", async () => {
-  const { site, profiles } = await community();
+test("the owner and moderators write announcements; they are listed", async () => {
+  const { site, profiles } = await community({ members: ["alice", "mod"] });
+  site.run("UPDATE members SET role = 'moderator' WHERE member = 'm-mod'");
   assert.equal(
     await refusal(write(site, "m-alice", profiles.alice, "공지", { announcement: true })),
-    "not_owner",
+    "not_moderator",
   );
   const post = await write(site, "m-owner", profiles.owner, "공지", { announcement: true });
   assert.equal(post.announcement, true);
+  site.now += 1;
+  const byMod = await write(site, "m-mod", profiles.mod, "모더 공지", { announcement: true });
+  assert.equal(byMod.announcement, true);
   const list = await site.query("posts:announcements", {}, VISITOR);
-  assert.deepEqual(list.map((p) => p.id), [post.id]);
+  assert.deepEqual(list.map((p) => p.id).sort(), [post.id, byMod.id].sort());
+
+  // A moderator turns their own post into an announcement and back; a member cannot.
+  const plain = await write(site, "m-mod", profiles.mod, "그냥 글");
+  const edit = (member, profile_id, post_id, announcement) =>
+    site.mutate("posts:update", { profile_id, post_id, content: "그냥 글", announcement }, as(member));
+  assert.equal((await edit("m-mod", profiles.mod, plain.id, true)).announcement, true);
+  assert.equal((await edit("m-mod", profiles.mod, plain.id, false)).announcement, false);
+  const mine = await write(site, "m-alice", profiles.alice, "내 글");
+  assert.equal(await refusal(edit("m-alice", profiles.alice, mine.id, true)), "not_moderator");
 });
 
 test("images are the writer's own uploads, in order", async () => {

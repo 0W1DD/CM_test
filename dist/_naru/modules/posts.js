@@ -301,8 +301,8 @@ async function writePost(ctx, post, { system = false } = {}) {
                 invalid(ctx, "커뮤 종료 시간 이전으로 예약해야 합니다", "scheduled_after_end");
         }
         if (post.announcement) {
-            if (role !== "owner")
-                denied(ctx, "공지사항은 소유자만 작성할 수 있습니다", "not_owner");
+            if (role !== "owner" && role !== "moderator")
+                denied(ctx, "공지사항은 소유자와 모더레이터만 작성할 수 있습니다", "not_moderator");
             if (inReplyToId)
                 invalid(ctx, "답글은 공지사항으로 작성할 수 없습니다", "announcement_reply");
         }

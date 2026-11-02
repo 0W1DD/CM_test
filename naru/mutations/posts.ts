@@ -137,7 +137,8 @@ export async function create(ctx: MutationCtx, args: unknown) {
 
 /**
  * Edits the profile's own post (PATCH /app/posts/:post_id), keeping what it
- * was in post_history. Only the owner sets or clears an announcement.
+ * was in post_history. Only the owner and moderators set or clear an
+ * announcement.
  */
 export async function update(ctx: MutationCtx, args: unknown) {
   const a = argsOf(args);
@@ -162,8 +163,12 @@ export async function update(ctx: MutationCtx, args: unknown) {
     announcement !== undefined &&
     announcement !== (post.announcement === 1)
   ) {
-    if (profile.membership.role !== "owner")
-      denied(ctx, "공지사항 설정은 소유자만 할 수 있습니다", "not_owner");
+    if (!isStaff(profile.membership))
+      denied(
+        ctx,
+        "공지사항 설정은 소유자와 모더레이터만 할 수 있습니다",
+        "not_moderator",
+      );
     if (announcement && post.depth !== 0)
       invalid(
         ctx,

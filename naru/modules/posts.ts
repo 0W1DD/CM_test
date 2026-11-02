@@ -410,8 +410,12 @@ async function writePost(
         );
     }
     if (post.announcement) {
-      if (role !== "owner")
-        denied(ctx, "공지사항은 소유자만 작성할 수 있습니다", "not_owner");
+      if (role !== "owner" && role !== "moderator")
+        denied(
+          ctx,
+          "공지사항은 소유자와 모더레이터만 작성할 수 있습니다",
+          "not_moderator",
+        );
       if (inReplyToId)
         invalid(
           ctx,
