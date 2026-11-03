@@ -42,6 +42,7 @@ export default [
   route("/admin/bots", "routes/admin.bots.tsx"),
   route("/admin/messages", "routes/admin.messages.tsx"),
   route("/admin/events", "routes/admin.events.tsx"),
+  route("/admin/badges", "routes/admin.badges.tsx"),
   route("/:username/:post_id", "routes/$username.$post_id.tsx"),
   route("/:username", "routes/$username.tsx"),
 ] satisfies RouteConfig;

@@ -3,6 +3,7 @@
 // sections (commung's console community page for its staff).
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Award,
   BarChart3,
   Bot,
   CheckCircle,
@@ -128,6 +129,12 @@ const SECTIONS: {
     icon: Gift,
     title: "선물 교환식",
     description: "주간 선물 교환식 신청자와 짝 지정, 입력된 선물을 봅니다",
+  },
+  {
+    to: "/admin/badges",
+    icon: Award,
+    title: "뱃지",
+    description: "뱃지를 만들고 프로필에 주거나 뺍니다",
   },
   {
     to: "/admin/messages",

@@ -1,0 +1,50 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { as, community, refusal } from "./helpers.mjs";
+
+const FIRST_WEEK = "01900000-0000-7000-8000-000000000001";
+
+test("the first badge is there; the staff give badges, and the first one is featured", async () => {
+  const { site, profiles } = await community();
+  const admin = await site.query("badges:admin", null, as("m-owner"));
+  assert.deepEqual(admin.badges.map((b) => [b.name, b.emoji]), [["첫 주를 함께한", "🎄"]]);
+  assert.equal(await refusal(site.query("badges:admin", null, as("m-alice"))), "not_moderator");
+  assert.equal(
+    await refusal(site.mutate("badges:setHolders", { badge_id: FIRST_WEEK, profile_ids: [profiles.alice] }, as("m-alice"))),
+    "not_moderator",
+  );
+  const { holders } = await site.mutate(
+    "badges:setHolders",
+    { badge_id: FIRST_WEEK, profile_ids: [profiles.alice, profiles.bob] },
+    as("m-owner"),
+  );
+  assert.equal(holders, 2);
+  const star = await site.mutate("badges:create", { name: "별", emoji: "⭐" }, as("m-owner"));
+  await site.mutate("badges:setHolders", { badge_id: star.id, profile_ids: [profiles.alice] }, as("m-owner"));
+  let featured = await site.query("badges:featured", null, as("m-bob"));
+  assert.equal(featured[profiles.alice].name, "첫 주를 함께한");
+  assert.equal(featured[profiles.bob].name, "첫 주를 함께한");
+
+  // Alice features the star; Bob cannot pick it for her, nor one she lacks.
+  assert.equal(
+    await refusal(site.mutate("badges:feature", { profile_id: profiles.alice, badge_id: star.id }, as("m-bob"))),
+    "not_found",
+  );
+  await site.mutate("badges:feature", { profile_id: profiles.alice, badge_id: star.id }, as("m-alice"));
+  assert.equal(
+    await refusal(site.mutate("badges:feature", { profile_id: profiles.bob, badge_id: star.id }, as("m-bob"))),
+    "not_found",
+  );
+  featured = await site.query("badges:featured", null, as("m-bob"));
+  assert.equal(featured[profiles.alice].emoji, "⭐");
+  const mine = await site.query("badges:ofProfile", { profile_id: profiles.alice }, as("m-bob"));
+  assert.deepEqual(mine.map((b) => [b.name, b.featured]), [["첫 주를 함께한", false], ["별", true]]);
+
+  // Taken away, and removed: nothing is featured any more.
+  await site.mutate("badges:setHolders", { badge_id: FIRST_WEEK, profile_ids: [profiles.alice] }, as("m-owner"));
+  await site.mutate("badges:feature", { profile_id: profiles.alice, badge_id: null }, as("m-alice"));
+  await site.mutate("badges:remove", { badge_id: star.id }, as("m-owner"));
+  featured = await site.query("badges:featured", null, as("m-bob"));
+  assert.deepEqual(Object.keys(featured), []);
+  assert.equal((await site.query("badges:admin", null, as("m-owner"))).badges[0].holders, 1);
+});

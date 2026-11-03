@@ -1303,3 +1303,43 @@ textarea,
     animation: none;
   }
 }
+
+/* Badges (badges.tsx): a small pill by a name; on a profile page, larger,
+   the featured one filled in. */
+.profile-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.05rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.profile-badge-lg {
+  padding: 0.2rem 0.65rem;
+  border-color: rgb(255 255 255 / 0.55);
+  background: rgb(255 255 255 / 0.12);
+  color: #fff;
+  font-size: 0.8125rem;
+}
+.profile-badge-lg.is-featured {
+  background: #fff;
+  color: #1f4a37;
+}
+button.profile-badge-lg:hover {
+  background: rgb(255 255 255 / 0.25);
+}
+button.profile-badge-lg.is-featured:hover {
+  background: #fff;
+}
+h2 .profile-badge {
+  border-color: rgb(255 255 255 / 0.55);
+  background: rgb(255 255 255 / 0.15);
+  color: #fff;
+  font-size: 0.8125rem;
+}

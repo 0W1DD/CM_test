@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
+import { FeaturedBadge, ProfileBadges } from "~/components/badges";
 import { PostCard } from "~/components/post-card";
 import { ReplyContext } from "~/components/reply-context";
 import { ProfileAvatar } from "~/components/profile-avatar";
@@ -243,7 +244,10 @@ export default function ProfileProfile() {
                   className="bg-white/20 backdrop-blur"
                 />
                 <div className="text-white">
-                  <h2 className="text-2xl font-bold">{profile.name}</h2>
+                  <h2 className="flex flex-wrap items-center gap-2 text-2xl font-bold">
+                    {profile.name}
+                    <FeaturedBadge profileId={profile.id} />
+                  </h2>
                   <p className="text-white/90 text-lg">@{profile.username}</p>
                   {profile.bio && (
                     <div
@@ -254,6 +258,10 @@ export default function ProfileProfile() {
                       }}
                     />
                   )}
+                  <ProfileBadges
+                    profileId={profile.id}
+                    own={!!user?.profiles.some((o) => o.id === profile.id)}
+                  />
                   <div className="flex items-center gap-2 mt-3 text-white/90">
                     <Calendar className="h-4 w-4" />
                     <span className="text-sm">

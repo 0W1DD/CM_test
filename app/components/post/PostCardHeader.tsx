@@ -1,5 +1,6 @@
 import { Edit, Flag, Megaphone, Pin, Shield, Trash2 } from "lucide-react";
 import { Link } from "react-router";
+import { FeaturedBadge } from "~/components/badges";
 import { ProfileAvatar } from "~/components/profile-avatar";
 import {
   AlertDialog,
@@ -113,6 +114,7 @@ export function PostCardHeader({
                 {author.name}
               </span>
             </Link>
+            <FeaturedBadge profileId={author.id} />
             <Link to={`/@${author.username}`} className="hover:underline">
               <span
                 className={`${isReply ? "text-xs" : "text-xs"} text-muted-foreground`}
@@ -136,7 +138,9 @@ export function PostCardHeader({
           <div className="flex items-center gap-2">
             <Link
               to={`/@${author.username}/${postId}`}
-              title={createdAt ? new Date(createdAt).toLocaleString("ko-KR") : ""}
+              title={
+                createdAt ? new Date(createdAt).toLocaleString("ko-KR") : ""
+              }
               className="text-xs text-[#8a6500] hover:text-[#6b4e00] dark:text-[#f2c94c] dark:hover:text-[#ffe082] transition-colors"
             >
               {createdAt ? shortTime(createdAt) : ""}
