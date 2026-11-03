@@ -84,13 +84,14 @@ function Confetti({ burst }: { burst: number }) {
     const ctx = el?.getContext("2d");
     if (!burst || !el || !ctx) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const dpr = window.devicePixelRatio || 1;
+    // Capped: a phone at 3x would otherwise clear and fill nine times the
+    // pixels each frame, for confetti nobody can tell apart at 1.5x.
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     const w = window.innerWidth;
     const h = window.innerHeight;
     el.width = w * dpr;
     el.height = h * dpr;
-    ctx.scale(dpr, dpr);
-    const pieces = Array.from({ length: 180 }, () => ({
+    const pieces = Array.from({ length: 120 }, () => ({
       x: w / 2 + (Math.random() - 0.5) * 60,
       y: h * 0.4,
       vx: (Math.random() - 0.5) * 16,
@@ -104,30 +105,38 @@ function Confetti({ burst }: { burst: number }) {
       round: Math.random() < 0.35,
     }));
     const start = performance.now();
+    let last = start;
     let frame = 0;
     const draw = (now: number) => {
-      ctx.clearRect(0, 0, w, h);
-      const fade = Math.max(0, 1 - (now - start - 2200) / 800);
+      // Moves by the time passed, in 60fps steps, so a dropped frame
+      // skips ahead instead of slowing the whole burst down.
+      const step = Math.min((now - last) / (1000 / 60), 4);
+      last = now;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, el.width, el.height);
+      ctx.globalAlpha = Math.max(0, 1 - (now - start - 2200) / 800);
       for (const p of pieces) {
-        p.vy += 0.32;
-        p.vx *= 0.99;
-        p.x += p.vx;
-        p.y += p.vy;
-        p.rot += p.spin;
-        ctx.save();
-        ctx.globalAlpha = fade;
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rot);
+        p.vy += 0.32 * step;
+        p.vx *= 0.99 ** step;
+        p.x += p.vx * step;
+        p.y += p.vy * step;
+        p.rot += p.spin * step;
+        if (p.y > h + 20 || p.x < -20 || p.x > w + 20) continue;
+        const cos = Math.cos(p.rot) * dpr;
+        const sin = Math.sin(p.rot) * dpr;
+        ctx.setTransform(cos, sin, -sin, cos, p.x * dpr, p.y * dpr);
         ctx.fillStyle = p.colour;
         if (p.round) {
           ctx.beginPath();
           ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
           ctx.fill();
         } else ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
-        ctx.restore();
       }
       if (now - start < 3000) frame = requestAnimationFrame(draw);
-      else ctx.clearRect(0, 0, w, h);
+      else {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, el.width, el.height);
+      }
     };
     frame = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(frame);

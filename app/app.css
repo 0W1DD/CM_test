@@ -510,6 +510,10 @@ body,
     display: none;
   }
 }
+/* Hidden behind a gift arriving, so the phone draws only the gift. */
+body:has(.gift-arrival) .snowfall {
+  display: none;
+}
 
 /* Phones: the home timeline lets the photo through. The page itself goes
    clear, and the composer and the posts become one framed column of paper,
