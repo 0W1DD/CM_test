@@ -14,7 +14,12 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 import { CheckInButton, GiftSignupButton } from "~/components/events-rail";
-import { GiftArrivalOverlay } from "~/components/gift-arrival";
+import {
+  ARRIVAL_STYLE,
+  ARRIVAL_STYLES,
+  type ArrivalStyle,
+  GiftArrivalOverlay,
+} from "~/components/gift-arrival";
 import { GiftContent } from "~/components/gift-content";
 import { LoadingState } from "~/components/shared/LoadingState";
 import { Button } from "~/components/ui/button";
@@ -221,9 +226,9 @@ export default function EventsPage() {
   const { currentProfile } = useAuth();
   // The staff's look at what a recipient sees, before or after Monday
   // 08:00: from their own saved gift, or a sample. Nothing is saved.
-  const [preview, setPreview] = useState<"waiting" | "open" | "arrival" | null>(
-    null,
-  );
+  const [preview, setPreview] = useState<"waiting" | "open" | null>(null);
+  // The arrival, in each of its designs.
+  const [arrival, setArrival] = useState<ArrivalStyle | null>(null);
   const cancel = useMutation({
     mutationFn: async () => {
       try {
@@ -307,7 +312,6 @@ export default function EventsPage() {
             [
               ["waiting", "열리기 전"],
               ["open", "월요일 8시 이후"],
-              ["arrival", "도착 연출"],
             ] as const
           ).map(([value, label]) => (
             <Button
@@ -319,22 +323,37 @@ export default function EventsPage() {
               {label}
             </Button>
           ))}
+          <span className="basis-full" />
+          <span className="font-semibold text-foreground">도착 연출</span>
+          {ARRIVAL_STYLES.map((style) => (
+            <Button
+              key={style.value}
+              size="sm"
+              variant="outline"
+              onClick={() => setArrival(style.value)}
+            >
+              {style.label}
+              {style.value === ARRIVAL_STYLE && " (사용 중)"}
+            </Button>
+          ))}
         </div>
       )}
 
-      {preview === "arrival" && (
+      {arrival && (
         <GiftArrivalOverlay
+          key={arrival}
+          style={arrival}
           gifts={previewReceived.gifts}
-          onClose={() => setPreview(null)}
+          onClose={() => setArrival(null)}
         />
       )}
 
-      {((preview && preview !== "arrival") || received.count > 0) && (
+      {(preview || received.count > 0) && (
         <section className="framed bg-card p-5 space-y-3">
           <h2 className="flex items-center gap-2 text-lg font-semibold">
             <PartyPopper className="h-5 w-5 text-primary" />
             받은 선물
-            {preview && preview !== "arrival" && (
+            {preview && (
               <span className="text-xs font-normal text-muted-foreground">
                 (미리보기)
               </span>
@@ -343,9 +362,7 @@ export default function EventsPage() {
           <ReceivedGifts
             // A fresh, still-wrapped gift each time the preview changes
             key={preview ?? "real"}
-            received={
-              preview && preview !== "arrival" ? previewReceived : received
-            }
+            received={preview ? previewReceived : received}
           />
         </section>
       )}

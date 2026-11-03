@@ -934,9 +934,263 @@ textarea,
   20% { transform: translateY(-8px) rotate(-6deg); }
   40% { transform: translateY(0) rotate(4deg); }
 }
+/* After the box, letter or ornament opens: the gift card rises into view. */
+.gift-rise {
+  animation: gift-rise 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.15) backwards;
+}
+@keyframes gift-rise {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.85);
+  }
+}
+
+/* The Lottie gift box: it drops in and hops now and then; opened, it plays
+   its own animation and the line under it fades. */
+.lottie-box {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 4 / 3;
+  animation:
+    gift-drop 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2) backwards,
+    gift-hop 2.2s ease-in-out 1s infinite;
+}
+.gift-stage-lottie.is-opening .lottie-box {
+  animation: none;
+}
+.arrived-line {
+  transition: opacity 0.3s;
+}
+.gift-stage.is-opening .arrived-line {
+  opacity: 0;
+}
+
+/* The gift box: red, ribboned in gold, a bow on top. It hops now and then;
+   opened, the lid flies off. */
+.gift-box {
+  position: relative;
+  display: block;
+  width: 180px;
+  height: 170px;
+  animation:
+    gift-drop 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2) backwards,
+    gift-hop 2.2s ease-in-out 1s infinite;
+}
+.gift-box-body,
+.gift-box-lid {
+  position: absolute;
+  border-radius: 6px;
+  background:
+    linear-gradient(90deg, transparent 42%, #f2c94c 42% 58%, transparent 58%),
+    #c8102e;
+  box-shadow: inset 0 -6px 0 rgb(0 0 0 / 0.15);
+}
+.gift-box-body {
+  bottom: 0;
+  left: 14px;
+  right: 14px;
+  height: 118px;
+}
+.gift-box-lid {
+  top: 26px;
+  left: 0;
+  right: 0;
+  height: 38px;
+  background:
+    linear-gradient(90deg, transparent 42%, #f2c94c 42% 58%, transparent 58%),
+    #e0233f;
+  z-index: 1;
+}
+.gift-box-bow {
+  position: absolute;
+  top: -42px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 3rem;
+  line-height: 1;
+}
+@keyframes gift-hop {
+  0%, 60%, 100% { transform: translateY(0) rotate(0); }
+  70% { transform: translateY(-14px) rotate(-4deg); }
+  80% { transform: translateY(0) rotate(3deg); }
+  90% { transform: translateY(-5px) rotate(0); }
+}
+.gift-stage-box.is-opening .gift-box {
+  animation: none;
+}
+.gift-stage-box.is-opening .gift-box-lid {
+  animation: lid-off 0.65s ease-in forwards;
+}
+@keyframes lid-off {
+  to {
+    opacity: 0;
+    transform: translateY(-180px) rotate(-30deg);
+  }
+}
+
+/* The letter: a cream envelope sealed with wax. It floats in on a tilt;
+   opened, the flap folds back and the letter slides up. */
+.envelope {
+  position: relative;
+  display: block;
+  width: 260px;
+  height: 170px;
+  animation:
+    letter-in 1s cubic-bezier(0.2, 0.9, 0.3, 1.1) backwards,
+    letter-float 3s ease-in-out 1s infinite;
+}
+.envelope-body {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  background: #fbf7ea;
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.35);
+  z-index: 1;
+}
+.envelope-letter {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 14px;
+  height: 140px;
+  border-radius: 4px;
+  background: #fff;
+  color: #1f4a37;
+  font-weight: 700;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 14px;
+  z-index: 0;
+  transition: transform 0.6s ease-out;
+}
+.envelope-flap {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 100px;
+  background: #e9dfc6;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform-origin: top;
+  z-index: 2;
+  transition: transform 0.4s ease-in;
+}
+.envelope-seal {
+  position: absolute;
+  top: 74px;
+  left: 50%;
+  width: 46px;
+  height: 46px;
+  margin-left: -23px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #e0233f, #8e1a2b);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  z-index: 3;
+  transition: opacity 0.2s;
+}
+@keyframes letter-in {
+  from {
+    opacity: 0;
+    transform: translate(-60vw, -30vh) rotate(-25deg);
+  }
+}
+@keyframes letter-float {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-8px) rotate(2deg); }
+}
+.gift-stage-letter.is-opening .envelope {
+  animation: none;
+}
+.gift-stage-letter.is-opening .envelope-seal {
+  opacity: 0;
+}
+.gift-stage-letter.is-opening .envelope-flap {
+  transform: rotateX(180deg);
+  z-index: 0;
+}
+.gift-stage-letter.is-opening .envelope-letter {
+  transform: translateY(-90px);
+  z-index: 2;
+  transition-delay: 0.2s;
+}
+
+/* The ornament: a glass bauble on a gold string, swinging; opened, it
+   swells and bursts. */
+.ornament {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform-origin: top center;
+  animation:
+    ornament-down 1s cubic-bezier(0.2, 0.9, 0.3, 1.2) backwards,
+    ornament-swing 2.6s ease-in-out 1s infinite;
+}
+.ornament-string {
+  width: 2px;
+  height: 90px;
+  background: #f2c94c;
+}
+.ornament-cap {
+  width: 34px;
+  height: 18px;
+  border-radius: 4px 4px 2px 2px;
+  background: linear-gradient(90deg, #b8912f, #f2c94c, #b8912f);
+}
+.ornament-ball {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, rgb(255 255 255 / 0.75) 0 8%, transparent 22%),
+    radial-gradient(circle at 50% 50%, #ff5a6e, #c8102e 60%, #7a0f1f);
+  box-shadow: 0 0 40px rgb(232 93 117 / 0.45);
+  overflow: hidden;
+}
+.ornament-band {
+  position: absolute;
+  inset: 44% 0;
+  background: repeating-linear-gradient(90deg, #f2c94c 0 10px, #fbf7ea 10px 20px);
+  opacity: 0.85;
+}
+@keyframes ornament-down {
+  from {
+    transform: translateY(-60vh);
+  }
+}
+@keyframes ornament-swing {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
+}
+.gift-stage-ornament.is-opening .ornament {
+  animation: none;
+}
+.gift-stage-ornament.is-opening .ornament-ball {
+  animation: ornament-pop 0.65s ease-in forwards;
+}
+@keyframes ornament-pop {
+  40% {
+    transform: scale(1.25);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gift-drop,
-  .gift-bounce {
+  .gift-bounce,
+  .gift-rise,
+  .gift-box,
+  .lottie-box,
+  .envelope,
+  .ornament {
     animation: none;
   }
   .gift-flip-inner {

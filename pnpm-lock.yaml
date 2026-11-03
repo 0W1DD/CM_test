@@ -68,6 +68,9 @@ importers:
       linkify-it:
         specifier: ^5.0.0
         version: 5.0.2
+      lottie-web:
+        specifier: 5.12.2
+        version: 5.12.2
       lucide-react:
         specifier: ^0.544.0
         version: 0.544.0(react@19.3.1)
@@ -1494,6 +1497,9 @@ packages:
 
   lodash@4.18.1:
     resolution: {integrity: sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==}
+
+  lottie-web@5.12.2:
+    resolution: {integrity: sha512-uvhvYPC8kGPjXT3MyKMrL3JitEAmDMp30lVkuq/590Mw9ok6pWcFCwXJveo0t5uqYw1UREQHofD+jVpdjBv8wg==}
 
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
@@ -3000,6 +3006,8 @@ snapshots:
       uc.micro: 2.1.0
 
   lodash@4.18.1: {}
+
+  lottie-web@5.12.2: {}
 
   lru-cache@5.1.1:
     dependencies:
