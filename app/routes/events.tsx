@@ -185,8 +185,8 @@ function ReceivedGifts({ received }: { received: EventsStatus["received"] }) {
   if (!received.open)
     return received.count > 0 ? (
       <p className="text-sm text-muted-foreground">
-        선물 {received.count}개가 기다리고 있습니다. {kstTime(received.opens)}에
-        열어볼 수 있습니다.
+        선물을 {received.count}개 받았습니다. {kstTime(received.opens)}에 열어볼
+        수 있습니다.
       </p>
     ) : null;
   if (received.gifts.length === 0)
@@ -294,8 +294,7 @@ export default function EventsPage() {
           출석체크
         </h2>
         <p className="text-sm text-muted-foreground">
-          매일 오전(0시~12시)에 한 번 출석하면 {coin} {data.check_in.coins}개를
-          받습니다.
+          출석체크 시 {coin} {data.check_in.coins}개를 받습니다.
         </p>
         <CheckInButton />
       </section>
@@ -423,8 +422,7 @@ export default function EventsPage() {
           <div className="space-y-3 border-t border-border pt-4">
             <h3 className="font-semibold text-foreground">선물 작성하기</h3>
             <p className="text-xs text-muted-foreground">
-              받을 사람은 랜덤으로 정해지며 공개되지 않습니다. 월요일 아침에
-              선물이 열릴 때 받은 사람이 확인합니다.
+              받을 사람은 랜덤으로 정해지며 공개되지 않습니다.
             </p>
             <GiftEditor
               key={gift.week}

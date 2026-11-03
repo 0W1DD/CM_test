@@ -49,11 +49,6 @@ const TRACKS: {
     credit: "MIT Concert Choir, W. Cutter · CC BY-SA 2.0",
   },
   {
-    title: "코렐리 · 크리스마스 협주곡",
-    src: "https://upload.wikimedia.org/wikipedia/commons/f/f7/Corelli_-_Concerto_Grosso_in_G_minor_-_Christmas_Concerto_-_part_1.ogg",
-    credit: "Advent Chamber Orchestra · CC BY-SA 2.0",
-  },
-  {
     title: "바흐 · 예수, 인간 소망의 기쁨",
     src: "https://upload.wikimedia.org/wikipedia/commons/5/51/Jesu%2C_Joy_of_Man%27s_Desiring_%28ISRC_USUAN1100189%29.mp3",
     credit: "Kevin MacLeod (incompetech.com) · CC BY 3.0",
