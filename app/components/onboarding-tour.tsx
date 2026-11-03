@@ -43,6 +43,7 @@ const MENU_TARGETS = new Set([
   "balance",
   "nav-shop",
   "nav-uses",
+  "nav-events",
   "nav-bookmarks",
   "nav-search",
   "nav-profiles",
@@ -175,6 +176,11 @@ const STEPS: Step[] = [
     target: "nav-uses",
     title: "사용 로그",
     body: "아이템을 쓰거나 다른 멤버에게 넘긴 기록이 모여 있습니다.",
+  },
+  {
+    target: "nav-events",
+    title: "이벤트",
+    body: "매일 오전 출석체크로 코인을 받고, 주간 선물 교환식에 참여할 수 있습니다.",
   },
   {
     target: "nav-bookmarks",

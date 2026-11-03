@@ -1,5 +1,6 @@
 import { type ReactNode, useRef } from "react";
 import { CampfireHeaderButton } from "~/components/campfire";
+import { EventsRail } from "~/components/events-rail";
 import { OnboardingTour } from "~/components/onboarding-tour";
 import { usePageTransition } from "~/hooks/usePageTransition";
 import { useScrollDirection } from "~/hooks/useScrollDirection";
@@ -94,13 +95,14 @@ export function MastodonLayout({
           {children}
         </main>
 
-        {/* Wide screens: clock and calendar on the right */}
+        {/* Wide screens: clock and calendar on the right, the morning
+            check-in and the events under them */}
         {showAuthenticatedLayout && (
-          <aside
-            data-tour="calendar"
-            className="hidden xl:block sticky top-6 self-start my-6"
-          >
-            <ClockCalendar />
+          <aside className="hidden xl:block sticky top-6 self-start my-6">
+            <div data-tour="calendar">
+              <ClockCalendar />
+            </div>
+            <EventsRail />
           </aside>
         )}
       </div>

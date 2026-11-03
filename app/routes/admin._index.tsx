@@ -8,6 +8,7 @@ import {
   CheckCircle,
   Clock,
   FileText,
+  Gift,
   LayoutList,
   Link as LinkIcon,
   LogIn,
@@ -121,6 +122,12 @@ const SECTIONS: {
     icon: Bot,
     title: "봇",
     description: "커뮤의 봇을 관리합니다",
+  },
+  {
+    to: "/admin/events",
+    icon: Gift,
+    title: "선물 교환식",
+    description: "주간 선물 교환식 신청자와 짝 지정, 입력된 선물을 봅니다",
   },
   {
     to: "/admin/messages",

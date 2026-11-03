@@ -7,6 +7,7 @@ import {
   MessagesSquare,
   Megaphone,
   MessageCircle,
+  PartyPopper,
   PenSquare,
   Search,
   Settings,
@@ -83,6 +84,7 @@ export function SidebarNav({
     { tour: "nav-boards", to: "/boards", icon: LayoutList, label: "게시판" },
     { tour: "nav-shop", to: "/shop", icon: ShoppingBag, label: "상점" },
     { tour: "nav-uses", to: "/uses", icon: ScrollText, label: "사용 로그" },
+    { tour: "nav-events", to: "/events", icon: PartyPopper, label: "이벤트" },
     {
       tour: "nav-bookmarks",
       to: "/bookmarks",

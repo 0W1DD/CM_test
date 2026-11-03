@@ -1,0 +1,1 @@
+import{v as r,q as s}from"./naru-CswLJRGV.js";import{u as a}from"./useAuth-BXw0H8Mr.js";function m(){const{currentProfile:e}=a(),u=e==null?void 0:e.id;return r({queryKey:["shop-summary",u],queryFn:async()=>u?await s("shop:summary",{profile_id:u}).catch(()=>null):null,enabled:!!u,staleTime:3e4})}export{m as u};
