@@ -67,7 +67,7 @@ export function parseSlashCommand(
 }
 
 function roleSatisfies(actor: string | null, required: CommandRole) {
-  if (actor === "owner") return true;
+  if (actor === "owner" || actor === "co_owner") return true;
   return actor === "moderator" && required === "moderator";
 }
 

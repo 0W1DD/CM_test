@@ -11,7 +11,10 @@ const escapeLike = (value) => value.replace(/[\\%_]/g, (c) => `\\${c}`);
 export async function list(ctx, args) {
     const me = await requireStaff(ctx);
     const a = argsOf(args);
-    const role = a.role === "owner" || a.role === "moderator" || a.role === "member"
+    const role = a.role === "owner" ||
+        a.role === "co_owner" ||
+        a.role === "moderator" ||
+        a.role === "member"
         ? a.role
         : null;
     const q = typeof a.q === "string" ? a.q.trim().toLowerCase().slice(0, 100) : "";
@@ -75,9 +78,10 @@ export async function stats(ctx) {
     await requireStaff(ctx);
     const { rows } = await ctx.sql `
     SELECT role, count(*) AS n FROM members GROUP BY role`;
-    const out = { owner: 0, moderator: 0, member: 0 };
+    const out = { owner: 0, co_owner: 0, moderator: 0, member: 0 };
     for (const row of rows)
         if (row.role === "owner" ||
+            row.role === "co_owner" ||
             row.role === "moderator" ||
             row.role === "member")
             out[row.role] = row.n;

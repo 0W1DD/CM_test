@@ -16,7 +16,7 @@ async function notifyStaff(ctx, entry, sender) {
     SELECT p.id FROM members m
     JOIN profile_owners o ON o.member = m.member AND o.role = 'owner'
     JOIN profiles p ON p.id = o.profile_id
-    WHERE m.role IN ('owner', 'moderator') AND m.member != ${sender.member}
+    WHERE m.role IN ('owner', 'co_owner', 'moderator') AND m.member != ${sender.member}
       AND p.is_primary = 1 AND p.activated_at IS NOT NULL AND p.deleted_at IS NULL`;
     const what = entry.kind === "transfer" ? "양도" : "사용";
     await notifyProfiles(ctx, {

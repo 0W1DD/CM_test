@@ -27,7 +27,9 @@ export async function requireMembership(ctx) {
         denied(ctx, "이 커뮤의 회원이 아닙니다.", "not_member");
     return membership;
 }
-export const isStaff = (membership) => membership?.role === "owner" || membership?.role === "moderator";
+/** The owner or a sub-owner (부소유자), who may do what the owner does. */
+export const isOwnerLike = (role) => role === "owner" || role === "co_owner";
+export const isStaff = (membership) => isOwnerLike(membership?.role) || membership?.role === "moderator";
 /** A moderator's or the owner's membership; refuses everyone else. */
 export async function requireStaff(ctx) {
     const membership = await requireMembership(ctx);
@@ -38,7 +40,7 @@ export async function requireStaff(ctx) {
 /** The community owner's membership; refuses everyone else. */
 export async function requireOwner(ctx) {
     const membership = await requireMembership(ctx);
-    if (membership.role !== "owner")
+    if (!isOwnerLike(membership.role))
         denied(ctx, "커뮤 소유자만 접근할 수 있습니다.", "not_owner");
     return membership;
 }

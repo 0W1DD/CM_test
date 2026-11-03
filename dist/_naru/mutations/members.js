@@ -5,7 +5,7 @@ import { endMembership, membershipIdOf, revokeSharedProfiles, } from "../modules
 import { argsOf, denied, invalid, iso, notFound, } from "../modules/core.js";
 async function ownerOnly(ctx, message) {
     const me = await requireMembership(ctx);
-    if (me.role !== "owner")
+    if (me.role !== "owner" && me.role !== "co_owner")
         denied(ctx, message, "not_owner");
     return me;
 }
@@ -26,10 +26,15 @@ export async function setRole(ctx, args) {
     const me = await ownerOnly(ctx, "커뮤 소유자만 회원 역할을 업데이트할 수 있습니다");
     const a = argsOf(args);
     const role = a.role;
-    if (role !== "owner" && role !== "moderator" && role !== "member")
+    if (role !== "owner" &&
+        role !== "co_owner" &&
+        role !== "moderator" &&
+        role !== "member")
         invalid(ctx, "role 값이 올바르지 않습니다.");
     const t = await target(ctx, a.membership_id);
     if (role === "owner") {
+        if (me.role !== "owner")
+            denied(ctx, "소유권은 소유자만 이전할 수 있습니다", "not_owner");
         if (t.role === "owner")
             invalid(ctx, "이미 소유자입니다", "already_owner");
         await ctx.sql `
@@ -47,7 +52,7 @@ export async function setRole(ctx, args) {
         invalid(ctx, "소유자의 역할을 변경할 수 없습니다. 소유권을 먼저 이전하세요", "target_owner");
     await ctx.sql `
     UPDATE members SET role = ${role}, updated_at = ${ctx.now} WHERE member = ${t.member}`;
-    if (t.role === "moderator" && role === "member")
+    if (t.role !== "member" && role === "member")
         await revokeSharedProfiles(ctx, t.member);
     return { membership_id: t.member, role, updated_at: iso(ctx.now) };
 }

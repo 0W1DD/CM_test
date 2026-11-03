@@ -7,7 +7,7 @@ import { type Ctx, denied, id, notFound } from "./core.js";
 
 export interface Membership {
   member: string;
-  role: "owner" | "moderator" | "member";
+  role: "owner" | "co_owner" | "moderator" | "member";
   application_id: string | null;
   created_at: number;
   activated_at: number | null;
@@ -33,13 +33,16 @@ export function memberId(ctx: Ctx): string {
 export async function requireMembership(ctx: Ctx): Promise<Membership> {
   memberId(ctx);
   const membership = await membershipOf(ctx);
-  if (!membership)
-    denied(ctx, "이 커뮤의 회원이 아닙니다.", "not_member");
+  if (!membership) denied(ctx, "이 커뮤의 회원이 아닙니다.", "not_member");
   return membership;
 }
 
+/** The owner or a sub-owner (부소유자), who may do what the owner does. */
+export const isOwnerLike = (role: string | null | undefined) =>
+  role === "owner" || role === "co_owner";
+
 export const isStaff = (membership: Membership | null) =>
-  membership?.role === "owner" || membership?.role === "moderator";
+  isOwnerLike(membership?.role) || membership?.role === "moderator";
 
 /** A moderator's or the owner's membership; refuses everyone else. */
 export async function requireStaff(ctx: Ctx): Promise<Membership> {
@@ -56,14 +59,15 @@ export async function requireStaff(ctx: Ctx): Promise<Membership> {
 /** The community owner's membership; refuses everyone else. */
 export async function requireOwner(ctx: Ctx): Promise<Membership> {
   const membership = await requireMembership(ctx);
-  if (membership.role !== "owner")
+  if (!isOwnerLike(membership.role))
     denied(ctx, "커뮤 소유자만 접근할 수 있습니다.", "not_owner");
   return membership;
 }
 
 /** Refuses anyone but the site's owner signed in as the owner (`admin` handle). */
 export function requireSiteOwner(ctx: Ctx) {
-  if (!ctx.owner) denied(ctx, "사이트 소유자만 할 수 있습니다.", "not_site_owner");
+  if (!ctx.owner)
+    denied(ctx, "사이트 소유자만 할 수 있습니다.", "not_site_owner");
 }
 
 export interface ProfileRow {
@@ -90,7 +94,9 @@ export async function actingProfile(
   ctx: Ctx,
   profileId: unknown,
   { manage = false } = {},
-): Promise<ProfileRow & { ownership: "owner" | "admin"; membership: Membership }> {
+): Promise<
+  ProfileRow & { ownership: "owner" | "admin"; membership: Membership }
+> {
   const membership = await requireMembership(ctx);
   const pid = id(ctx, profileId, "profile_id");
   const { rows } = await ctx.sql<ProfileRow & { ownership: "owner" | "admin" }>`

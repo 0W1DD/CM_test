@@ -11,7 +11,7 @@ export interface CommunityProfile {
   updated_at: string;
   is_primary: boolean;
   user_group_key: string;
-  user_role: "owner" | "moderator" | "member";
+  user_role: "owner" | "co_owner" | "moderator" | "member";
 }
 
 export const COMMUNITY_PROFILES_KEY = ["profiles"] as const;

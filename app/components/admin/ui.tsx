@@ -162,13 +162,18 @@ export function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export type Role = "owner" | "moderator" | "member";
+export type Role = "owner" | "co_owner" | "moderator" | "member";
 
 export const ROLE_CONFIG = {
   owner: {
     label: "소유자",
     icon: Crown,
     className: "bg-destructive/15 text-destructive",
+  },
+  co_owner: {
+    label: "부소유자",
+    icon: Crown,
+    className: "bg-destructive/10 text-destructive",
   },
   moderator: {
     label: "모더레이터",

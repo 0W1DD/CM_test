@@ -167,6 +167,7 @@ const groupColor = (group: string) => {
 
 const ROLE_DESCRIPTIONS = {
   owner: "커뮤의 모든 권한을 가집니다",
+  co_owner: "소유권 이전과 소유자 변경을 뺀 소유자의 모든 권한을 가집니다",
   moderator: "멤버 관리 및 게시물 삭제 권한을 가집니다",
   member: "기본 멤버 권한을 가집니다",
 } as const;
@@ -224,21 +225,23 @@ function RoleDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(["owner", "moderator", "member"] as const).map((r) => (
-                  <SelectItem key={r} value={r}>
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        className={ROLE_CONFIG[r].className}
-                        variant="outline"
-                      >
-                        {ROLE_CONFIG[r].label}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {ROLE_DESCRIPTIONS[r]}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
+                {(["owner", "co_owner", "moderator", "member"] as const).map(
+                  (r) => (
+                    <SelectItem key={r} value={r}>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          className={ROLE_CONFIG[r].className}
+                          variant="outline"
+                        >
+                          {ROLE_CONFIG[r].label}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {ROLE_DESCRIPTIONS[r]}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ),
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -642,12 +645,17 @@ function MemberManagement() {
   });
   const members = useMemo(() => data?.pages.flat() ?? [], [data?.pages]);
 
-  const { data: roleStats = { owner: 0, moderator: 0, member: 0 } } = useQuery({
+  const {
+    data: roleStats = { owner: 0, co_owner: 0, moderator: 0, member: 0 },
+  } = useQuery({
     queryKey: ["community-member-stats"],
     queryFn: () =>
-      query<{ owner: number; moderator: number; member: number }>(
-        "members:stats",
-      ),
+      query<{
+        owner: number;
+        co_owner: number;
+        moderator: number;
+        member: number;
+      }>("members:stats"),
   });
 
   const update = () => {
@@ -693,6 +701,7 @@ function MemberManagement() {
           {(
             [
               ["owner", Crown, "text-destructive"],
+              ["co_owner", Crown, "text-destructive"],
               ["moderator", Shield, "text-primary"],
               ["member", UserIcon, "text-muted-foreground"],
             ] as const
@@ -729,6 +738,7 @@ function MemberManagement() {
             <SelectContent>
               <SelectItem value="all">모든 역할</SelectItem>
               <SelectItem value="owner">소유자</SelectItem>
+              <SelectItem value="co_owner">부소유자</SelectItem>
               <SelectItem value="moderator">모더레이터</SelectItem>
               <SelectItem value="member">멤버</SelectItem>
             </SelectContent>

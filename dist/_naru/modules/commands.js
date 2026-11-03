@@ -58,7 +58,7 @@ export function parseSlashCommand(content) {
     return { name: match[1].toLowerCase(), args: match[2] ?? "" };
 }
 function roleSatisfies(actor, required) {
-    if (actor === "owner")
+    if (actor === "owner" || actor === "co_owner")
         return true;
     return actor === "moderator" && required === "moderator";
 }

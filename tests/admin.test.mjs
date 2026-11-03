@@ -143,9 +143,28 @@ test("staff list members with their profiles", async () => {
   assert.equal((await site.query("members:list", { limit: 2 }, as("m-owner"))).length, 2);
   assert.deepEqual(await site.query("members:stats", null, as("m-owner")), {
     owner: 1,
+    co_owner: 0,
     moderator: 0,
     member: 3,
   });
+});
+
+test("a sub-owner does what the owner does but cannot touch the owner", async () => {
+  const { site } = await community();
+  await site.mutate("members:setRole", { membership_id: "m-alice", role: "co_owner" }, as("m-owner"));
+  assert.equal((await site.query("me:session", null, as("m-alice"))).role, "co_owner");
+  await site.mutate("members:setRole", { membership_id: "m-bob", role: "co_owner" }, as("m-alice"));
+  await site.mutate("members:setRole", { membership_id: "m-bob", role: "moderator" }, as("m-alice"));
+  assert.equal(
+    await refusal(site.mutate("members:setRole", { membership_id: "m-bob", role: "owner" }, as("m-alice"))),
+    "not_owner",
+  );
+  assert.equal(
+    await refusal(site.mutate("members:setRole", { membership_id: "m-owner", role: "member" }, as("m-alice"))),
+    "target_owner",
+  );
+  assert.equal(await refusal(site.mutate("members:remove", { membership_id: "m-owner" }, as("m-alice"))), "target_owner");
+  assert.equal((await site.query("members:stats", null, as("m-alice"))).co_owner, 1);
 });
 
 test("the owner changes roles; a demoted moderator loses shared profiles", async () => {

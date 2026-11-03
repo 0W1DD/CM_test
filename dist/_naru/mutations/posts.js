@@ -334,7 +334,7 @@ export async function report(ctx, args) {
     VALUES (${uuidv7(ctx.now)}, ${postId}, ${profile.id}, ${profile.membership.member},
       ${reason}, ${ctx.now})`;
     const { rows: staff } = await ctx.sql `
-    SELECT member FROM members WHERE role IN ('owner', 'moderator')`;
+    SELECT member FROM members WHERE role IN ('owner', 'co_owner', 'moderator')`;
     const recipients = staff
         .map((row) => row.member)
         .filter((member) => member !== profile.membership.member);

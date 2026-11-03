@@ -8,7 +8,7 @@ import { briefsById, imagesByMessage, reactionsByMessage, } from "../modules/mes
 /** The moderator's profile and the target profile, checked as commung did. */
 async function moderate(ctx, args) {
     const me = await requireMembership(ctx);
-    if (me.role !== "owner" && me.role !== "moderator")
+    if (me.role !== "owner" && me.role !== "co_owner" && me.role !== "moderator")
         denied(ctx, "소유자 또는 모더레이터만 이 작업을 수행할 수 있습니다", "not_moderator");
     const moderatorId = await moderatorProfileId(ctx, me.member);
     if (!moderatorId)
@@ -70,7 +70,8 @@ export async function unmute(ctx, args) {
 export async function readMessages(ctx, args) {
     const a = argsOf(args);
     const viewer = await actingProfile(ctx, a.profile_id);
-    if (viewer.membership.role !== "owner")
+    if (viewer.membership.role !== "owner" &&
+        viewer.membership.role !== "co_owner")
         denied(ctx, "커뮤 소유자만 접근할 수 있습니다.", "not_owner");
     const profileA = id(ctx, a.profile_a, "profile_a");
     const profileB = id(ctx, a.profile_b, "profile_b");

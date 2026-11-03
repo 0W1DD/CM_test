@@ -13,7 +13,7 @@ import {
 
 interface MemberRow {
   member: string;
-  role: "owner" | "moderator" | "member";
+  role: "owner" | "co_owner" | "moderator" | "member";
   created_at: number;
   activated_at: number | null;
   application_json: string | null;
@@ -43,7 +43,10 @@ export async function list(ctx: QueryCtx, args: unknown) {
   const me = await requireStaff(ctx);
   const a = argsOf(args);
   const role =
-    a.role === "owner" || a.role === "moderator" || a.role === "member"
+    a.role === "owner" ||
+    a.role === "co_owner" ||
+    a.role === "moderator" ||
+    a.role === "member"
       ? a.role
       : null;
   const q =
@@ -111,10 +114,11 @@ export async function stats(ctx: QueryCtx) {
   await requireStaff(ctx);
   const { rows } = await ctx.sql<{ role: string; n: number }>`
     SELECT role, count(*) AS n FROM members GROUP BY role`;
-  const out = { owner: 0, moderator: 0, member: 0 };
+  const out = { owner: 0, co_owner: 0, moderator: 0, member: 0 };
   for (const row of rows)
     if (
       row.role === "owner" ||
+      row.role === "co_owner" ||
       row.role === "moderator" ||
       row.role === "member"
     )

@@ -37,8 +37,12 @@ export function useCurrentInstance() {
     instanceName: instance?.name || "",
     instanceSlug: instance?.slug || "",
     userRole: role,
-    isOwner: role === "owner",
-    isModerator: role === "moderator" || role === "owner",
+    // A sub-owner (부소유자) may do what the owner does; only handing the
+    // community over and changing the owner stay the owner's.
+    isOwner: role === "owner" || role === "co_owner",
+    isRealOwner: role === "owner",
+    isModerator:
+      role === "moderator" || role === "owner" || role === "co_owner",
     showAllReplies: currentInstance?.show_all_replies ?? false,
     themeKeyColor: instance?.theme_key_color ?? null,
     // The site owner's own look: 사용자 CSS and the /_owner/ files, once the

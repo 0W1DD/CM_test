@@ -214,7 +214,7 @@ export async function approve(ctx, applicationId, reviewer) {
 /** The owner and moderators, for notifying them. */
 export async function staffMembers(ctx) {
     const { rows } = await ctx.sql `
-    SELECT member, role FROM members WHERE role IN ('owner', 'moderator')
+    SELECT member, role FROM members WHERE role IN ('owner', 'co_owner', 'moderator')
     ORDER BY role = 'owner' DESC LIMIT 1000`;
     return rows.map((row) => row.member);
 }

@@ -14,7 +14,7 @@ export interface SessionInstance {
   gate_html: string | null;
   gate_image_url: string | null;
   is_set_up: boolean;
-  role: "owner" | "moderator" | "member" | null;
+  role: "owner" | "co_owner" | "moderator" | "member" | null;
   starts_at: string | null;
   ends_at: string | null;
   is_recruiting: boolean;
@@ -28,7 +28,7 @@ export interface SessionInstance {
 /** The signed-in member as the site's code sees them (`me:session`). */
 export interface Session {
   id: string;
-  role: "owner" | "moderator" | "member" | null;
+  role: "owner" | "co_owner" | "moderator" | "member" | null;
   is_member: boolean;
   application: {
     id: string;

@@ -181,7 +181,9 @@ export function AdminGate({
       </div>
     );
   const allowed =
-    userRole === "owner" || (allow === "staff" && userRole === "moderator");
+    userRole === "owner" ||
+    userRole === "co_owner" ||
+    (allow === "staff" && userRole === "moderator");
   if (!allowed)
     return (
       <div className="min-h-screen bg-background p-4">

@@ -388,7 +388,8 @@ async function writePost(
     const { rows: roles } = await ctx.sql<{ role: string }>`
       SELECT role FROM members WHERE member = ${post.actorMember}`;
     const role = roles[0]?.role;
-    const staff = role === "owner" || role === "moderator";
+    const staff =
+      role === "owner" || role === "co_owner" || role === "moderator";
     if (ctx.now < settings.starts_at && !staff)
       denied(ctx, "커뮤가 아직 시작되지 않았습니다", "community_not_started");
     if (scheduledAt !== null) {
@@ -410,7 +411,7 @@ async function writePost(
         );
     }
     if (post.announcement) {
-      if (role !== "owner" && role !== "moderator")
+      if (role !== "owner" && role !== "co_owner" && role !== "moderator")
         denied(
           ctx,
           "공지사항은 소유자와 모더레이터만 작성할 수 있습니다",
