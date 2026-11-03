@@ -17,6 +17,7 @@ import { CheckInButton, GiftSignupButton } from "~/components/events-rail";
 import { GiftContent } from "~/components/gift-content";
 import { LoadingState } from "~/components/shared/LoadingState";
 import { Button } from "~/components/ui/button";
+import { useAuth } from "~/hooks/useAuth";
 import { useCurrentInstance } from "~/hooks/useCurrentInstance";
 import { useImageUpload } from "~/hooks/useImageUpload";
 import {
@@ -216,6 +217,10 @@ function ReceivedGifts({ received }: { received: EventsStatus["received"] }) {
 export default function EventsPage() {
   const { data, isLoading, profileId, refresh } = useEventsStatus();
   const { isModerator } = useCurrentInstance();
+  const { currentProfile } = useAuth();
+  // The staff's look at what a recipient sees, before or after Monday
+  // 08:00: from their own saved gift, or a sample. Nothing is saved.
+  const [preview, setPreview] = useState<"waiting" | "open" | null>(null);
   const cancel = useMutation({
     mutationFn: async () => {
       try {
@@ -235,6 +240,27 @@ export default function EventsPage() {
     return <LoadingState message="이벤트를 불러오는 중..." />;
   const { gift, received } = data;
   const coin = data.currency ?? "코인";
+  const previewReceived: EventsStatus["received"] = {
+    ...received,
+    open: preview === "open",
+    count: 1,
+    gifts: [
+      {
+        giver: currentProfile
+          ? {
+              id: currentProfile.id,
+              name: currentProfile.name,
+              username: currentProfile.username,
+              profile_picture_url: null,
+            }
+          : null,
+        content: gift.submitted_at
+          ? gift.content
+          : "메리 크리스마스! 따뜻한 핫초코 한 잔 보냅니다 ☕ https://example.com",
+        images: gift.submitted_at ? gift.images : [],
+      },
+    ],
+  };
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
@@ -266,13 +292,48 @@ export default function EventsPage() {
         <CheckInButton />
       </section>
 
-      {received.count > 0 && (
+      {isModerator && (
+        <div className="flex flex-wrap items-center gap-2 border border-dashed border-border p-3 text-sm">
+          <span className="font-semibold text-foreground">
+            받는 화면 미리보기
+          </span>
+          <span className="text-xs text-muted-foreground">
+            (운영진에게만 보입니다. 실제 선물은 바뀌지 않아요)
+          </span>
+          {(
+            [
+              ["waiting", "열리기 전"],
+              ["open", "월요일 8시 이후"],
+            ] as const
+          ).map(([value, label]) => (
+            <Button
+              key={value}
+              size="sm"
+              variant={preview === value ? "default" : "outline"}
+              onClick={() => setPreview(preview === value ? null : value)}
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {(preview || received.count > 0) && (
         <section className="framed bg-card p-5 space-y-3">
           <h2 className="flex items-center gap-2 text-lg font-semibold">
             <PartyPopper className="h-5 w-5 text-primary" />
             받은 선물
+            {preview && (
+              <span className="text-xs font-normal text-muted-foreground">
+                (미리보기)
+              </span>
+            )}
           </h2>
-          <ReceivedGifts received={received} />
+          <ReceivedGifts
+            // A fresh, still-wrapped gift each time the preview changes
+            key={preview ?? "real"}
+            received={preview ? previewReceived : received}
+          />
         </section>
       )}
 

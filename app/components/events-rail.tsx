@@ -38,12 +38,10 @@ export function CheckInButton({ className = "" }: { className?: string }) {
     >
       <CalendarCheck className="h-4 w-4" />
       {c.checked_in
-        ? "오늘 출석 완료"
-        : !c.open
-          ? "출석은 오전에만 (0~12시)"
-          : checkIn.isPending
-            ? "출석하는 중..."
-            : `출석체크 (+${c.coins} ${currency ?? "코인"})`}
+        ? "출석체크 완료."
+        : checkIn.isPending
+          ? "출석하는 중..."
+          : "출석체크 (0시~12시)"}
     </Button>
   );
 }
@@ -113,8 +111,7 @@ export function EventsRail() {
             주간 선물 교환식
           </p>
           <p className="text-xs text-muted-foreground">
-            신청 {gift.participants}명 · 참여하면 {data.gift_coins}{" "}
-            {data.currency ?? "코인"}
+            신청 {gift.participants}명
           </p>
           <GiftSignupButton />
           {gift.signed_up && (
@@ -134,7 +131,7 @@ export function EventsRail() {
             className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
           >
             <PartyPopper className="h-4 w-4" />
-            선물이 도착했어요! 열어보기
+            선물이 도착했습니다. 열어보기
           </Link>
         )}
         <Link
