@@ -48,6 +48,7 @@ export function TimelineCleanup() {
   const [status, setStatus] = useState<Status>("all");
   const [count, setCount] = useState<number | null>(null);
   const [counting, setCounting] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   // Opened from the use log's link: scroll here, on the use log.
   const { hash } = useLocation();
@@ -95,12 +96,20 @@ export function TimelineCleanup() {
     mutationFn: async () => {
       if (!currentProfile) throw new Error("프로필을 선택하세요");
       try {
-        return target === "timeline"
-          ? await mutate<{ deleted: number }>("posts:adminPurge", {
-              profile_id: currentProfile.id,
-              ...args(),
-            })
-          : await mutate<{ deleted: number }>("uses:purge", args());
+        if (target !== "timeline")
+          return await mutate<{ deleted: number }>("uses:purge", args());
+        // A call clears one batch; keep calling until none are left.
+        let deleted = 0;
+        setProgress(0);
+        for (;;) {
+          const batch = await mutate<{ deleted: number; more: boolean }>(
+            "posts:adminPurge",
+            { profile_id: currentProfile.id, so_far: deleted, ...args() },
+          );
+          deleted += batch.deleted;
+          setProgress(deleted);
+          if (!batch.more) return { deleted };
+        }
       } catch (error) {
         throw new Error(errorMessage(error, "지우지 못했습니다"));
       }
@@ -290,7 +299,9 @@ export function TimelineCleanup() {
                   purge.mutate();
               }}
             >
-              {purge.isPending ? "지우는 중..." : `${count}개 지우기`}
+              {purge.isPending
+                ? `지우는 중... (${progress}/${count})`
+                : `${count}개 지우기`}
             </Button>
           )}
         </div>

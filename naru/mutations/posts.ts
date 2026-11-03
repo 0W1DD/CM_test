@@ -418,15 +418,18 @@ export async function report(ctx: MutationCtx, args: unknown) {
 
 /**
  * Clears the timeline (the owner or a moderator): deletes the posts
- * purgeWhere picks, with the replies under them. Deleted as one post is
- * (hidden, out of search), and logged once as the acting profile. Answers
- * how many went.
+ * purgeWhere picks, with the replies under them, PURGE_BATCH at a time:
+ * the page calls again while `more`, passing how many went so far in
+ * `so_far`. Deleted as one post is (hidden, out of search), and logged
+ * once, as the acting profile, when the last batch is done.
  */
+const PURGE_BATCH = 100;
+
 export async function adminPurge(ctx: MutationCtx, args: unknown) {
   await requireStaff(ctx);
   const a = argsOf(args);
   const profile = await actingProfile(ctx, a.profile_id);
-  const { where, values } = purgeWhere(ctx, a);
+  const { where, values } = purgeWhere(ctx, a, PURGE_BATCH);
   await ctx.sql(
     `DELETE FROM posts_search WHERE post_id IN (SELECT id FROM posts WHERE ${where})`,
     values,
@@ -435,7 +438,11 @@ export async function adminPurge(ctx: MutationCtx, args: unknown) {
     `UPDATE posts SET deleted_at = ? WHERE ${where}`,
     [ctx.now, ...values],
   );
-  if (changes) {
+  const more = changes >= PURGE_BATCH;
+  const soFar =
+    typeof a.so_far === "number" && a.so_far > 0 ? Math.floor(a.so_far) : 0;
+  const total = soFar + changes;
+  if (total && !more) {
     const day = (value: unknown) =>
       typeof value === "string" && value ? value.slice(0, 10) : null;
     const range = [day(a.after), day(a.before)];
@@ -456,8 +463,8 @@ export async function adminPurge(ctx: MutationCtx, args: unknown) {
     await ctx.sql`
       INSERT INTO moderation_log (id, action, description, moderator, created_at)
       VALUES (${uuidv7(ctx.now)}, 'delete_post',
-        ${`타임라인 정리: ${when}${whose}${what} ${changes}개를 삭제했습니다${a.keep_announcements !== false ? " (공지사항 제외)" : ""}`},
+        ${`타임라인 정리: ${when}${whose}${what} ${total}개를 삭제했습니다${a.keep_announcements !== false ? " (공지사항 제외)" : ""}`},
         ${profile.id}, ${ctx.now})`;
   }
-  return { deleted: changes };
+  return { deleted: changes, more };
 }
