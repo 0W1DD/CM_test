@@ -324,11 +324,13 @@ function useFireButton() {
  */
 function FireLevelsPanel({ className }: { className: string }) {
   const { levelsOpen: open } = useFire();
-  const panel = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
     const close = (e: PointerEvent) => {
-      if (!panel.current?.contains(e.target as Node)) setLevelsOpen(false);
+      // Inside either panel (the corner's or the top bar's, one of them
+      // hidden by the layout) is not outside.
+      if (!(e.target as Element).closest?.(".campfire-levels-panel"))
+        setLevelsOpen(false);
     };
     // Next tick, so the press that opened them does not close them.
     const id = setTimeout(() =>
@@ -341,7 +343,7 @@ function FireLevelsPanel({ className }: { className: string }) {
   }, [open]);
   if (!open) return null;
   return (
-    <div ref={panel} className={`campfire-levels-panel ${className}`}>
+    <div className={`campfire-levels-panel ${className}`}>
       <FireLevels />
     </div>
   );
