@@ -1,12 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Megaphone } from "lucide-react";
+import { useEffect } from "react";
 import { Link } from "react-router";
 import { useAuth } from "~/hooks/useAuth";
 import {
   markAnnouncementsSeen,
   unseenAnnouncements,
 } from "~/lib/announcements-seen";
-import { query } from "~/lib/naru";
+import { query, subscribe } from "~/lib/naru";
 import type { Post } from "~/types/post";
 
 /** A post's first line as plain text, for a one-line summary. */
@@ -37,6 +38,19 @@ export function AnnouncementTicker() {
         ...(profileId && { profile_id: profileId }),
       }),
   });
+  // Listens live, so a new announcement shows here without a reload: Naru
+  // answers again whenever a post is written and the list has changed.
+  const queryClient = useQueryClient();
+  useEffect(
+    () =>
+      subscribe<Post[]>(
+        "posts:announcements",
+        profileId ? { profile_id: profileId } : {},
+        (posts) =>
+          queryClient.setQueryData(["announcements", profileId], posts),
+      ),
+    [profileId, queryClient],
+  );
 
   const latest = announcements[0];
   if (!latest) return null;
