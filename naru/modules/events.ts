@@ -3,8 +3,9 @@
 // profile, for a coin. A week of the exchange runs from Monday: members sign
 // up until Saturday ends, write their gift until Sunday 23:30, are given
 // someone to give to (at random once sign-up closes, unless the staff pinned
-// it), and open what they were given the next Monday at 08:00, when every
-// sender is paid. There is no scheduler, so drawing and paying happen in
+// it before then; senders are never shown who), and open what they were
+// given the next Monday at 08:00, seeing who sent it, when every sender is
+// paid. There is no scheduler, so drawing and paying happen in
 // settleGifts, which the events mutations run first (as posts' publishDue).
 import type { Ctx, MutationCtx } from "./core.js";
 import { imageJson, imagesById } from "./images.js";
@@ -166,7 +167,10 @@ export async function settleGifts(ctx: MutationCtx) {
         (SELECT count(*) FROM gift_entries WHERE week = ${w}) AS entries`;
     const state = rows[0];
     if (!state?.entries) continue;
-    if (state.assigned_at === null) await drawWeek(ctx, w);
+    // The draw at sign-up's close is the final one: pairs pinned until then
+    // are kept, everyone else is drawn.
+    if (state.assigned_at === null || state.assigned_at < times.signupEnds)
+      await drawWeek(ctx, w);
     if (ctx.now >= times.opens && state.paid_at === null) await payWeek(ctx, w);
   }
 }

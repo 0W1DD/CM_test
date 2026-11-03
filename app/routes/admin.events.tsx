@@ -1,7 +1,7 @@
 // The gift exchange for the staff: a week's participants, who each gives
 // to (pinned by hand, or drawn), and every gift written.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Gift, Pin, Shuffle } from "lucide-react";
+import { Gift, Pin } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -12,7 +12,6 @@ import {
 } from "~/components/admin/ui";
 import { GiftContent } from "~/components/gift-content";
 import { LoadingState } from "~/components/shared/LoadingState";
-import { Button } from "~/components/ui/button";
 import {
   type Brief,
   type GiftImage,
@@ -78,24 +77,10 @@ function GiftExchangeAdmin() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const draw = useMutation({
-    mutationFn: async () => {
-      try {
-        await mutate("events:giftDraw", { week: data?.week });
-      } catch (error) {
-        throw new Error(errorMessage(error, "배정하지 못했습니다"));
-      }
-    },
-    onSuccess: () => {
-      toast.success("지정하지 않은 사람들을 랜덤으로 배정했습니다");
-      refresh();
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
   if (isLoading || !data)
     return <LoadingState message="불러오는 중..." asCard={false} />;
-  const opened = Date.now() >= Date.parse(data.opens);
+  // Pairs are pinned until sign-up closes; then the draw makes them final.
+  const closed = Date.now() >= Date.parse(data.signup_ends);
   const participants = data.entries.flatMap((e) => (e.giver ? [e.giver] : []));
 
   return (
@@ -115,22 +100,6 @@ function GiftExchangeAdmin() {
             ))}
           </select>
         </label>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={opened || draw.isPending || data.entries.length < 2}
-          onClick={() => {
-            if (
-              window.confirm(
-                "지정(📌)하지 않은 사람들의 받는 사람을 랜덤으로 다시 정할까요?",
-              )
-            )
-              draw.mutate();
-          }}
-        >
-          <Shuffle className="h-4 w-4" />
-          나머지 랜덤 배정
-        </Button>
       </div>
       <div className="text-sm text-muted-foreground space-y-0.5">
         <p>
@@ -138,9 +107,11 @@ function GiftExchangeAdmin() {
           {kstTime(data.gifts_close)} · 열림 {kstTime(data.opens)}
         </p>
         <p>
-          {data.assigned_at
-            ? `배정됨 (${formatDateTime(data.assigned_at)})`
-            : "아직 배정 전 (신청 마감 뒤 첫 접속 때 자동 배정)"}
+          {closed
+            ? data.assigned_at
+              ? `배정 완료 (${formatDateTime(data.assigned_at)}) · 지정 잠김`
+              : "신청 마감 · 첫 접속 때 자동 배정됩니다"
+            : "신청 마감 전: 찌름 요청은 지금 지정하세요. 마감 때 나머지가 랜덤 배정됩니다. 받는 사람은 보내는 사람에게 공개되지 않습니다."}
           {data.paid_at && ` · 코인 지급됨 (${formatDateTime(data.paid_at)})`}
         </p>
         <p>
@@ -166,7 +137,7 @@ function GiftExchangeAdmin() {
                   <span className="text-muted-foreground">→</span>
                   <select
                     value={entry.recipient?.id ?? ""}
-                    disabled={opened || pin.isPending}
+                    disabled={closed || pin.isPending}
                     onChange={(e) =>
                       pin.mutate({
                         giver: giverId,
@@ -219,8 +190,9 @@ function GiftExchangeAdmin() {
         </ul>
       )}
       <p className="text-xs text-muted-foreground">
-        받는 사람을 고르면 그 짝은 지정(📌)되어 랜덤 배정에서 빠집니다.
-        "(랜덤)"을 고르면 지정이 풀립니다.
+        신청 마감 전까지 받는 사람을 고르면 그 짝은 지정(📌)되어 랜덤 배정에서
+        빠집니다. "(랜덤)"을 고르면 지정이 풀립니다. 받는 사람은 보내는 사람에게
+        보이지 않습니다.
       </p>
     </div>
   );

@@ -15,7 +15,6 @@ import {
 import {
   CHECK_IN_COINS,
   coinCurrency,
-  drawWeek,
   isMorning,
   kstDay,
   settleGifts,
@@ -142,14 +141,20 @@ export async function giftSave(ctx: MutationCtx, args: unknown) {
 }
 
 /**
- * Pins who a participant gives to (the staff), or unpins it when
- * `recipient_id` is null. A recipient someone else was drawn to give to
- * is taken from them; the next draw finds that one another.
+ * Pins who a participant gives to (the staff, until sign-up closes), or
+ * unpins it when `recipient_id` is null. The draw at sign-up's close keeps
+ * the pinned pairs and draws everyone else; nobody sees a pair until then.
  */
 export async function giftPin(ctx: MutationCtx, args: unknown) {
   await requireStaff(ctx);
   const a = argsOf(args);
   const week = typeof a.week === "string" ? a.week : weekOf(ctx.now);
+  if (ctx.now >= weekTimes(week).signupEnds)
+    invalid(
+      ctx,
+      "신청이 마감되어 받는 사람을 지정할 수 없습니다.",
+      "pin_closed",
+    );
   const giver = id(ctx, a.profile_id, "profile_id");
   const recipient =
     a.recipient_id === null || a.recipient_id === undefined
@@ -189,16 +194,5 @@ export async function giftPin(ctx: MutationCtx, args: unknown) {
     UPDATE gift_entries SET recipient_id = ${recipient}, pinned = ${recipient ? 1 : 0},
       updated_at = ${ctx.now}
     WHERE week = ${week} AND profile_id = ${giver}`;
-  return { week };
-}
-
-/** Draws a week's unpinned recipients now, or again (the staff). */
-export async function giftDraw(ctx: MutationCtx, args: unknown) {
-  await requireStaff(ctx);
-  const a = argsOf(args);
-  const week = typeof a.week === "string" ? a.week : weekOf(ctx.now);
-  if (ctx.now >= weekTimes(week).opens)
-    invalid(ctx, "이미 선물이 열린 주입니다.", "gifts_opened");
-  await drawWeek(ctx, week);
   return { week };
 }

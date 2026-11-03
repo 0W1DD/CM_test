@@ -119,9 +119,7 @@ export function EventsRail() {
               to="/events"
               className="block text-sm font-medium text-primary hover:underline"
             >
-              {gift.recipient
-                ? `${gift.recipient.name}에게 선물 보내기 →`
-                : "선물 작성하기 →"}
+              선물 작성하기 →
             </Link>
           )}
         </div>

@@ -892,6 +892,58 @@ textarea,
     transition: none;
   }
 }
+/* A gift arriving (gift-arrival.tsx): the card drops in from above with a
+   little bounce, and turns over to show the gift. Both faces share one
+   grid cell, so the card is as tall as the taller face. */
+.gift-drop {
+  animation: gift-drop 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2) backwards;
+}
+@keyframes gift-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-110vh) rotate(-8deg);
+  }
+  70% {
+    opacity: 1;
+  }
+}
+.gift-flip {
+  perspective: 1400px;
+}
+.gift-flip-inner {
+  display: grid;
+  transition: transform 0.8s cubic-bezier(0.3, 0.7, 0.3, 1);
+  transform-style: preserve-3d;
+}
+.gift-flip-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+.gift-face {
+  grid-area: 1 / 1;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.gift-back {
+  transform: rotateY(180deg);
+}
+.gift-bounce {
+  animation: gift-bounce 1.6s ease-in-out infinite;
+}
+@keyframes gift-bounce {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  20% { transform: translateY(-8px) rotate(-6deg); }
+  40% { transform: translateY(0) rotate(4deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gift-drop,
+  .gift-bounce {
+    animation: none;
+  }
+  .gift-flip-inner {
+    transition: none;
+  }
+}
+
 /* The fireplace itself is the button: no frame around it, its action
    written underneath, and it lifts under the pointer. */
 .campfire-button {

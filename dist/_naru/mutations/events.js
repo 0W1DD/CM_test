@@ -3,7 +3,7 @@
 // pay once the gifts have opened.
 import { actingProfile, requireStaff } from "../modules/access.js";
 import { argsOf, id, ids, invalid, list, notFound, optionalText, } from "../modules/core.js";
-import { CHECK_IN_COINS, coinCurrency, drawWeek, isMorning, kstDay, settleGifts, weekOf, weekTimes, } from "../modules/events.js";
+import { CHECK_IN_COINS, coinCurrency, isMorning, kstDay, settleGifts, weekOf, weekTimes, } from "../modules/events.js";
 import { ownImages } from "../modules/images.js";
 import { failShop, grantCurrency } from "../modules/shop.js";
 /** A profile the calling member acts as, active in the community. */
@@ -108,14 +108,16 @@ export async function giftSave(ctx, args) {
     return { week };
 }
 /**
- * Pins who a participant gives to (the staff), or unpins it when
- * `recipient_id` is null. A recipient someone else was drawn to give to
- * is taken from them; the next draw finds that one another.
+ * Pins who a participant gives to (the staff, until sign-up closes), or
+ * unpins it when `recipient_id` is null. The draw at sign-up's close keeps
+ * the pinned pairs and draws everyone else; nobody sees a pair until then.
  */
 export async function giftPin(ctx, args) {
     await requireStaff(ctx);
     const a = argsOf(args);
     const week = typeof a.week === "string" ? a.week : weekOf(ctx.now);
+    if (ctx.now >= weekTimes(week).signupEnds)
+        invalid(ctx, "신청이 마감되어 받는 사람을 지정할 수 없습니다.", "pin_closed");
     const giver = id(ctx, a.profile_id, "profile_id");
     const recipient = a.recipient_id === null || a.recipient_id === undefined
         ? null
@@ -144,15 +146,5 @@ export async function giftPin(ctx, args) {
     UPDATE gift_entries SET recipient_id = ${recipient}, pinned = ${recipient ? 1 : 0},
       updated_at = ${ctx.now}
     WHERE week = ${week} AND profile_id = ${giver}`;
-    return { week };
-}
-/** Draws a week's unpinned recipients now, or again (the staff). */
-export async function giftDraw(ctx, args) {
-    await requireStaff(ctx);
-    const a = argsOf(args);
-    const week = typeof a.week === "string" ? a.week : weekOf(ctx.now);
-    if (ctx.now >= weekTimes(week).opens)
-        invalid(ctx, "이미 선물이 열린 주입니다.", "gifts_opened");
-    await drawWeek(ctx, week);
     return { week };
 }

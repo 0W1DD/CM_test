@@ -65,9 +65,10 @@ test("the gift exchange: sign up, draw after Saturday, write, open on Monday 08:
     await refusal(site.mutate("events:giftPin", { profile_id: profiles.bob, recipient_id: profiles.dave }, as("m-mod"))),
     "recipient_taken",
   );
+  // Pinned, but a sender is never shown who they give to.
   const mine = await status("m-alice", profiles.alice);
   assert.equal(mine.gift.phase, "signup");
-  assert.equal(mine.gift.recipient.username, "dave");
+  assert.equal("recipient" in mine.gift, false);
 
   // A gift before the draw is fine; an empty one is not.
   assert.equal(await refusal(call("giftSave", "m-bob", profiles.bob, { content: "  " })), "empty_gift");
@@ -76,7 +77,13 @@ test("the gift exchange: sign up, draw after Saturday, write, open on Monday 08:
   // Sunday: sign-up closed, the first call draws everyone else.
   site.now = MONDAY_10 + 6 * DAY;
   assert.equal(await refusal(call("giftSignup", "m-mod", profiles.mod)), "signup_closed");
+  // Pins close with sign-up.
+  assert.equal(
+    await refusal(site.mutate("events:giftPin", { profile_id: profiles.bob, recipient_id: profiles.carol }, as("m-mod"))),
+    "pin_closed",
+  );
   await site.mutate("events:settle", {}, as("m-bob"));
+  assert.equal("recipient" in (await status("m-alice", profiles.alice)).gift, false);
   const week = await site.query("events:admin", {}, as("m-mod"));
   const to = Object.fromEntries(week.entries.map((e) => [e.giver.username, e.recipient?.username]));
   assert.equal(to.alice, "dave");
@@ -119,8 +126,9 @@ test("the staff see every gift; members see only their own and what they were gi
   const staff = await site.query("events:admin", {}, as("m-owner"));
   assert.equal(staff.entries.find((e) => e.giver.username === "alice").content, "비밀 선물");
   assert.equal((await status("m-bob", profiles.bob)).gift.content, null);
-  // A draw on demand by the staff, before Saturday: two people give to each other.
-  await site.mutate("events:giftDraw", {}, as("m-owner"));
+  // Sign-up closes: two people give to each other.
+  site.now += 6 * DAY;
+  await site.mutate("events:settle", {}, as("m-bob"));
   const drawn = await site.query("events:admin", {}, as("m-owner"));
   assert.deepEqual(drawn.entries.map((e) => [e.giver.username, e.recipient.username]).sort(), [["alice", "bob"], ["bob", "alice"]]);
 });

@@ -133,7 +133,9 @@ export async function settleGifts(ctx) {
         const state = rows[0];
         if (!state?.entries)
             continue;
-        if (state.assigned_at === null)
+        // The draw at sign-up's close is the final one: pairs pinned until then
+        // are kept, everyone else is drawn.
+        if (state.assigned_at === null || state.assigned_at < times.signupEnds)
             await drawWeek(ctx, w);
         if (ctx.now >= times.opens && state.paid_at === null)
             await payWeek(ctx, w);

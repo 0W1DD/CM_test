@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 import { CheckInButton, GiftSignupButton } from "~/components/events-rail";
+import { GiftArrivalOverlay } from "~/components/gift-arrival";
 import { GiftContent } from "~/components/gift-content";
 import { LoadingState } from "~/components/shared/LoadingState";
 import { Button } from "~/components/ui/button";
@@ -220,7 +221,9 @@ export default function EventsPage() {
   const { currentProfile } = useAuth();
   // The staff's look at what a recipient sees, before or after Monday
   // 08:00: from their own saved gift, or a sample. Nothing is saved.
-  const [preview, setPreview] = useState<"waiting" | "open" | null>(null);
+  const [preview, setPreview] = useState<"waiting" | "open" | "arrival" | null>(
+    null,
+  );
   const cancel = useMutation({
     mutationFn: async () => {
       try {
@@ -304,6 +307,7 @@ export default function EventsPage() {
             [
               ["waiting", "열리기 전"],
               ["open", "월요일 8시 이후"],
+              ["arrival", "도착 연출"],
             ] as const
           ).map(([value, label]) => (
             <Button
@@ -318,12 +322,19 @@ export default function EventsPage() {
         </div>
       )}
 
-      {(preview || received.count > 0) && (
+      {preview === "arrival" && (
+        <GiftArrivalOverlay
+          gifts={previewReceived.gifts}
+          onClose={() => setPreview(null)}
+        />
+      )}
+
+      {((preview && preview !== "arrival") || received.count > 0) && (
         <section className="framed bg-card p-5 space-y-3">
           <h2 className="flex items-center gap-2 text-lg font-semibold">
             <PartyPopper className="h-5 w-5 text-primary" />
             받은 선물
-            {preview && (
+            {preview && preview !== "arrival" && (
               <span className="text-xs font-normal text-muted-foreground">
                 (미리보기)
               </span>
@@ -332,7 +343,9 @@ export default function EventsPage() {
           <ReceivedGifts
             // A fresh, still-wrapped gift each time the preview changes
             key={preview ?? "real"}
-            received={preview ? previewReceived : received}
+            received={
+              preview && preview !== "arrival" ? previewReceived : received
+            }
           />
         </section>
       )}
@@ -363,8 +376,8 @@ export default function EventsPage() {
               {kstTime(gift.gifts_close)})
             </li>
             <li>
-              수신인을 정하고 싶을 경우 운영진에게 개인 메시지를 보냅니다.
-              선착순으로 배정됩니다.
+              수신인을 정하고 싶을 경우 신청 마감 전까지 운영진에게 개인
+              메시지를 보냅니다. 선착순으로 배정됩니다.
             </li>
           </ol>
           <p className="text-muted-foreground">
@@ -391,17 +404,11 @@ export default function EventsPage() {
 
         {gift.signed_up && (
           <div className="space-y-3 border-t border-border pt-4">
-            <h3 className="font-semibold text-foreground">
-              {gift.recipient
-                ? `${gift.recipient.name}에게 선물 보내기`
-                : "선물 작성하기"}
-            </h3>
-            {!gift.recipient && (
-              <p className="text-xs text-muted-foreground">
-                받을 사람은 신청이 마감된 뒤({kstLastMinute(gift.signup_ends)})
-                정해집니다. 선물은 먼저 써 둘 수 있습니다.
-              </p>
-            )}
+            <h3 className="font-semibold text-foreground">선물 작성하기</h3>
+            <p className="text-xs text-muted-foreground">
+              받을 사람은 랜덤으로 정해지며 공개되지 않습니다. 월요일 아침에
+              선물이 열릴 때 받은 사람이 확인합니다.
+            </p>
             <GiftEditor
               key={gift.week}
               gift={gift}

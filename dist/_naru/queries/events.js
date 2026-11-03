@@ -15,7 +15,8 @@ function timesJson(week) {
 }
 /**
  * The acting profile's day and week: whether it checked in today and may
- * now, this week's exchange (signed up, who it gives to, its gift), and
+ * now, this week's exchange (signed up, its gift: who it goes to is never
+ * shown to the sender), and
  * last week's gifts to it once they have opened (Monday 08:00).
  */
 export async function status(ctx, args) {
@@ -57,7 +58,6 @@ export async function status(ctx, args) {
                     : "closed",
             participants: counts[0]?.n ?? 0,
             signed_up: !!mine,
-            recipient: mineJson?.recipient ?? null,
             content: mineJson?.content ?? null,
             images: mineJson?.images ?? [],
             submitted_at: mineJson?.submitted_at ?? null,

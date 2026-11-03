@@ -1,6 +1,7 @@
 import { type ReactNode, useRef } from "react";
 import { CampfireHeaderButton } from "~/components/campfire";
 import { EventsRail } from "~/components/events-rail";
+import { GiftArrival } from "~/components/gift-arrival";
 import { OnboardingTour } from "~/components/onboarding-tour";
 import { usePageTransition } from "~/hooks/usePageTransition";
 import { useScrollDirection } from "~/hooks/useScrollDirection";
@@ -109,6 +110,9 @@ export function MastodonLayout({
 
       {/* First visit: a tour of the menus */}
       {showAuthenticatedLayout && <OnboardingTour />}
+
+      {/* The week's gifts, the first time after they open */}
+      {showAuthenticatedLayout && <GiftArrival />}
 
       {/* Mobile Bottom Navigation */}
       {showAuthenticatedLayout && (

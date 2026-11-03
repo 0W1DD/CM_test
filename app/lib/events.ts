@@ -32,7 +32,6 @@ export interface EventsStatus {
     phase: "signup" | "writing" | "closed";
     participants: number;
     signed_up: boolean;
-    recipient: Brief | null;
     content: string | null;
     images: GiftImage[];
     submitted_at: string | null;
