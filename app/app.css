@@ -792,8 +792,8 @@ textarea,
   content: none;
 }
 
-/* Firelight (campfire.tsx): a warm wash over the whole page, glowing from
-   the corner where the fire sits, stronger and flickering once it is lit.
+/* Firelight (campfire.tsx): a warm glow from the corner where the fire
+   sits, only while it is lit, flickering. Nothing at all while it is out.
    Plain see-through colour, not a blend mode: a blended layer over the
    whole page makes the browser recompose all of it on every frame (snow,
    scrolling, the flicker), which slowed everything down. The flicker only
@@ -803,25 +803,16 @@ textarea,
   inset: 0;
   z-index: 60;
   pointer-events: none;
-  background:
-    radial-gradient(
-      circle at 100% 100%,
-      rgb(255 140 50 / 0.16),
-      transparent 55%
-    ),
-    rgb(255 170 90 / 0.05);
+  background: radial-gradient(
+    circle at 100% 100%,
+    rgb(255 130 40 / 0.22),
+    transparent 60%
+  );
   transition: opacity 1.5s ease;
-  opacity: 0.8;
+  opacity: 0;
 }
 .fire-lit .cozy-filter {
   opacity: 1;
-  background:
-    radial-gradient(
-      circle at 100% 100%,
-      rgb(255 130 40 / 0.28),
-      transparent 65%
-    ),
-    rgb(255 160 80 / 0.08);
   animation: firelight 3s ease-in-out infinite;
   will-change: opacity;
 }
