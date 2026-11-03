@@ -1,4 +1,9 @@
-import { useSyncExternalStore } from "react";
+import {
+  type MouseEvent,
+  useEffect,
+  useRef,
+  useSyncExternalStore,
+} from "react";
 
 /** Calm public-domain (or CC0) recordings on Wikimedia Commons. */
 /**
@@ -9,7 +14,8 @@ import { useSyncExternalStore } from "react";
 const TRACKS: {
   title: string;
   src: string;
-  volume?: number;
+  /** How much louder it plays than the rest (a quieter recording). */
+  boost?: number;
   credit?: string;
 }[] = [
   {
@@ -30,17 +36,11 @@ const TRACKS: {
     title: "차이콥스키 · 꽃의 왈츠",
     src: "https://upload.wikimedia.org/wikipedia/commons/e/e4/P.I._Tchaikovsky%27s_Waltz_of_the_Flowers_Performed_by_The_U.S._Army_Band%2C_c._2019.mp3",
   },
-  {
-    // An Edison record from the early 1920s, cut quietly: played at full
-    // volume to sit level with the rest.
-    title: "차이콥스키 · 사탕 요정의 춤, 갈대 피리의 춤",
-    src: "https://upload.wikimedia.org/wikipedia/commons/transcoded/c/cd/PDP-CH_-_American_Symphony_Orchestra_-_Casse-Noisette_Suite_-_a_Danse_de_la_F%C3%A9e_Drag%C3%A9e,_b_Danse_des_Mirlitons_-_Pyotr_Ilyich_Tchaikovsky_-_Edison-80594l-6252.flac/PDP-CH_-_American_Symphony_Orchestra_-_Casse-Noisette_Suite_-_a_Danse_de_la_F%C3%A9e_Drag%C3%A9e,_b_Danse_des_Mirlitons_-_Pyotr_Ilyich_Tchaikovsky_-_Edison-80594l-6252.flac.mp3",
-    volume: 1,
-  },
   // Recordings that ask for credit, from Wikimedia Commons.
   {
     title: "차이콥스키 · 사탕 요정의 춤",
     src: "https://upload.wikimedia.org/wikipedia/commons/9/9d/Tchaikovsky_-_Dance_of_the_Sugar_Plum_Fairy_-_The_Nutcracker.ogg",
+    boost: 2, // recorded some 7 dB quieter than the rest
     credit: "Free Classical Music on YouTube · CC BY 3.0",
   },
   {
@@ -65,8 +65,16 @@ const TRACKS: {
   },
 ];
 
-const MUSIC_VOLUME = 0.3;
-const FIRE_VOLUME = 0.5;
+// How loud each plays, 0 to 1, as the sliders by the fire set them; kept
+// in this browser. The fire's sound at its loudest is FIRE_MAX.
+const FIRE_MAX = 0.6;
+const LEVELS_KEY = "commung-campfire-levels";
+let levels = { fire: 0.35, music: 0.7 };
+try {
+  const saved = JSON.parse(localStorage.getItem(LEVELS_KEY) ?? "null");
+  if (typeof saved?.fire === "number" && typeof saved?.music === "number")
+    levels = { fire: saved.fire, music: saved.music };
+} catch {}
 
 /** Seconds of noise, white or (brown) low-rumbling. */
 function noiseBuffer(ctx: AudioContext, seconds: number, brown: boolean) {
@@ -100,8 +108,12 @@ function crackleBuffer(ctx: AudioContext) {
 function startFire(ctx: AudioContext) {
   const master = ctx.createGain();
   master.gain.setValueAtTime(0, ctx.currentTime);
-  master.gain.linearRampToValueAtTime(FIRE_VOLUME, ctx.currentTime + 2);
+  master.gain.linearRampToValueAtTime(
+    levels.fire * FIRE_MAX,
+    ctx.currentTime + 2,
+  );
   master.connect(ctx.destination);
+  fireGain = master;
 
   const rumble = ctx.createBufferSource();
   rumble.buffer = noiseBuffer(ctx, 4, true);
@@ -157,6 +169,7 @@ function startFire(ctx: AudioContext) {
       hiss.stop();
       master.disconnect();
     }, 1100);
+    if (fireGain === master) fireGain = null;
   };
 }
 
@@ -226,11 +239,15 @@ let track = 0;
 let audioCtx: AudioContext | null = null;
 let stopFire: (() => void) | null = null;
 let audio: HTMLAudioElement | null = null;
+let fireGain: GainNode | null = null;
+// The volume sliders: opened by holding the fire down (phones) or by its
+// right click (computers), closed by a tap anywhere else.
+let levelsOpen = false;
 const listeners = new Set<() => void>();
-let snapshot = { lit, track };
+let snapshot = { lit, track, levelsOpen, ...levels };
 
 function publish() {
-  snapshot = { lit, track };
+  snapshot = { lit, track, levelsOpen, ...levels };
   document.documentElement.classList.toggle("fire-lit", lit);
   for (const listener of listeners) listener();
 }
@@ -239,8 +256,120 @@ function playTrack(index: number) {
   if (!audio) return;
   track = index;
   audio.src = TRACKS[index]?.src ?? "";
-  audio.volume = TRACKS[index]?.volume ?? MUSIC_VOLUME;
+  audio.volume = musicVolume();
   audio.play().catch(() => {});
+}
+
+const musicVolume = () =>
+  Math.min(1, levels.music * (TRACKS[track]?.boost ?? 1));
+
+/** Sets how loud the fire or the music plays, now and from now on. */
+function setLevel(kind: "fire" | "music", value: number) {
+  levels = { ...levels, [kind]: value };
+  try {
+    localStorage.setItem(LEVELS_KEY, JSON.stringify(levels));
+  } catch {}
+  if (kind === "music" && audio) audio.volume = musicVolume();
+  if (kind === "fire" && fireGain && audioCtx) {
+    fireGain.gain.cancelScheduledValues(audioCtx.currentTime);
+    fireGain.gain.setTargetAtTime(value * FIRE_MAX, audioCtx.currentTime, 0.05);
+  }
+  publish();
+}
+
+function setLevelsOpen(open: boolean) {
+  if (levelsOpen === open) return;
+  levelsOpen = open;
+  publish();
+}
+
+/**
+ * What the fire's button needs besides its click: holding it down (half a
+ * second) or right-clicking it opens the sliders, and the click that ends a
+ * hold does not also light or put out the fire.
+ */
+function useFireButton() {
+  const hold = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const held = useRef(false);
+  const cancel = () => {
+    if (hold.current) clearTimeout(hold.current);
+    hold.current = null;
+  };
+  return {
+    onClick: () => {
+      if (held.current) held.current = false;
+      else toggleFire();
+    },
+    onPointerDown: () => {
+      held.current = false;
+      cancel();
+      hold.current = setTimeout(() => {
+        held.current = true;
+        setLevelsOpen(true);
+      }, 500);
+    },
+    onPointerUp: cancel,
+    onPointerLeave: cancel,
+    onContextMenu: (e: MouseEvent) => {
+      e.preventDefault();
+      cancel();
+      setLevelsOpen(true);
+    },
+  };
+}
+
+/**
+ * The fire and music sliders, while open; a press anywhere outside them
+ * closes them. `className` places them (the corner, or under the top bar).
+ */
+function FireLevelsPanel({ className }: { className: string }) {
+  const { levelsOpen: open } = useFire();
+  const panel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: PointerEvent) => {
+      if (!panel.current?.contains(e.target as Node)) setLevelsOpen(false);
+    };
+    // Next tick, so the press that opened them does not close them.
+    const id = setTimeout(() =>
+      document.addEventListener("pointerdown", close),
+    );
+    return () => {
+      clearTimeout(id);
+      document.removeEventListener("pointerdown", close);
+    };
+  }, [open]);
+  if (!open) return null;
+  return (
+    <div ref={panel} className={`campfire-levels-panel ${className}`}>
+      <FireLevels />
+    </div>
+  );
+}
+
+/** The two volume sliders. */
+function FireLevels() {
+  const { fire, music } = useFire();
+  const row = (kind: "fire" | "music", label: string, value: number) => (
+    <label className="campfire-level">
+      <span>{label}</span>
+      <input
+        type="range"
+        min={0}
+        max={1}
+        step={0.05}
+        value={value}
+        onChange={(e) => setLevel(kind, Number(e.target.value))}
+        aria-label={`${label} 소리 크기`}
+      />
+    </label>
+  );
+  return (
+    <div className="campfire-levels">
+      {row("fire", "불", fire)}
+      {row("music", "음악", music)}
+    </div>
+  );
 }
 
 function toggleFire() {
@@ -284,7 +413,7 @@ const subscribeFire = (listener: () => void) => {
   listeners.add(listener);
   return () => listeners.delete(listener);
 };
-const unlit = { lit: false, track: 0 };
+const unlit = { lit: false, track: 0, levelsOpen: false, fire: 0, music: 0 };
 
 function useFire() {
   return useSyncExternalStore(
@@ -307,19 +436,24 @@ export function Campfire() {
       <div className="cozy-filter" aria-hidden />
       <div className="campfire" data-tour="campfire">
         {lit && (
-          <span className="campfire-track">
+          <div className="campfire-track">
             ♪ {TRACKS[track]?.title}
             {TRACKS[track]?.credit && (
               <small className="campfire-credit">{TRACKS[track]?.credit}</small>
             )}
-          </span>
+          </div>
         )}
+        <FireLevelsPanel className="campfire-levels-corner" />
         <button
           type="button"
-          onClick={toggleFire}
+          {...useFireButton()}
           className="campfire-button"
           aria-pressed={lit}
-          title={lit ? "벽난로 끄기" : "벽난로 피우기 (소리가 나요)"}
+          title={
+            lit
+              ? "벽난로 끄기 (우클릭: 소리 크기)"
+              : "벽난로 피우기 (소리가 나요)"
+          }
         >
           <FireArt lit={lit} />
           <span className="campfire-label">
@@ -337,18 +471,22 @@ export function Campfire() {
  */
 export function CampfireHeaderButton() {
   const { lit } = useFire();
+  const gestures = useFireButton();
   return (
-    <button
-      type="button"
-      data-campfire-header
-      data-tour="campfire"
-      onClick={toggleFire}
-      className="campfire-header-button ml-auto shrink-0 flex items-center gap-1 text-xs font-semibold text-foreground"
-      aria-pressed={lit}
-      title={lit ? "벽난로 끄기" : "벽난로 피우기 (소리가 나요)"}
-    >
-      <FireArt lit={lit} size={32} />
-      {lit ? "불 끄기" : "불 피우기"}
-    </button>
+    <>
+      <FireLevelsPanel className="campfire-levels-top" />
+      <button
+        type="button"
+        data-campfire-header
+        data-tour="campfire"
+        {...gestures}
+        className="campfire-header-button ml-auto shrink-0 flex items-center gap-1 text-xs font-semibold text-foreground"
+        aria-pressed={lit}
+        title={lit ? "벽난로 끄기" : "벽난로 피우기 (소리가 나요)"}
+      >
+        <FireArt lit={lit} size={32} />
+        {lit ? "불 끄기" : "불 피우기"}
+      </button>
+    </>
   );
 }

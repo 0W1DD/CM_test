@@ -1250,6 +1250,50 @@ textarea,
   white-space: nowrap;
   animation: timeline-in 0.6s ease-out backwards;
 }
+/* Held down for the sliders: no text selection or callout menu on phones. */
+.campfire-button,
+.campfire-header-button {
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* The volume sliders (held down or right-clicked open): above the corner
+   fire, or under the phone's top bar. */
+.campfire-levels-panel {
+  font-family: var(--font-display);
+  color: #fbf1dc;
+  background: rgb(40 24 12 / 0.9);
+  padding: 0.5rem 0.7rem;
+  animation: timeline-in 0.3s ease-out backwards;
+}
+.campfire-levels-corner {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.5rem);
+}
+.campfire-levels-top {
+  position: fixed;
+  z-index: 56;
+  top: 3.75rem;
+  right: 0.75rem;
+}
+.campfire-levels {
+  display: grid;
+  gap: 0.25rem;
+}
+.campfire-level {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.6875rem;
+}
+.campfire-level span {
+  width: 2rem;
+}
+.campfire-level input {
+  width: 6.5rem;
+  accent-color: #f28a1d;
+}
 .campfire-credit {
   display: block;
   font-family: var(--font-sans, inherit);
