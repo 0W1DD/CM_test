@@ -117,6 +117,9 @@ export function sqlOf(db, kind = "mutation") {
       return Promise.reject(
         new Error("Invalid SQL: a read-only query cannot write."),
       );
+    // Naru refuses recursive SQL (and the local SQLite would not).
+    if (/RECURSIVE/i.test(statement))
+      return Promise.reject(new Error("Invalid SQL: recursive queries are refused."));
     if (bound.length > 100)
       return Promise.reject(
         new Error("Invalid SQL: at most 100 values are bound."),

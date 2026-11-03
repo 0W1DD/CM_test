@@ -476,7 +476,7 @@ test("a long timeline is cleared in batches, replies before their posts, logged 
   const root = await write(site, "m-alice", profiles.alice, "뿌리 글");
   for (let i = 0; i < 110; i++)
     await write(site, "m-bob", profiles.bob, `답글 ${i}`, { in_reply_to_id: root.id });
-  for (let i = 0; i < 20; i++) await write(site, "m-alice", profiles.alice, `글 ${i}`);
+  for (let i = 0; i < 110; i++) await write(site, "m-alice", profiles.alice, `글 ${i}`);
   let deleted = 0;
   let calls = 0;
   for (;;) {
@@ -489,10 +489,10 @@ test("a long timeline is cleared in batches, replies before their posts, logged 
     calls++;
     if (!batch.more) break;
   }
-  assert.equal(deleted, 131);
+  assert.equal(deleted, 221);
   assert.equal(calls > 1, true);
   assert.equal(site.rows("SELECT count(*) AS n FROM posts WHERE deleted_at IS NULL")[0].n, 0);
   const logs = site.rows("SELECT description FROM moderation_log");
   assert.equal(logs.length, 1);
-  assert.match(logs[0].description, /131개/);
+  assert.match(logs[0].description, /221개/);
 });

@@ -490,15 +490,22 @@ export async function search(ctx: QueryCtx, args: unknown) {
 }
 
 /**
- * How many posts a timeline clean-up would take, replies under them
- * included (the staff, before confirming).
+ * How many posts a timeline clean-up would take, with the threads under the
+ * posts it picks and two levels of replies under the replies it picks (the
+ * staff, before confirming). Deeper ones go too but are not counted:
+ * counting them all would take recursive SQL, which Naru refuses.
  */
 export async function purgeCount(ctx: QueryCtx, args: unknown) {
   await requireStaff(ctx);
   const { where, values } = purgeWhere(ctx, argsOf(args));
   const { rows } = await ctx.sql<{ n: number }>(
-    `SELECT count(*) AS n FROM posts WHERE ${where}`,
-    values,
+    `SELECT count(*) AS n FROM posts q WHERE q.deleted_at IS NULL AND (
+       q.id IN (SELECT p.id FROM posts p WHERE ${where})
+       OR q.root_post_id IN (SELECT p.id FROM posts p WHERE ${where} AND p.depth = 0)
+       OR q.in_reply_to_id IN (SELECT p.id FROM posts p WHERE ${where})
+       OR q.in_reply_to_id IN (SELECT c.id FROM posts c WHERE c.in_reply_to_id IN (
+         SELECT p.id FROM posts p WHERE ${where})))`,
+    [...values, ...values, ...values, ...values],
   );
   return { count: rows[0]?.n ?? 0 };
 }

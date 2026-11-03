@@ -75,17 +75,15 @@ export async function unindexPost(ctx, postId) {
     await ctx.sql `DELETE FROM posts_search WHERE post_id = ${postId}`;
 }
 /**
- * The posts a timeline clean-up takes, as a WHERE clause and its values.
- * Picked first: the live posts written before `before` (everything until
- * now when absent) and from `after`, by `scope` ("all", "posts" for the
- * posts that start a thread, "replies"), only one profile's by `username`.
- * Then every reply under a picked one goes too, so no reply is left without
- * its thread. A thread under an announcement is kept whole unless
- * `keep_announcements` is false. One statement, since a call may make only
- * so many; with `limit`, only that many of them (a call has tens of
- * milliseconds, too few to clear a long timeline at once).
+ * The posts a timeline clean-up picks, as a WHERE clause on `posts p` and
+ * its values: the live posts written before `before` (everything until now
+ * when absent) and from `after`, by `scope` ("all", "posts" for the posts
+ * that start a thread, "replies"), only one profile's by `username`. A
+ * thread under an announcement is kept whole unless `keep_announcements`
+ * is false. The replies under a picked post go too, but Naru refuses
+ * recursive SQL, so the callers follow them a level at a time.
  */
-export function purgeWhere(ctx, a, limit = null) {
+export function purgeWhere(ctx, a) {
     const before = msOf(ctx, a.before, "before") ?? ctx.now + 1;
     const after = msOf(ctx, a.after, "after");
     const scope = a.scope === "posts" || a.scope === "replies" ? a.scope : "all";
@@ -112,22 +110,7 @@ export function purgeWhere(ctx, a, limit = null) {
     if (keep)
         conditions.push(`NOT EXISTS (SELECT 1 FROM posts r
       WHERE r.id = coalesce(p.root_post_id, p.id) AND r.announcement = 1)`);
-    return {
-        where: `deleted_at IS NULL AND id IN (
-      WITH RECURSIVE gone(id) AS (
-        SELECT p.id FROM posts p WHERE ${conditions.join(" AND ")}
-        UNION
-        SELECT c.id FROM posts c JOIN gone g ON c.in_reply_to_id = g.id
-      ) ${
-        // A batch takes the deepest replies first, so the posts they hang
-        // from stay picked (and their other replies with them) next time.
-        limit === null
-            ? "SELECT id FROM gone"
-            : `SELECT g.id FROM gone g JOIN posts x ON x.id = g.id
-             WHERE x.deleted_at IS NULL
-             ORDER BY x.depth DESC LIMIT ${limit}`})`,
-        values,
-    };
+    return { where: conditions.join(" AND "), values };
 }
 /**
  * What publishing a post sends: a reply notification to the parent's author

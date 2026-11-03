@@ -417,28 +417,39 @@ export async function report(ctx: MutationCtx, args: unknown) {
 }
 
 /**
- * Clears the timeline (the owner or a moderator): deletes the posts
- * purgeWhere picks, with the replies under them, PURGE_BATCH at a time:
- * the page calls again while `more`, passing how many went so far in
- * `so_far`. Deleted as one post is (hidden, out of search), and logged
- * once, as the acting profile, when the last batch is done.
+ * Clears the timeline (the owner or a moderator): deletes PURGE_BATCH of
+ * the posts purgeWhere picks, then the replies under what went, a level at
+ * a time (Naru refuses recursive SQL); the page calls again while `more`,
+ * passing how many went so far in `so_far`. Deleted as one post is (hidden,
+ * out of search), and logged once, as the acting profile, when the last
+ * batch is done. What a call deletes is told apart by its time, ctx.now.
  */
 const PURGE_BATCH = 100;
+const PURGE_LEVELS = 40;
 
 export async function adminPurge(ctx: MutationCtx, args: unknown) {
   await requireStaff(ctx);
   const a = argsOf(args);
   const profile = await actingProfile(ctx, a.profile_id);
-  const { where, values } = purgeWhere(ctx, a, PURGE_BATCH);
-  await ctx.sql(
-    `DELETE FROM posts_search WHERE post_id IN (SELECT id FROM posts WHERE ${where})`,
-    values,
-  );
-  const { changes } = await ctx.sql(
-    `UPDATE posts SET deleted_at = ? WHERE ${where}`,
+  const { where, values } = purgeWhere(ctx, a);
+  const picked = await ctx.sql(
+    `UPDATE posts SET deleted_at = ? WHERE id IN (
+       SELECT p.id FROM posts p WHERE ${where} LIMIT ${PURGE_BATCH})`,
     [ctx.now, ...values],
   );
-  const more = changes >= PURGE_BATCH;
+  let changes = picked.changes;
+  for (let level = 0; picked.changes && level < PURGE_LEVELS; level++) {
+    const replies = await ctx.sql`
+      UPDATE posts SET deleted_at = ${ctx.now}
+      WHERE deleted_at IS NULL AND in_reply_to_id IN (
+        SELECT id FROM posts WHERE deleted_at = ${ctx.now})`;
+    if (!replies.changes) break;
+    changes += replies.changes;
+  }
+  await ctx.sql`
+    DELETE FROM posts_search WHERE post_id IN (
+      SELECT id FROM posts WHERE deleted_at = ${ctx.now})`;
+  const more = picked.changes >= PURGE_BATCH;
   const soFar =
     typeof a.so_far === "number" && a.so_far > 0 ? Math.floor(a.so_far) : 0;
   const total = soFar + changes;

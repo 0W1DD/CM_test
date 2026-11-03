@@ -264,16 +264,16 @@ export async function deleteReply(ctx: MutationCtx, args: unknown) {
     await ctx.sql`
       UPDATE board_replies SET deleted_at = ${ctx.now}
       WHERE root_reply_id = ${replyId} AND deleted_at IS NULL`;
+  // The replies under it, a level at a time: Naru refuses recursive SQL.
+  // What this call deletes is told apart by its time, ctx.now.
   else
-    await ctx.sql`
-      WITH RECURSIVE descendants (id) AS (
-        SELECT id FROM board_replies WHERE in_reply_to_id = ${replyId} AND deleted_at IS NULL
-        UNION ALL
-        SELECT r.id FROM board_replies r JOIN descendants d ON r.in_reply_to_id = d.id
-        WHERE r.deleted_at IS NULL
-      )
-      UPDATE board_replies SET deleted_at = ${ctx.now}
-      WHERE id IN (SELECT id FROM descendants)`;
+    for (let level = 0; level < 40; level++) {
+      const { changes } = await ctx.sql`
+        UPDATE board_replies SET deleted_at = ${ctx.now}
+        WHERE deleted_at IS NULL AND in_reply_to_id IN (
+          SELECT id FROM board_replies WHERE deleted_at = ${ctx.now})`;
+      if (!changes) break;
+    }
   return { id: replyId, deleted: true };
 }
 
