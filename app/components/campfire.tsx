@@ -1,7 +1,17 @@
 import { useSyncExternalStore } from "react";
 
 /** Calm public-domain (or CC0) recordings on Wikimedia Commons. */
-const TRACKS = [
+/**
+ * The music the fire plays. `credit` is shown under the title while it
+ * plays, for the recordings whose licence asks for one (Creative Commons
+ * BY and BY-SA): who recorded it, and the licence.
+ */
+const TRACKS: {
+  title: string;
+  src: string;
+  volume?: number;
+  credit?: string;
+}[] = [
   {
     title: "사티 · 짐노페디 1번",
     src: "https://upload.wikimedia.org/wikipedia/commons/9/90/Erik_Satie_-_gymnopedies_-_la_1_ere._lent_et_douloureux.ogg",
@@ -13,6 +23,45 @@ const TRACKS = [
   {
     title: "바흐 · G선상의 아리아",
     src: "https://upload.wikimedia.org/wikipedia/commons/1/1e/Air_%28Bach%29.ogg",
+  },
+  // Christmas pieces, each recording in the public domain on Wikimedia
+  // Commons (the U.S. Army Band's is a work of the U.S. government).
+  {
+    title: "차이콥스키 · 꽃의 왈츠",
+    src: "https://upload.wikimedia.org/wikipedia/commons/e/e4/P.I._Tchaikovsky%27s_Waltz_of_the_Flowers_Performed_by_The_U.S._Army_Band%2C_c._2019.mp3",
+  },
+  {
+    // An Edison record from the early 1920s, cut quietly: played at full
+    // volume to sit level with the rest.
+    title: "차이콥스키 · 사탕 요정의 춤, 갈대 피리의 춤",
+    src: "https://upload.wikimedia.org/wikipedia/commons/transcoded/c/cd/PDP-CH_-_American_Symphony_Orchestra_-_Casse-Noisette_Suite_-_a_Danse_de_la_F%C3%A9e_Drag%C3%A9e,_b_Danse_des_Mirlitons_-_Pyotr_Ilyich_Tchaikovsky_-_Edison-80594l-6252.flac/PDP-CH_-_American_Symphony_Orchestra_-_Casse-Noisette_Suite_-_a_Danse_de_la_F%C3%A9e_Drag%C3%A9e,_b_Danse_des_Mirlitons_-_Pyotr_Ilyich_Tchaikovsky_-_Edison-80594l-6252.flac.mp3",
+    volume: 1,
+  },
+  // Recordings that ask for credit, from Wikimedia Commons.
+  {
+    title: "차이콥스키 · 사탕 요정의 춤",
+    src: "https://upload.wikimedia.org/wikipedia/commons/9/9d/Tchaikovsky_-_Dance_of_the_Sugar_Plum_Fairy_-_The_Nutcracker.ogg",
+    credit: "Free Classical Music on YouTube · CC BY 3.0",
+  },
+  {
+    title: "헨델 · 메시아 중 목가",
+    src: "https://upload.wikimedia.org/wikipedia/commons/0/0f/Handel_-_messiah_-_13_pifa.ogg",
+    credit: "MIT Concert Choir, W. Cutter · CC BY-SA 2.0",
+  },
+  {
+    title: "코렐리 · 크리스마스 협주곡",
+    src: "https://upload.wikimedia.org/wikipedia/commons/f/f7/Corelli_-_Concerto_Grosso_in_G_minor_-_Christmas_Concerto_-_part_1.ogg",
+    credit: "Advent Chamber Orchestra · CC BY-SA 2.0",
+  },
+  {
+    title: "바흐 · 예수, 인간 소망의 기쁨",
+    src: "https://upload.wikimedia.org/wikipedia/commons/5/51/Jesu%2C_Joy_of_Man%27s_Desiring_%28ISRC_USUAN1100189%29.mp3",
+    credit: "Kevin MacLeod (incompetech.com) · CC BY 3.0",
+  },
+  {
+    title: "비발디 · 사계 중 겨울 2악장",
+    src: "https://upload.wikimedia.org/wikipedia/commons/b/b1/11_-_Vivaldi_Winter_mvt_2_Largo_-_John_Harrison_violin.ogg",
+    credit: "John Harrison (JohnHarrisonViolin.com) · CC BY-SA 4.0",
   },
 ];
 
@@ -190,7 +239,7 @@ function playTrack(index: number) {
   if (!audio) return;
   track = index;
   audio.src = TRACKS[index]?.src ?? "";
-  audio.volume = MUSIC_VOLUME;
+  audio.volume = TRACKS[index]?.volume ?? MUSIC_VOLUME;
   audio.play().catch(() => {});
 }
 
@@ -258,7 +307,12 @@ export function Campfire() {
       <div className="cozy-filter" aria-hidden />
       <div className="campfire" data-tour="campfire">
         {lit && (
-          <span className="campfire-track">♪ {TRACKS[track]?.title}</span>
+          <span className="campfire-track">
+            ♪ {TRACKS[track]?.title}
+            {TRACKS[track]?.credit && (
+              <small className="campfire-credit">{TRACKS[track]?.credit}</small>
+            )}
+          </span>
         )}
         <button
           type="button"

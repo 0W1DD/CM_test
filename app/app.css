@@ -1250,6 +1250,12 @@ textarea,
   white-space: nowrap;
   animation: timeline-in 0.6s ease-out backwards;
 }
+.campfire-credit {
+  display: block;
+  font-family: var(--font-sans, inherit);
+  font-size: 0.625rem;
+  opacity: 0.75;
+}
 @media (prefers-reduced-motion: reduce) {
   .fire-lit .cozy-filter,
   .campfire-frame-a,
