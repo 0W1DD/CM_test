@@ -183,16 +183,25 @@ function GiftCard({
 /**
  * The Lottie gift box ("Gift box" by Phuong Nguyen on LottieFiles, Lottie
  * Simple License): still on its first frame until `playing`, then it opens
- * once, stars and ribbons flying. The player and the animation load only
- * when a gift arrives.
+ * once, stars and ribbons flying, and calls `onBurst` on the frame they
+ * burst out (BURST_FRAME), for the confetti to go with them. The player and
+ * the animation load only when a gift arrives.
  */
-function LottieBox({ playing }: { playing: boolean }) {
+function LottieBox({
+  playing,
+  onBurst,
+}: {
+  playing: boolean;
+  onBurst: () => void;
+}) {
   const box = useRef<HTMLSpanElement>(null);
   const animation = useRef<{ play: () => void; destroy: () => void } | null>(
     null,
   );
   const wantPlay = useRef(playing);
   wantPlay.current = playing;
+  const burst = useRef(onBurst);
+  burst.current = onBurst;
   useEffect(() => {
     let cancelled = false;
     Promise.all([
@@ -211,6 +220,12 @@ function LottieBox({ playing }: { playing: boolean }) {
         rendererSettings: { preserveAspectRatio: "xMidYMid slice" },
       });
       anim.goToAndStop(0, true);
+      let burstDone = false;
+      anim.addEventListener("enterFrame", (event) => {
+        if (burstDone || event.currentTime < BURST_FRAME) return;
+        burstDone = true;
+        burst.current();
+      });
       animation.current = anim;
       if (wantPlay.current) anim.play();
     });
@@ -224,6 +239,9 @@ function LottieBox({ playing }: { playing: boolean }) {
   }, [playing]);
   return <span ref={box} className="lottie-box" aria-hidden />;
 }
+
+/** The Lottie box's frame where the stars and ribbons burst out (25 a second). */
+const BURST_FRAME = 37;
 
 /** "선물이 도착했습니다." and the hint to press, under each closed gift. */
 function ArrivedLine() {
@@ -262,14 +280,23 @@ export function GiftArrivalOverlay({
     return () => window.removeEventListener("keydown", onKey);
   }, [close]);
 
+  // The confetti and then the gift card, once.
+  const burstDone = useRef(false);
+  const burstThenOpen = (wait: number) => {
+    if (burstDone.current) return;
+    burstDone.current = true;
+    setBurst((b) => b + 1);
+    setTimeout(() => setPhase("open"), wait);
+  };
+
   const open = () => {
     if (phase !== "closed") return;
     setPhase("opening");
-    setBurst((b) => b + 1);
-    // Each opening plays out before the gift card shows; the Lottie box
-    // until its stars have flown.
-    const wait = style === "card" ? 0 : style === "lottie" ? 1700 : 650;
-    setTimeout(() => setPhase("open"), wait);
+    // The Lottie box bursts on its own frame (LottieBox's onBurst), or
+    // after a while if it never loaded; the others at once, then their
+    // own opening plays out before the gift card shows.
+    if (style === "lottie") setTimeout(() => burstThenOpen(0), 3500);
+    else burstThenOpen(style === "card" ? 0 : 650);
   };
 
   let stage: ReactNode;
@@ -309,7 +336,12 @@ export function GiftArrivalOverlay({
         onClick={open}
         className={`gift-stage gift-stage-${style} ${phase === "opening" ? "is-opening" : ""} flex w-full flex-col items-center`}
       >
-        {style === "lottie" && <LottieBox playing={phase === "opening"} />}
+        {style === "lottie" && (
+          <LottieBox
+            playing={phase === "opening"}
+            onBurst={() => burstThenOpen(600)}
+          />
+        )}
         {style === "box" && (
           <span className="gift-box" aria-hidden>
             <span className="gift-box-lid">
