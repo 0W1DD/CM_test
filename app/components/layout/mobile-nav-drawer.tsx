@@ -180,7 +180,7 @@ export function MobileNavDrawer({
             </div>
 
             {/* Navigation Links */}
-            <nav className="flex flex-col gap-1 mt-4 flex-1 overflow-y-auto">
+            <nav className="flex flex-col gap-1 mt-4 flex-1 overflow-y-auto overflow-x-hidden">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 return (

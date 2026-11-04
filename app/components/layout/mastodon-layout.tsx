@@ -63,7 +63,7 @@ export function MastodonLayout({
       >
         {/* Sidebar: hidden on mobile, sticky on tablet+ */}
         {showAuthenticatedLayout && (
-          <div className="framed hidden md:block sticky top-6 self-start my-6 max-h-[calc(100vh-3rem)] overflow-y-auto">
+          <div className="framed hidden md:block sticky top-6 self-start my-6 max-h-[calc(100vh-3rem)] overflow-y-auto overflow-x-hidden">
             {/* Tablet: collapsed sidebar */}
             <div className="lg:hidden">
               <SidebarNav
