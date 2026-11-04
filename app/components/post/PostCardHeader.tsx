@@ -106,10 +106,10 @@ export function PostCardHeader({
           />
         </Link>
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <Link to={`/@${author.username}`} className="hover:underline">
               <span
-                className={`${isReply ? "text-[13px]" : "text-sm"} font-semibold text-foreground`}
+                className={`${isReply ? "text-[13px]" : "text-sm"} whitespace-nowrap font-semibold text-foreground`}
               >
                 {author.name}
               </span>
@@ -117,7 +117,7 @@ export function PostCardHeader({
             <FeaturedBadge profileId={author.id} />
             <Link to={`/@${author.username}`} className="hover:underline">
               <span
-                className={`${isReply ? "text-xs" : "text-xs"} text-muted-foreground`}
+                className={`${isReply ? "text-xs" : "text-xs"} whitespace-nowrap text-muted-foreground`}
               >
                 @{author.username}
               </span>

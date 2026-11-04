@@ -4,6 +4,7 @@ import {
   useRef,
   useSyncExternalStore,
 } from "react";
+import { useSparkleCursor } from "~/components/sparkle-cursor";
 
 /** Calm public-domain (or CC0) recordings on Wikimedia Commons. */
 /**
@@ -344,6 +345,21 @@ function FireLevelsPanel({ className }: { className: string }) {
   );
 }
 
+/** The switch for the sparkles that follow the pointer (computers only). */
+function SparkleToggle() {
+  const { on, setOn } = useSparkleCursor();
+  return (
+    <label className="campfire-level campfire-sparkle-toggle">
+      <input
+        type="checkbox"
+        checked={on}
+        onChange={(e) => setOn(e.target.checked)}
+      />
+      반짝이 커서
+    </label>
+  );
+}
+
 /** The two volume sliders. */
 function FireLevels() {
   const { fire, music } = useFire();
@@ -365,6 +381,7 @@ function FireLevels() {
     <div className="campfire-levels">
       {row("fire", "불", fire)}
       {row("music", "음악", music)}
+      <SparkleToggle />
     </div>
   );
 }

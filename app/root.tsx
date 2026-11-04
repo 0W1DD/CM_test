@@ -9,12 +9,13 @@ import {
   ScrollRestoration,
 } from "react-router";
 import { AppLayout } from "~/components/app-layout";
+import { Campfire } from "~/components/campfire";
 import {
   CommunityOwnerLook,
   CommunityThemeInjector,
 } from "~/components/community-theme-injector";
-import { Campfire } from "~/components/campfire";
 import { Snowfall } from "~/components/snowfall";
+import { SparkleCursor } from "~/components/sparkle-cursor";
 import { Toaster } from "~/components/ui/sonner";
 import { CurrentProfileProvider } from "~/providers/CurrentProfileProvider";
 import type { Route } from "./+types/root";
@@ -42,7 +43,11 @@ export function meta() {
 }
 
 export const links: Route.LinksFunction = () => [
-  { rel: "preconnect", href: "https://cdn.jsdelivr.net", crossOrigin: "anonymous" },
+  {
+    rel: "preconnect",
+    href: "https://cdn.jsdelivr.net",
+    crossOrigin: "anonymous",
+  },
   // Pretendard: a Korean UI face built for screens, loaded as a subset. It
   // covers every glyph the pages use.
   {
@@ -77,6 +82,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
           <Campfire />
+          <SparkleCursor />
           <Toaster />
           <ScrollRestoration />
           <Scripts />

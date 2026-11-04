@@ -1294,6 +1294,28 @@ textarea,
   width: 6.5rem;
   accent-color: #f28a1d;
 }
+/* The sparkles' switch: computers only, where the sparkles are. */
+.campfire-sparkle-toggle {
+  margin-top: 0.15rem;
+}
+.campfire-sparkle-toggle input {
+  width: auto;
+}
+@media not ((hover: hover) and (pointer: fine)) {
+  .campfire-sparkle-toggle {
+    display: none;
+  }
+}
+/* The sparkles that follow the pointer (sparkle-cursor.tsx): over
+   everything, never in the way of a click. */
+.sparkle-cursor {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100;
+  pointer-events: none;
+}
 .campfire-credit {
   display: block;
   font-family: var(--font-sans, inherit);
