@@ -10,6 +10,7 @@ import {
 } from "react-router";
 import { AppLayout } from "~/components/app-layout";
 import { Campfire } from "~/components/campfire";
+import { CarolDock } from "~/components/carol-player";
 import {
   CommunityOwnerLook,
   CommunityThemeInjector,
@@ -82,6 +83,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
           <Campfire />
+          <CarolDock />
           <SparkleCursor />
           <Toaster />
           <ScrollRestoration />

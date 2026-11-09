@@ -100,7 +100,7 @@ export function MastodonLayout({
         {/* Wide screens: clock and calendar on the right, the morning
             check-in and the events under them */}
         {showAuthenticatedLayout && (
-          <aside className="hidden xl:block sticky top-6 self-start my-6">
+          <aside className="hidden xl:block sticky top-6 self-start my-6 max-h-[calc(100vh-3rem)] overflow-y-auto overflow-x-hidden pb-28 rail-scroll">
             <div data-tour="calendar">
               <ClockCalendar />
             </div>

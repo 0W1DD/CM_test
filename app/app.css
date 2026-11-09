@@ -1521,3 +1521,62 @@ h2 .profile-badge {
   background: var(--card);
   border-color: var(--frame);
 }
+
+/* The right rail scrolls on its own when taller than the screen, its
+   scrollbar hidden; its foot clears the fireplace in the corner. */
+.rail-scroll {
+  scrollbar-width: none;
+}
+.rail-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* The carol player's small window (carol-player.tsx), for the whole site:
+   bottom left on computers, above the bottom bar on phones. Folded, its
+   player is moved out of sight but stays loaded, so it keeps playing. */
+.carol-dock {
+  position: fixed;
+  z-index: 57;
+  left: 1rem;
+  bottom: 1rem;
+  width: 20rem;
+  max-width: calc(100vw - 2rem);
+  background: var(--card);
+  color: var(--foreground);
+  border: 1.5px solid var(--frame);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.35);
+}
+.carol-dock-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.8125rem;
+}
+.carol-dock-head svg {
+  color: var(--primary);
+}
+.carol-dock-body {
+  position: relative;
+  aspect-ratio: 16 / 9;
+}
+.carol-dock-body iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.carol-dock.is-folded .carol-dock-body {
+  position: fixed;
+  left: -10000px;
+  width: 320px;
+}
+@media (max-width: 767px) {
+  .carol-dock {
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto;
+    bottom: 5.5rem;
+  }
+}
