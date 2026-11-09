@@ -1567,6 +1567,17 @@ h2 .profile-badge {
   height: 100%;
   border: 0;
 }
+/* Folded: a slim bar flush with the bottom edge, below the side menu. */
+.carol-dock.is-folded {
+  bottom: 0;
+  width: auto;
+  border-bottom: none;
+  box-shadow: none;
+}
+.carol-dock.is-folded .carol-dock-head {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+}
 .carol-dock.is-folded .carol-dock-body {
   position: fixed;
   left: -10000px;
@@ -1578,5 +1589,9 @@ h2 .profile-badge {
     right: 0.75rem;
     width: auto;
     bottom: 5.5rem;
+  }
+  .carol-dock.is-folded {
+    bottom: 5.5rem;
+    border-bottom: 1.5px solid var(--frame);
   }
 }
