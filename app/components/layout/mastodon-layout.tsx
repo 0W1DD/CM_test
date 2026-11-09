@@ -1,5 +1,4 @@
 import { type ReactNode, useRef } from "react";
-import { BoxCollectionRail } from "~/components/box-collection";
 import { CampfireHeaderButton } from "~/components/campfire";
 import { EventsRail } from "~/components/events-rail";
 import { GiftArrival } from "~/components/gift-arrival";
@@ -104,7 +103,6 @@ export function MastodonLayout({
             <div data-tour="calendar">
               <ClockCalendar />
             </div>
-            <BoxCollectionRail />
             <EventsRail />
           </aside>
         )}

@@ -1437,6 +1437,7 @@ h2 .profile-badge {
     0 0 / 0.5rem 1.1rem repeat-y;
 }
 .box-notebook-head {
+  color: inherit;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1447,7 +1448,10 @@ h2 .profile-badge {
   gap: 0.25rem;
   overflow-x: auto;
   padding: 0.35rem 0.5rem 0 0.2rem;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+}
+.box-notebook-tabs::-webkit-scrollbar {
+  display: none;
 }
 .box-notebook-tab {
   position: relative;
@@ -1496,4 +1500,24 @@ h2 .profile-badge {
   height: 0.45rem;
   border-radius: 999px;
   background: #e24b4a;
+}
+
+/* The events page's two tabs (events.tsx): the events, and the book. */
+.events-tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1.5px solid var(--frame);
+}
+.events-tabs button {
+  padding: 0.45rem 1.1rem;
+  margin-bottom: -1.5px;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  border: 1.5px solid transparent;
+  border-bottom: none;
+}
+.events-tabs button.is-open {
+  color: var(--foreground);
+  background: var(--card);
+  border-color: var(--frame);
 }

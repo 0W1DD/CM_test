@@ -3,7 +3,8 @@
 // scrolling, a red dot on what was registered since this browser last
 // looked, and the card that shows what an opened box gave.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { ChevronDown } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import {
@@ -40,6 +41,7 @@ export interface BoxDraw {
 
 const BOOK_KEY = ["box-book"];
 const SEEN_KEY = "commung-box-book-seen";
+const OPEN_KEY = "commung-box-book-open";
 
 export function useBoxBook() {
   return useQuery({
@@ -103,10 +105,47 @@ export function useRegisterBox(onDone?: () => void) {
 /**
  * The notebook: category tabs along the top (a red dot on those with
  * something new), the open page's entries on ruled lines, scrolling inside.
- * `tall` for the events page; the staff get a reset at the foot.
+ * `tall` for the events page; `folding` (under the calendar) starts shut,
+ * its title opening and closing it, as this browser last left it. The
+ * staff get a reset at the foot.
  */
-export function BoxNotebook({ tall = false }: { tall?: boolean }) {
+export function BoxNotebook({
+  tall = false,
+  folding = false,
+  tour,
+}: {
+  tall?: boolean;
+  folding?: boolean;
+  tour?: string;
+}) {
   const { data } = useBoxBook();
+  const [open, setOpen] = useState(() => {
+    if (!folding) return true;
+    try {
+      return localStorage.getItem(OPEN_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const toggle = () => {
+    setOpen(!open);
+    try {
+      localStorage.setItem(OPEN_KEY, open ? "0" : "1");
+    } catch {}
+  };
+  // The tabs scroll sideways with the wheel, their scrollbar hidden.
+  const tabs = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = tabs.current;
+    if (!el) return;
+    const wheel = (e: WheelEvent) => {
+      if (el.scrollWidth <= el.clientWidth || !e.deltaY) return;
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    };
+    el.addEventListener("wheel", wheel, { passive: false });
+    return () => el.removeEventListener("wheel", wheel);
+  });
   const { isModerator } = useCurrentInstance();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState(0);
@@ -115,7 +154,7 @@ export function BoxNotebook({ tall = false }: { tall?: boolean }) {
 
   // The open page counts as seen, a moment after it shows.
   useEffect(() => {
-    if (!page || !hasNew(page, seen)) return;
+    if (!open || !page || !hasNew(page, seen)) return;
     const id = setTimeout(() => {
       const next = { ...loadSeen(), [page.name]: new Date().toISOString() };
       try {
@@ -124,7 +163,7 @@ export function BoxNotebook({ tall = false }: { tall?: boolean }) {
       setSeen(next);
     }, 1500);
     return () => clearTimeout(id);
-  }, [page, seen]);
+  }, [open, page, seen]);
 
   const reset = useMutation({
     mutationFn: async () => {
@@ -145,8 +184,14 @@ export function BoxNotebook({ tall = false }: { tall?: boolean }) {
   if (!data || !page) return null;
   const anyNew = data.categories.some((c) => hasNew(c, seen));
   return (
-    <div className="box-notebook" data-tour="box-book">
-      <div className="box-notebook-head">
+    <div className="box-notebook" data-tour={tour}>
+      <button
+        type="button"
+        className="box-notebook-head w-full text-left"
+        onClick={folding ? toggle : undefined}
+        aria-expanded={open}
+        disabled={!folding}
+      >
         <span className="relative font-semibold">
           크리스마스 도감
           {anyNew && <span className="box-dot -right-2.5 top-0" />}
@@ -154,78 +199,80 @@ export function BoxNotebook({ tall = false }: { tall?: boolean }) {
         <span className="ml-auto tabular-nums text-xs">
           {data.registered} / {data.total}
         </span>
-      </div>
-      <div className="box-notebook-tabs" role="tablist">
-        {data.categories.map((c, i) => (
-          <button
-            key={c.name}
-            type="button"
-            role="tab"
-            aria-selected={i === tab}
-            onClick={() => setTab(i)}
-            className={`box-notebook-tab ${i === tab ? "is-open" : ""}`}
-          >
-            {c.name}
-            {hasNew(c, seen) && <span className="box-dot -right-1 -top-1" />}
-          </button>
-        ))}
-      </div>
-      <div
-        className={`box-notebook-page ${tall ? "h-96" : "h-52"}`}
-        role="tabpanel"
-      >
-        <p className="box-notebook-line text-xs opacity-70">
-          {page.name} · {page.entries.length} / {page.total}
-        </p>
-        {page.entries.length === 0 ? (
-          <p className="box-notebook-line opacity-70">
-            아직 등록된 물건이 없습니다.
-          </p>
-        ) : (
-          page.entries.map((e) => (
-            <p key={e.entry} className="box-notebook-line flex gap-2">
-              <span className="truncate">{e.entry}</span>
-              {e.by && (
-                <span className="ml-auto shrink-0 text-xs opacity-60">
-                  {e.by.name}
-                </span>
-              )}
-            </p>
-          ))
+        {folding && (
+          <ChevronDown
+            className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
+          />
         )}
-      </div>
-      {isModerator && (
-        <div className="box-notebook-foot">
-          <button
-            type="button"
-            disabled={reset.isPending}
-            onClick={() => {
-              if (
-                confirm(
-                  "도감을 모두 비울까요? 회원들이 가진 물건은 그대로 남습니다.",
-                )
-              )
-                reset.mutate();
-            }}
+      </button>
+      {open && (
+        <>
+          <div className="box-notebook-tabs" role="tablist" ref={tabs}>
+            {data.categories.map((c, i) => (
+              <button
+                key={c.name}
+                type="button"
+                role="tab"
+                aria-selected={i === tab}
+                onClick={() => setTab(i)}
+                className={`box-notebook-tab ${i === tab ? "is-open" : ""}`}
+              >
+                {c.name}
+                {hasNew(c, seen) && (
+                  <span className="box-dot -right-1 -top-1" />
+                )}
+              </button>
+            ))}
+          </div>
+          <div
+            className={`box-notebook-page ${tall ? "h-96" : "h-40"}`}
+            role="tabpanel"
           >
-            도감 초기화 (운영진)
-          </button>
-        </div>
+            <p className="box-notebook-line text-xs opacity-70">
+              {page.name} · {page.entries.length} / {page.total}
+            </p>
+            {page.entries.length === 0 ? (
+              <p className="box-notebook-line opacity-70">
+                아직 등록된 물건이 없습니다.
+              </p>
+            ) : (
+              page.entries.map((e) => (
+                <p key={e.entry} className="box-notebook-line flex gap-2">
+                  <span className="truncate">{e.entry}</span>
+                  {e.by && (
+                    <span className="ml-auto shrink-0 text-xs opacity-60">
+                      {e.by.name}
+                    </span>
+                  )}
+                </p>
+              ))
+            )}
+          </div>
+          {isModerator && (
+            <div className="box-notebook-foot">
+              <button
+                type="button"
+                disabled={reset.isPending}
+                onClick={() => {
+                  if (
+                    confirm(
+                      "도감을 모두 비울까요? 회원들이 가진 물건은 그대로 남습니다.",
+                    )
+                  )
+                    reset.mutate();
+                }}
+              >
+                도감 초기화 (운영진)
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
 
-/** Under the calendar on wide screens. */
-export function BoxCollectionRail() {
-  return (
-    <div className="mt-4">
-      <BoxNotebook />
-    </div>
-  );
-}
-
-/** On the events page, where phones find it. */
+/** The book, on the events page. */
 export function BoxCollectionBook() {
   return (
     // biome-ignore lint/correctness/useUniqueElementIds: links aim at /events#collection; the book is on that page once.

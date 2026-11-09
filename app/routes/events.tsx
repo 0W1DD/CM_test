@@ -11,7 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { toast } from "sonner";
 import { BoxCollectionBook } from "~/components/box-collection";
 import { CheckInButton, GiftSignupButton } from "~/components/events-rail";
@@ -225,6 +225,14 @@ export default function EventsPage() {
   const { data, isLoading, profileId, refresh } = useEventsStatus();
   const { isModerator } = useCurrentInstance();
   const { currentProfile } = useAuth();
+  // Two tabs: the events, and the random box's book (#collection opens it).
+  const { hash } = useLocation();
+  const [tab, setTab] = useState<"events" | "book">(
+    hash === "#collection" ? "book" : "events",
+  );
+  useEffect(() => {
+    if (hash === "#collection") setTab("book");
+  }, [hash]);
   // The staff's look at what a recipient sees, before or after Monday
   // 08:00: from their own saved gift, or a sample. Nothing is saved.
   const [preview, setPreview] = useState<"waiting" | "open" | null>(null);
@@ -289,153 +297,180 @@ export default function EventsPage() {
         )}
       </div>
 
-      <BoxCollectionBook />
+      <div className="events-tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "events"}
+          className={tab === "events" ? "is-open" : ""}
+          onClick={() => setTab("events")}
+        >
+          이벤트
+        </button>
+        <button
+          type="button"
+          role="tab"
+          data-tour="box-book"
+          aria-selected={tab === "book"}
+          className={tab === "book" ? "is-open" : ""}
+          onClick={() => setTab("book")}
+        >
+          도감
+        </button>
+      </div>
 
-      <section className="framed bg-card p-5 space-y-3">
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
-          <CalendarCheck className="h-5 w-5 text-primary" />
-          출석체크
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          출석체크 시 {coin} {data.check_in.coins}개를 받습니다.
-        </p>
-        <CheckInButton />
-      </section>
-
-      {isModerator && (
-        <div className="flex flex-wrap items-center gap-2 border border-dashed border-border p-3 text-sm">
-          <span className="font-semibold text-foreground">
-            받는 화면 미리보기
-          </span>
-          <span className="text-xs text-muted-foreground">
-            (운영진에게만 보입니다. 실제 선물은 바뀌지 않아요)
-          </span>
-          {(
-            [
-              ["waiting", "열리기 전"],
-              ["open", "월요일 8시 이후"],
-            ] as const
-          ).map(([value, label]) => (
-            <Button
-              key={value}
-              size="sm"
-              variant={preview === value ? "default" : "outline"}
-              onClick={() => setPreview(preview === value ? null : value)}
-            >
-              {label}
-            </Button>
-          ))}
-          <span className="basis-full" />
-          <span className="font-semibold text-foreground">도착 연출</span>
-          {ARRIVAL_STYLES.map((style) => (
-            <Button
-              key={style.value}
-              size="sm"
-              variant="outline"
-              onClick={() => setArrival(style.value)}
-            >
-              {style.label}
-              {style.value === ARRIVAL_STYLE && " (사용 중)"}
-            </Button>
-          ))}
-        </div>
-      )}
-
-      {arrival && (
-        <GiftArrivalOverlay
-          key={arrival}
-          style={arrival}
-          gifts={previewReceived.gifts}
-          onClose={() => setArrival(null)}
-        />
-      )}
-
-      {(preview || received.count > 0) && (
-        <section className="framed bg-card p-5 space-y-3">
-          <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <PartyPopper className="h-5 w-5 text-primary" />
-            받은 선물
-            {preview && (
-              <span className="text-xs font-normal text-muted-foreground">
-                (미리보기)
-              </span>
-            )}
-          </h2>
-          <ReceivedGifts
-            // A fresh, still-wrapped gift each time the preview changes
-            key={preview ?? "real"}
-            received={preview ? previewReceived : received}
-          />
-        </section>
-      )}
-
-      <section className="framed bg-card p-5 space-y-4">
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
-          <Gift className="h-5 w-5 text-primary" />
-          주간 선물 교환식
-        </h2>
-        <div className="space-y-2 text-sm text-foreground">
-          <p>
-            일주일에 한 번 선물을 교환합니다. 월요일 아침 8시에 열어볼 수
-            있습니다.
-          </p>
-          <p>
-            선물은 랜덤으로 배부됩니다. 운영진에게 따로 메시지를 줄 경우
-            특정인에게 선물을 줄 수도 있습니다. 일종의 찌름 기능이라고
-            생각해주세요. 이 외의 선물은 100% 시스템 랜덤으로 전달됩니다.
-          </p>
-          <ol className="list-decimal space-y-1 pl-5">
-            <li>
-              월요일 ~ 토요일: 선물 교환식 신청을 합니다. (이번 주 마감:{" "}
-              {kstLastMinute(gift.signup_ends)})
-            </li>
-            <li>
-              신청 후 ~ 일요일 저녁 11시 반까지: 선물을 입력합니다.
-              링크/이미지/글을 넣을 수 있습니다. (마감:{" "}
-              {kstTime(gift.gifts_close)})
-            </li>
-            <li>
-              수신인을 정하고 싶을 경우 신청 마감 전까지 운영진에게 개인
-              메시지를 보냅니다. 선착순으로 배정됩니다.
-            </li>
-          </ol>
-          <p className="text-muted-foreground">
-            선물을 보낸 사람은 선물이 열리는 월요일에 {coin} {data.gift_coins}
-            개를 받습니다. 지금 신청 {gift.participants}명.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <GiftSignupButton />
-          {gift.signed_up && gift.phase === "signup" && (
-            <button
-              type="button"
-              disabled={cancel.isPending}
-              onClick={() => {
-                if (window.confirm("선물 교환식 신청을 취소할까요?"))
-                  cancel.mutate();
-              }}
-              className="text-xs text-muted-foreground hover:text-destructive hover:underline"
-            >
-              신청 취소
-            </button>
-          )}
-        </div>
-
-        {gift.signed_up && (
-          <div className="space-y-3 border-t border-border pt-4">
-            <h3 className="font-semibold text-foreground">선물 작성하기</h3>
-            <p className="text-xs text-muted-foreground">
-              받을 사람은 랜덤으로 정해지며 공개되지 않습니다.
+      {tab === "book" ? (
+        <BoxCollectionBook />
+      ) : (
+        <>
+          <section className="framed bg-card p-5 space-y-3">
+            <h2 className="flex items-center gap-2 text-lg font-semibold">
+              <CalendarCheck className="h-5 w-5 text-primary" />
+              출석체크
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              출석체크 시 {coin} {data.check_in.coins}개를 받습니다.
             </p>
-            <GiftEditor
-              key={gift.week}
-              gift={gift}
-              onSaved={refresh}
-              profileId={profileId}
+            <CheckInButton />
+          </section>
+
+          {isModerator && (
+            <div className="flex flex-wrap items-center gap-2 border border-dashed border-border p-3 text-sm">
+              <span className="font-semibold text-foreground">
+                받는 화면 미리보기
+              </span>
+              <span className="text-xs text-muted-foreground">
+                (운영진에게만 보입니다. 실제 선물은 바뀌지 않아요)
+              </span>
+              {(
+                [
+                  ["waiting", "열리기 전"],
+                  ["open", "월요일 8시 이후"],
+                ] as const
+              ).map(([value, label]) => (
+                <Button
+                  key={value}
+                  size="sm"
+                  variant={preview === value ? "default" : "outline"}
+                  onClick={() => setPreview(preview === value ? null : value)}
+                >
+                  {label}
+                </Button>
+              ))}
+              <span className="basis-full" />
+              <span className="font-semibold text-foreground">도착 연출</span>
+              {ARRIVAL_STYLES.map((style) => (
+                <Button
+                  key={style.value}
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setArrival(style.value)}
+                >
+                  {style.label}
+                  {style.value === ARRIVAL_STYLE && " (사용 중)"}
+                </Button>
+              ))}
+            </div>
+          )}
+
+          {arrival && (
+            <GiftArrivalOverlay
+              key={arrival}
+              style={arrival}
+              gifts={previewReceived.gifts}
+              onClose={() => setArrival(null)}
             />
-          </div>
-        )}
-      </section>
+          )}
+
+          {(preview || received.count > 0) && (
+            <section className="framed bg-card p-5 space-y-3">
+              <h2 className="flex items-center gap-2 text-lg font-semibold">
+                <PartyPopper className="h-5 w-5 text-primary" />
+                받은 선물
+                {preview && (
+                  <span className="text-xs font-normal text-muted-foreground">
+                    (미리보기)
+                  </span>
+                )}
+              </h2>
+              <ReceivedGifts
+                // A fresh, still-wrapped gift each time the preview changes
+                key={preview ?? "real"}
+                received={preview ? previewReceived : received}
+              />
+            </section>
+          )}
+
+          <section className="framed bg-card p-5 space-y-4">
+            <h2 className="flex items-center gap-2 text-lg font-semibold">
+              <Gift className="h-5 w-5 text-primary" />
+              주간 선물 교환식
+            </h2>
+            <div className="space-y-2 text-sm text-foreground">
+              <p>
+                일주일에 한 번 선물을 교환합니다. 월요일 아침 8시에 열어볼 수
+                있습니다.
+              </p>
+              <p>
+                선물은 랜덤으로 배부됩니다. 운영진에게 따로 메시지를 줄 경우
+                특정인에게 선물을 줄 수도 있습니다. 일종의 찌름 기능이라고
+                생각해주세요. 이 외의 선물은 100% 시스템 랜덤으로 전달됩니다.
+              </p>
+              <ol className="list-decimal space-y-1 pl-5">
+                <li>
+                  월요일 ~ 토요일: 선물 교환식 신청을 합니다. (이번 주 마감:{" "}
+                  {kstLastMinute(gift.signup_ends)})
+                </li>
+                <li>
+                  신청 후 ~ 일요일 저녁 11시 반까지: 선물을 입력합니다.
+                  링크/이미지/글을 넣을 수 있습니다. (마감:{" "}
+                  {kstTime(gift.gifts_close)})
+                </li>
+                <li>
+                  수신인을 정하고 싶을 경우 신청 마감 전까지 운영진에게 개인
+                  메시지를 보냅니다. 선착순으로 배정됩니다.
+                </li>
+              </ol>
+              <p className="text-muted-foreground">
+                선물을 보낸 사람은 선물이 열리는 월요일에 {coin}{" "}
+                {data.gift_coins}
+                개를 받습니다. 지금 신청 {gift.participants}명.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <GiftSignupButton />
+              {gift.signed_up && gift.phase === "signup" && (
+                <button
+                  type="button"
+                  disabled={cancel.isPending}
+                  onClick={() => {
+                    if (window.confirm("선물 교환식 신청을 취소할까요?"))
+                      cancel.mutate();
+                  }}
+                  className="text-xs text-muted-foreground hover:text-destructive hover:underline"
+                >
+                  신청 취소
+                </button>
+              )}
+            </div>
+
+            {gift.signed_up && (
+              <div className="space-y-3 border-t border-border pt-4">
+                <h3 className="font-semibold text-foreground">선물 작성하기</h3>
+                <p className="text-xs text-muted-foreground">
+                  받을 사람은 랜덤으로 정해지며 공개되지 않습니다.
+                </p>
+                <GiftEditor
+                  key={gift.week}
+                  gift={gift}
+                  onSaved={refresh}
+                  profileId={profileId}
+                />
+              </div>
+            )}
+          </section>
+        </>
+      )}
     </div>
   );
 }
