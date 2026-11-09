@@ -34,6 +34,8 @@ export interface ShopInventoryEntry {
   qty: number;
   consumable: boolean;
   randomBox?: boolean;
+  boxEntry?: boolean;
+  registered?: boolean;
 }
 
 export interface ShopSummary {

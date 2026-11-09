@@ -139,7 +139,7 @@ export async function listItems(ctx) {
     const { rows } = await ctx.sql `
     SELECT i.*, c.name AS currency_name FROM shop_items i
     JOIN shop_currencies c ON c.id = i.currency_id
-    WHERE i.deleted_at IS NULL ORDER BY i.name`;
+    WHERE i.deleted_at IS NULL AND i.box_entry = 0 ORDER BY i.name`;
     return rows.map(itemJson);
 }
 export async function getItem(ctx, itemId) {
@@ -238,7 +238,9 @@ export async function listBalances(ctx, profileId) {
 export async function listInventory(ctx, profileId) {
     const { rows } = await ctx.sql `
     SELECT v.id, v.item_id, i.name AS item_name, i.description AS item_description,
-      i.consumable, i.is_unique, i.random_box, v.qty, v.granted_at, v.updated_at
+      i.consumable, i.is_unique, i.random_box, i.box_entry,
+      EXISTS (SELECT 1 FROM box_registry r WHERE r.entry = i.name) AS registered,
+      v.qty, v.granted_at, v.updated_at
     FROM shop_inventory v JOIN shop_items i ON i.id = v.item_id
     WHERE v.profile_id = ${profileId} AND v.qty > 0 AND i.deleted_at IS NULL
     ORDER BY i.name`;
@@ -250,6 +252,8 @@ export async function listInventory(ctx, profileId) {
         consumable: bool(row.consumable),
         isUnique: bool(row.is_unique),
         randomBox: bool(row.random_box),
+        boxEntry: bool(row.box_entry),
+        registered: bool(row.registered),
         qty: row.qty,
         grantedAt: iso(row.granted_at),
         updatedAt: iso(row.updated_at),
@@ -327,7 +331,7 @@ async function owns(ctx, profileId, itemId) {
 function alreadyOwned() {
     return new ShopError("CONFLICT", "이미 보유 중인 상품입니다", "already_owned");
 }
-async function addToInventory(ctx, profileId, itemId, qty) {
+export async function addToInventory(ctx, profileId, itemId, qty) {
     await ctx.sql `
     INSERT INTO shop_inventory (id, profile_id, item_id, qty, granted_at, updated_at)
     VALUES (${uuidv7(ctx.now)}, ${profileId}, ${itemId}, ${qty}, ${ctx.now}, ${ctx.now})

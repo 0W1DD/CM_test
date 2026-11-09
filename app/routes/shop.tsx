@@ -10,7 +10,11 @@ import {
 import { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
-import { type BoxDraw, BoxRevealDialog } from "~/components/box-collection";
+import {
+  type BoxDraw,
+  BoxRevealDialog,
+  useRegisterBox,
+} from "~/components/box-collection";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
@@ -232,11 +236,12 @@ export default function ShopPage() {
     onSuccess: (result) => {
       setDraw(result);
       queryClient.invalidateQueries({ queryKey: ["shop-summary"] });
-      queryClient.invalidateQueries({ queryKey: ["box-collection"] });
+      queryClient.invalidateQueries({ queryKey: ["box-book"] });
       refetch();
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  const register = useRegisterBox(() => refetch());
   const busy = use.isPending || transfer.isPending || openBox.isPending;
 
   if (isLoading || !data) {
@@ -433,6 +438,15 @@ export default function ShopPage() {
                         }
                       >
                         {entry.consumable ? "사용" : "꺼내 보이기"}
+                      </Button>
+                    )}
+                    {entry.boxEntry && !entry.registered && (
+                      <Button
+                        size="sm"
+                        disabled={busy || register.isPending}
+                        onClick={() => register.mutate(entry.itemId)}
+                      >
+                        도감 등록
                       </Button>
                     )}
                     <Button

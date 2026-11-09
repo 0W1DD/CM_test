@@ -1415,3 +1415,85 @@ h2 .profile-badge {
   color: #fff;
   font-size: 0.8125rem;
 }
+
+/* The random box's book (box-collection.tsx): a notebook of cream paper
+   with its rings down the left, tabs along the top, ruled lines inside. */
+.box-notebook {
+  position: relative;
+  background: #fbf3dc;
+  color: #2e2a20;
+  border: 1.5px solid #6b5a3a;
+  padding-left: 1.4rem;
+  font-size: 0.875rem;
+}
+.box-notebook::before {
+  content: "";
+  position: absolute;
+  top: 0.6rem;
+  bottom: 0.6rem;
+  left: 0.45rem;
+  width: 0.5rem;
+  background: radial-gradient(circle, #6b5a3a 0 0.18rem, transparent 0.2rem)
+    0 0 / 0.5rem 1.1rem repeat-y;
+}
+.box-notebook-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem 0.3rem 0.2rem;
+}
+.box-notebook-tabs {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  padding: 0.35rem 0.5rem 0 0.2rem;
+  scrollbar-width: thin;
+}
+.box-notebook-tab {
+  position: relative;
+  flex-shrink: 0;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.75rem;
+  background: #e9dcb8;
+  border: 1px solid #b8a57a;
+  border-bottom: none;
+  color: #5a4b2c;
+}
+.box-notebook-tab.is-open {
+  background: #fffaf0;
+  color: #2e2a20;
+  font-weight: 600;
+}
+.box-notebook-page {
+  overflow-y: auto;
+  background-color: #fffaf0;
+  background-image: repeating-linear-gradient(
+    transparent 0 1.55rem,
+    #e8d9b5 1.55rem 1.6rem
+  );
+  border-top: 1px solid #b8a57a;
+  padding: 0 0.75rem 0 0.4rem;
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.box-notebook-line {
+  line-height: 1.6rem;
+  min-height: 1.6rem;
+}
+.box-notebook-foot {
+  padding: 0 0.75rem 0.6rem 0.2rem;
+  text-align: right;
+}
+.box-notebook-foot button {
+  font-size: 0.75rem;
+  color: #a32d2d;
+  text-decoration: underline;
+}
+/* Something new: a small red dot on the tab or the title. */
+.box-dot {
+  position: absolute;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: #e24b4a;
+}

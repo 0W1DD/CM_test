@@ -1,7 +1,10 @@
 // The Christmas random box: what an opened box can give, by category, and
-// the draw. A profile gets what it has not collected yet while any is
-// left, so the collection (도감) fills without repeats; after that, any.
-import type { MutationCtx } from "./core.js";
+// the draw. What a box gives becomes an item in the opener's inventory (a
+// shop item marked box_entry, made the first time it comes out), to use or
+// give away, and whoever holds one may register it in the community's book
+// (도감). The draw favours what the book does not have yet.
+import { type MutationCtx, uuidv7 } from "./core.js";
+import { addToInventory } from "./shop.js";
 
 export const BOX_ITEMS: Record<string, readonly string[]> = {
   장식: [
@@ -842,27 +845,39 @@ export const BOX_ENTRIES: readonly { entry: string; category: string }[] =
     entries.map((entry) => ({ entry, category })),
   );
 
+export const categoryOf = (entry: string) =>
+  BOX_ENTRIES.find((e) => e.entry === entry)?.category ?? null;
+
 /**
- * Draws one entry for `profileId`: one it has not collected while any is
- * left, any once it has them all; then records it in the collection.
- * Answers it, and whether it is new to the profile.
+ * Draws one entry, one the book lacks while any is left, and puts it in
+ * `profileId`'s inventory as an item (priced, never sold, in the box's own
+ * currency; an item of the same name the staff made is used as it is).
+ * Answers it, its item, and whether the book has it already.
  */
-export async function drawBox(ctx: MutationCtx, profileId: string) {
+export async function giveBox(
+  ctx: MutationCtx,
+  profileId: string,
+  currencyId: string,
+) {
   const { rows } = await ctx.sql<{ entry: string }>`
-    SELECT entry FROM box_collection WHERE profile_id = ${profileId}`;
-  const have = new Set(rows.map((r) => r.entry));
-  const fresh = BOX_ENTRIES.filter((e) => !have.has(e.entry));
-  const pool = fresh.length ? fresh : BOX_ENTRIES;
+    SELECT entry FROM box_registry`;
+  const inBook = new Set(rows.map((r) => r.entry));
+  const missing = BOX_ENTRIES.filter((e) => !inBook.has(e.entry));
+  const pool = missing.length ? missing : BOX_ENTRIES;
   const picked = pool[Math.floor(Math.random() * pool.length)];
   if (!picked) throw new Error("the box list is empty");
-  await ctx.sql`
-    INSERT INTO box_collection (profile_id, entry, category, count, first_at, last_at)
-    VALUES (${profileId}, ${picked.entry}, ${picked.category}, 1, ${ctx.now}, ${ctx.now})
-    ON CONFLICT (profile_id, entry) DO UPDATE SET
-      count = count + 1, last_at = excluded.last_at`;
-  return {
-    ...picked,
-    isNew: fresh.length > 0,
-    collected: have.size + (fresh.length ? 1 : 0),
-  };
+  const { rows: found } = await ctx.sql<{ id: string }>`
+    SELECT id FROM shop_items
+    WHERE lower(name) = lower(${picked.entry}) AND deleted_at IS NULL`;
+  let itemId = found[0]?.id;
+  if (!itemId) {
+    itemId = uuidv7(ctx.now);
+    await ctx.sql`
+      INSERT INTO shop_items (id, name, description, price_amount, currency_id,
+        consumable, is_unique, random_box, box_entry, created_at, updated_at)
+      VALUES (${itemId}, ${picked.entry}, ${`크리스마스 랜덤박스에서 나온 물건 (${picked.category})`},
+        1, ${currencyId}, 0, 0, 0, 1, ${ctx.now}, ${ctx.now})`;
+  }
+  await addToInventory(ctx, profileId, itemId, 1);
+  return { ...picked, itemId, registered: inBook.has(picked.entry) };
 }

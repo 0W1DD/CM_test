@@ -1,9 +1,10 @@
-// The Christmas random box's collection (도감, naru/queries/boxes.ts): a
-// short list by the calendar on wide screens, the whole book on the events
-// page, and the card that shows what a box gave.
-import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Gift } from "lucide-react";
-import { Link } from "react-router";
+// The Christmas random box's book (도감, naru/queries/boxes.ts), shared by
+// the whole community: a notebook with a tab per category, each page
+// scrolling, a red dot on what was registered since this browser last
+// looked, and the card that shows what an opened box gave.
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -12,159 +13,263 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { useAuth } from "~/hooks/useAuth";
-import { query } from "~/lib/naru";
+import { useCurrentInstance } from "~/hooks/useCurrentInstance";
+import { errorMessage, mutate, query } from "~/lib/naru";
 
-export interface BoxCollection {
+export interface BoxBook {
   total: number;
-  collected: number;
-  recent: { entry: string; count: number; last_at: string }[];
-  categories: { name: string; entries: { entry: string; count: number }[] }[];
+  registered: number;
+  latest_at: string | null;
+  categories: {
+    name: string;
+    total: number;
+    entries: {
+      entry: string;
+      registered_at: string;
+      by: { name: string; username: string | null } | null;
+    }[];
+  }[];
 }
 
 export interface BoxDraw {
   entry: string;
   category: string;
-  is_new: boolean;
-  collected: number;
+  item_id: string;
+  registered: boolean;
 }
 
-export const boxCollectionKey = (profileId: string | undefined) => [
-  "box-collection",
-  profileId,
-];
+const BOOK_KEY = ["box-book"];
+const SEEN_KEY = "commung-box-book-seen";
 
-/** The acting profile's collection (or `profileId`'s). */
-export function useBoxCollection(profileId?: string) {
-  const { currentProfile } = useAuth();
-  const id = profileId ?? currentProfile?.id;
+export function useBoxBook() {
   return useQuery({
-    queryKey: boxCollectionKey(id),
-    queryFn: () => query<BoxCollection>("boxes:collection", { profile_id: id }),
-    enabled: !!id,
+    queryKey: BOOK_KEY,
+    queryFn: () => query<BoxBook>("boxes:collection"),
   });
 }
 
-/** Under the calendar: how far the book is, and the latest finds. */
-export function BoxCollectionRail() {
-  const { data } = useBoxCollection();
-  if (!data) return null;
+/** When this browser last looked at each category's page. */
+function loadSeen(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(SEEN_KEY) ?? "{}");
+  } catch {
+    return {};
+  }
+}
+
+const hasNew = (
+  category: BoxBook["categories"][number],
+  seen: Record<string, string>,
+) => {
+  const since = seen[category.name] ?? "";
+  return category.entries.some((e) => e.registered_at > since);
+};
+
+/** Registers an item the acting profile holds in the book. */
+export function useRegisterBox(onDone?: () => void) {
+  const { currentProfile } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (itemId: string) => {
+      if (!currentProfile) throw new Error("프로필을 선택하세요");
+      try {
+        return await mutate<{
+          entry: string;
+          coins: number;
+          currency: string | null;
+        }>("boxes:register", {
+          profile_id: currentProfile.id,
+          item_id: itemId,
+        });
+      } catch (error) {
+        throw new Error(errorMessage(error, "도감에 등록하지 못했습니다"));
+      }
+    },
+    onSuccess: (result) => {
+      toast.success(
+        result.coins
+          ? `${result.entry}을(를) 도감에 처음 등록했습니다! ${result.currency} ${result.coins}개를 받았습니다.`
+          : `${result.entry}을(를) 도감에 등록했습니다.`,
+      );
+      queryClient.invalidateQueries({ queryKey: ["events-status"] });
+      queryClient.invalidateQueries({ queryKey: BOOK_KEY });
+      queryClient.invalidateQueries({ queryKey: ["shop-summary"] });
+      onDone?.();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+/**
+ * The notebook: category tabs along the top (a red dot on those with
+ * something new), the open page's entries on ruled lines, scrolling inside.
+ * `tall` for the events page; the staff get a reset at the foot.
+ */
+export function BoxNotebook({ tall = false }: { tall?: boolean }) {
+  const { data } = useBoxBook();
+  const { isModerator } = useCurrentInstance();
+  const queryClient = useQueryClient();
+  const [tab, setTab] = useState(0);
+  const [seen, setSeen] = useState(loadSeen);
+  const page = data?.categories[tab];
+
+  // The open page counts as seen, a moment after it shows.
+  useEffect(() => {
+    if (!page || !hasNew(page, seen)) return;
+    const id = setTimeout(() => {
+      const next = { ...loadSeen(), [page.name]: new Date().toISOString() };
+      try {
+        localStorage.setItem(SEEN_KEY, JSON.stringify(next));
+      } catch {}
+      setSeen(next);
+    }, 1500);
+    return () => clearTimeout(id);
+  }, [page, seen]);
+
+  const reset = useMutation({
+    mutationFn: async () => {
+      try {
+        return await mutate<{ removed: number }>("boxes:reset");
+      } catch (error) {
+        throw new Error(errorMessage(error, "도감을 초기화하지 못했습니다"));
+      }
+    },
+    onSuccess: (r) => {
+      toast.success(`도감을 비웠습니다 (${r.removed}개).`);
+      queryClient.invalidateQueries({ queryKey: BOOK_KEY });
+      queryClient.invalidateQueries({ queryKey: ["shop-summary"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  if (!data || !page) return null;
+  const anyNew = data.categories.some((c) => hasNew(c, seen));
   return (
-    <div className="framed mt-4 p-4 space-y-2">
-      <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-        <BookOpen className="h-4 w-4 text-primary" />
-        크리스마스 도감
-        <span className="ml-auto text-xs font-normal text-muted-foreground tabular-nums">
-          {data.collected} / {data.total}
+    <div className="box-notebook" data-tour="box-book">
+      <div className="box-notebook-head">
+        <span className="relative font-semibold">
+          크리스마스 도감
+          {anyNew && <span className="box-dot -right-2.5 top-0" />}
         </span>
-      </p>
-      {data.recent.length === 0 ? (
-        <p className="text-xs text-muted-foreground">
-          상점에서 랜덤박스를 사서 열면 여기에 모입니다.
+        <span className="ml-auto tabular-nums text-xs">
+          {data.registered} / {data.total}
+        </span>
+      </div>
+      <div className="box-notebook-tabs" role="tablist">
+        {data.categories.map((c, i) => (
+          <button
+            key={c.name}
+            type="button"
+            role="tab"
+            aria-selected={i === tab}
+            onClick={() => setTab(i)}
+            className={`box-notebook-tab ${i === tab ? "is-open" : ""}`}
+          >
+            {c.name}
+            {hasNew(c, seen) && <span className="box-dot -right-1 -top-1" />}
+          </button>
+        ))}
+      </div>
+      <div
+        className={`box-notebook-page ${tall ? "h-96" : "h-52"}`}
+        role="tabpanel"
+      >
+        <p className="box-notebook-line text-xs opacity-70">
+          {page.name} · {page.entries.length} / {page.total}
         </p>
-      ) : (
-        <ul className="max-h-40 overflow-y-auto space-y-0.5 text-sm">
-          {data.recent.map((r) => (
-            <li key={r.entry} className="flex items-center gap-2">
-              <span className="truncate">{r.entry}</span>
-              {r.count > 1 && (
-                <span className="ml-auto text-xs text-muted-foreground">
-                  ×{r.count}
+        {page.entries.length === 0 ? (
+          <p className="box-notebook-line opacity-70">
+            아직 등록된 물건이 없습니다.
+          </p>
+        ) : (
+          page.entries.map((e) => (
+            <p key={e.entry} className="box-notebook-line flex gap-2">
+              <span className="truncate">{e.entry}</span>
+              {e.by && (
+                <span className="ml-auto shrink-0 text-xs opacity-60">
+                  {e.by.name}
                 </span>
               )}
-            </li>
-          ))}
-        </ul>
+            </p>
+          ))
+        )}
+      </div>
+      {isModerator && (
+        <div className="box-notebook-foot">
+          <button
+            type="button"
+            disabled={reset.isPending}
+            onClick={() => {
+              if (
+                confirm(
+                  "도감을 모두 비울까요? 회원들이 가진 물건은 그대로 남습니다.",
+                )
+              )
+                reset.mutate();
+            }}
+          >
+            도감 초기화 (운영진)
+          </button>
+        </div>
       )}
-      <Link
-        to="/events#collection"
-        className="block text-xs text-muted-foreground hover:text-foreground hover:underline"
-      >
-        도감 전체 보기
-      </Link>
     </div>
   );
 }
 
-/** The whole book by category; what is not found yet shows as ？？？. */
-export function BoxCollectionBook() {
-  const { data } = useBoxCollection();
-  if (!data) return null;
+/** Under the calendar on wide screens. */
+export function BoxCollectionRail() {
   return (
-    // biome-ignore lint/correctness/useUniqueElementIds: the rail's link aims at /events#collection; the book is on that page once.
-    <section id="collection" className="framed p-5 space-y-3">
-      <h2 className="flex items-center gap-2 font-semibold text-foreground">
-        <BookOpen className="h-5 w-5 text-primary" />
-        크리스마스 도감
-        <span className="ml-auto text-sm font-normal text-muted-foreground tabular-nums">
-          {data.collected} / {data.total}
-        </span>
-      </h2>
-      <p className="text-sm text-muted-foreground">
-        상점에서 랜덤박스를 사서 열면 나온 물건이 도감에 모입니다. 아직 모으지
-        않은 물건이 남아 있는 동안은 같은 물건이 다시 나오지 않습니다.
-      </p>
-      <div className="space-y-2">
-        {data.categories.map((c) => {
-          const got = c.entries.filter((e) => e.count > 0).length;
-          return (
-            <details key={c.name} className="border border-border">
-              <summary className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm font-medium">
-                {c.name}
-                <span className="ml-auto text-xs text-muted-foreground tabular-nums">
-                  {got} / {c.entries.length}
-                </span>
-              </summary>
-              <ul className="grid grid-cols-2 gap-x-3 gap-y-1 px-3 pb-3 text-sm sm:grid-cols-3">
-                {c.entries.map((e) => (
-                  <li
-                    key={e.entry}
-                    className={
-                      e.count > 0 ? "text-foreground" : "text-muted-foreground"
-                    }
-                  >
-                    {e.count > 0 ? e.entry : "？？？"}
-                    {e.count > 1 && (
-                      <span className="ml-1 text-xs text-muted-foreground">
-                        ×{e.count}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </details>
-          );
-        })}
-      </div>
+    <div className="mt-4">
+      <BoxNotebook />
+    </div>
+  );
+}
+
+/** On the events page, where phones find it. */
+export function BoxCollectionBook() {
+  return (
+    // biome-ignore lint/correctness/useUniqueElementIds: links aim at /events#collection; the book is on that page once.
+    <section id="collection">
+      <BoxNotebook tall />
     </section>
   );
 }
 
-/** What an opened box gave. */
+/** What an opened box gave, with the button that registers it. */
 export function BoxRevealDialog({
   draw,
-  total,
   onClose,
 }: {
   draw: BoxDraw | null;
-  total?: number;
   onClose: () => void;
 }) {
+  const register = useRegisterBox(onClose);
   return (
     <Dialog open={!!draw} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-sm text-center">
         {draw && (
           <div className="gift-rise space-y-3 py-2">
-            <Gift className="mx-auto h-10 w-10 text-primary" />
-            <DialogDescription>
-              {draw.category}
-              {draw.is_new ? " · 새로 도감에 등록!" : " · 이미 가진 물건"}
-            </DialogDescription>
+            <DialogDescription>{draw.category}</DialogDescription>
             <DialogTitle className="text-2xl">{draw.entry}</DialogTitle>
-            <p className="text-sm text-muted-foreground tabular-nums">
-              도감 {draw.collected}
-              {total ? ` / ${total}` : ""}
+            <p className="text-sm text-muted-foreground">
+              인벤토리에 들어갔습니다.
+              {draw.registered
+                ? " 이미 도감에 등록된 물건입니다."
+                : " 아직 도감에 없는 물건이에요!"}
             </p>
-            <Button onClick={onClose}>확인</Button>
+            <div className="flex justify-center gap-2">
+              {!draw.registered && (
+                <Button
+                  disabled={register.isPending}
+                  onClick={() => register.mutate(draw.item_id)}
+                >
+                  도감에 등록
+                </Button>
+              )}
+              <Button variant="outline" onClick={onClose}>
+                닫기
+              </Button>
+            </div>
           </div>
         )}
       </DialogContent>

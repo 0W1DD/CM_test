@@ -1,33 +1,36 @@
-// A profile's collection (도감) of what its random boxes gave, against the
-// whole list (modules/boxes.ts), for any member to look at.
+// The community's book (도감) of the random box's list (modules/boxes.ts):
+// every category with what has been registered in it and by whom.
 import { requireMembership } from "../modules/access.js";
 import { BOX_ENTRIES, BOX_ITEMS } from "../modules/boxes.js";
-import { argsOf, id, iso } from "../modules/core.js";
-/**
- * Every category with its entries, each with how many times this profile
- * got it (0 when not yet), and the most recent ones first in `recent`.
- */
-export async function collection(ctx, args) {
+import { iso } from "../modules/core.js";
+// The list's entries, to count only what is still on it.
+const LISTED = new Set(BOX_ENTRIES.map((e) => e.entry));
+export async function collection(ctx) {
     await requireMembership(ctx);
-    const profileId = id(ctx, argsOf(args).profile_id, "profile_id");
     const { rows } = await ctx.sql `
-    SELECT entry, count, first_at, last_at FROM box_collection
-    WHERE profile_id = ${profileId} ORDER BY last_at DESC LIMIT 1000`;
-    const got = new Map(rows.map((r) => [r.entry, r]));
+    SELECT r.entry, r.registered_at, r.profile_id, p.name, p.username
+    FROM box_registry r LEFT JOIN profiles p ON p.id = r.profile_id
+    ORDER BY r.registered_at DESC LIMIT 1000`;
+    const found = new Map(rows.map((r) => [r.entry, r]));
     return {
         total: BOX_ENTRIES.length,
-        collected: rows.length,
-        recent: rows.slice(0, 50).map((r) => ({
-            entry: r.entry,
-            count: r.count,
-            last_at: iso(r.last_at),
-        })),
+        registered: rows.filter((r) => LISTED.has(r.entry)).length,
+        latest_at: rows[0] ? iso(rows[0].registered_at) : null,
         categories: Object.entries(BOX_ITEMS).map(([name, entries]) => ({
             name,
-            entries: entries.map((entry) => ({
-                entry,
-                count: got.get(entry)?.count ?? 0,
-            })),
+            total: entries.length,
+            entries: entries.flatMap((entry) => {
+                const r = found.get(entry);
+                return r
+                    ? [
+                        {
+                            entry,
+                            registered_at: iso(r.registered_at),
+                            by: r.name ? { name: r.name, username: r.username } : null,
+                        },
+                    ]
+                    : [];
+            }),
         })),
     };
 }

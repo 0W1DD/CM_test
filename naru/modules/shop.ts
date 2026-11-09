@@ -205,7 +205,7 @@ export async function listItems(ctx: Ctx): Promise<Item[]> {
   const { rows } = await ctx.sql<ItemRow>`
     SELECT i.*, c.name AS currency_name FROM shop_items i
     JOIN shop_currencies c ON c.id = i.currency_id
-    WHERE i.deleted_at IS NULL ORDER BY i.name`;
+    WHERE i.deleted_at IS NULL AND i.box_entry = 0 ORDER BY i.name`;
   return rows.map(itemJson);
 }
 
@@ -368,6 +368,10 @@ export interface InventoryEntry {
   consumable: boolean;
   isUnique: boolean;
   randomBox: boolean;
+  /** One of the random box's list: may be registered in the book. */
+  boxEntry: boolean;
+  /** Already in the community's book (for a box entry). */
+  registered: boolean;
   qty: number;
   grantedAt: string | null;
   updatedAt: string | null;
@@ -385,12 +389,16 @@ export async function listInventory(
     consumable: number;
     is_unique: number;
     random_box: number;
+    box_entry: number;
+    registered: number;
     qty: number;
     granted_at: number;
     updated_at: number;
   }>`
     SELECT v.id, v.item_id, i.name AS item_name, i.description AS item_description,
-      i.consumable, i.is_unique, i.random_box, v.qty, v.granted_at, v.updated_at
+      i.consumable, i.is_unique, i.random_box, i.box_entry,
+      EXISTS (SELECT 1 FROM box_registry r WHERE r.entry = i.name) AS registered,
+      v.qty, v.granted_at, v.updated_at
     FROM shop_inventory v JOIN shop_items i ON i.id = v.item_id
     WHERE v.profile_id = ${profileId} AND v.qty > 0 AND i.deleted_at IS NULL
     ORDER BY i.name`;
@@ -402,6 +410,8 @@ export async function listInventory(
     consumable: bool(row.consumable),
     isUnique: bool(row.is_unique),
     randomBox: bool(row.random_box),
+    boxEntry: bool(row.box_entry),
+    registered: bool(row.registered),
     qty: row.qty,
     grantedAt: iso(row.granted_at),
     updatedAt: iso(row.updated_at),
@@ -526,7 +536,7 @@ function alreadyOwned() {
   );
 }
 
-async function addToInventory(
+export async function addToInventory(
   ctx: MutationCtx,
   profileId: string,
   itemId: string,

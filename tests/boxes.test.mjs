@@ -38,29 +38,46 @@ test("a random box is bought once a day, and can be given away", async () => {
   assert.equal(held.randomBox, true);
 });
 
-test("opening a box gives something new to the collection, never twice while any is left", async () => {
-  const { site, profiles, box, buy, open } = await withBox();
+test("an opened box gives an item to hold; any holder may register it in the shared book", async () => {
+  const { site, profiles, box, open } = await withBox();
   assert.equal(await refusal(open("m-alice", profiles.alice)), "no_box");
-  await site.mutate("shop:adminGrant", { kind: "item", profile_id: profiles.alice, item_id: box.id, qty: 20 }, as("m-owner"));
-  const seen = new Set();
-  for (let i = 0; i < 20; i++) {
-    const got = await open("m-alice", profiles.alice);
-    assert.equal(got.is_new, true);
-    assert.equal(seen.has(got.entry), false);
-    seen.add(got.entry);
-  }
-  assert.equal(await refusal(open("m-alice", profiles.alice)), "no_box");
-  assert.equal(await refusal(open("m-bob", profiles.alice)), "not_found");
-  const book = await site.query("boxes:collection", { profile_id: profiles.alice }, as("m-bob"));
-  assert.equal(book.collected, 20);
+  await site.mutate("shop:adminGrant", { kind: "item", profile_id: profiles.alice, item_id: box.id, qty: 3 }, as("m-owner"));
+  const got = await open("m-alice", profiles.alice);
+  assert.equal(got.registered, false);
+  const inv = async (u) => (await site.query("shop:inventory", { username: u }, as("m-alice"))).items;
+  const held = (await inv("alice")).find((e) => e.itemId === got.item_id);
+  assert.deepEqual([held.itemName, held.qty, held.boxEntry, held.registered], [got.entry, 1, true, false]);
+  // Not sold in the shop.
+  const shop = await site.query("shop:summary", { profile_id: profiles.alice }, as("m-alice"));
+  assert.equal(shop.items.some((i) => i.id === got.item_id), false);
+
+  // Alice gives it to Bob; Bob registers it; it stays with him, and the book is everyone's.
+  await site.mutate("uses:transfer", { profile_id: profiles.alice, item_id: got.item_id, to_username: "bob", qty: 1 }, as("m-alice"));
+  assert.equal(await refusal(site.mutate("boxes:register", { profile_id: profiles.alice, item_id: got.item_id }, as("m-alice"))), "not_found");
+  const coins = (p) => site.rows("SELECT amount FROM shop_balances WHERE profile_id = ?", p)[0]?.amount ?? 0;
+  const before = coins(profiles.bob);
+  const reg = await site.mutate("boxes:register", { profile_id: profiles.bob, item_id: got.item_id }, as("m-bob"));
+  assert.deepEqual([reg.coins, coins(profiles.bob) - before], [2, 2]);
+  assert.equal(await refusal(site.mutate("boxes:register", { profile_id: profiles.bob, item_id: got.item_id }, as("m-bob"))), "already_registered");
+  assert.equal((await inv("bob")).find((e) => e.itemId === got.item_id).registered, true);
+  const book = await site.query("boxes:collection", null, as("m-alice"));
+  assert.equal(book.registered, 1);
   assert.equal(book.total > 800, true);
-  assert.equal(book.recent.length, 20);
-  const counted = book.categories.flatMap((c) => c.entries).filter((e) => e.count > 0).length;
-  assert.equal(counted, 20);
-  // An ordinary item cannot be opened.
+  const entry = book.categories.flatMap((c) => c.entries).find((e) => e.entry === got.entry);
+  assert.equal(entry.by.username, "bob");
+
+  // The draw favours what the book lacks: the next two are not the registered one.
+  for (let i = 0; i < 2; i++) assert.notEqual((await open("m-alice", profiles.alice)).entry, got.entry);
+
+  // An ordinary item cannot be opened or registered.
   const gold = (await site.query("shop:adminCurrencies", null, as("m-owner")))[0];
   const cup = await site.mutate("shop:adminCreateItem", { name: "컵", price_amount: 1, currency_id: gold.id }, as("m-owner"));
   await site.mutate("shop:adminGrant", { kind: "item", profile_id: profiles.alice, item_id: cup.id }, as("m-owner"));
   assert.equal(await refusal(site.mutate("boxes:open", { profile_id: profiles.alice, item_id: cup.id }, as("m-alice"))), "not_random_box");
-  void buy;
+  assert.equal(await refusal(site.mutate("boxes:register", { profile_id: profiles.alice, item_id: cup.id }, as("m-alice"))), "not_in_book");
+
+  // Only the staff reset the book.
+  assert.equal(await refusal(site.mutate("boxes:reset", null, as("m-bob"))), "not_moderator");
+  assert.equal((await site.mutate("boxes:reset", null, as("m-owner"))).removed, 1);
+  assert.equal((await site.query("boxes:collection", null, as("m-bob"))).registered, 0);
 });
