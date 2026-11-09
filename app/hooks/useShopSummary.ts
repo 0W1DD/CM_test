@@ -18,6 +18,7 @@ export interface ShopItem {
   currencyName: string;
   consumable: boolean;
   isUnique: boolean;
+  randomBox?: boolean;
 }
 
 export interface ShopBalance {
@@ -32,6 +33,7 @@ export interface ShopInventoryEntry {
   itemName: string;
   qty: number;
   consumable: boolean;
+  randomBox?: boolean;
 }
 
 export interface ShopSummary {

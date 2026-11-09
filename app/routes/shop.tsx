@@ -10,12 +10,12 @@ import {
 import { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
+import { type BoxDraw, BoxRevealDialog } from "~/components/box-collection";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useAuth } from "~/hooks/useAuth";
-import { DEMO_SHOP_ITEM, useTourDemo } from "~/lib/tour-demo";
 import { useCommunityProfilesQuery } from "~/hooks/useCommunityProfiles";
 import {
   type ShopInventoryEntry,
@@ -23,6 +23,7 @@ import {
   useShopSummary,
 } from "~/hooks/useShopSummary";
 import { errorMessage, mutate } from "~/lib/naru";
+import { DEMO_SHOP_ITEM, useTourDemo } from "~/lib/tour-demo";
 
 export function meta() {
   return [
@@ -64,6 +65,11 @@ function ItemRow({
             {item.isUnique && (
               <Badge variant="outline" className="text-xs">
                 유니크
+              </Badge>
+            )}
+            {item.randomBox && (
+              <Badge variant="outline" className="text-xs">
+                랜덤박스 · 하루 1번
               </Badge>
             )}
           </div>
@@ -210,7 +216,28 @@ export default function ShopPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
-  const busy = use.isPending || transfer.isPending;
+  const [draw, setDraw] = useState<BoxDraw | null>(null);
+  const openBox = useMutation({
+    mutationFn: async (entry: ShopInventoryEntry) => {
+      if (!currentProfile) throw new Error("프로필을 선택하세요");
+      try {
+        return await mutate<BoxDraw>("boxes:open", {
+          profile_id: currentProfile.id,
+          item_id: entry.itemId,
+        });
+      } catch (error) {
+        throw new Error(errorMessage(error, "상자를 열지 못했습니다"));
+      }
+    },
+    onSuccess: (result) => {
+      setDraw(result);
+      queryClient.invalidateQueries({ queryKey: ["shop-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["box-collection"] });
+      refetch();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const busy = use.isPending || transfer.isPending || openBox.isPending;
 
   if (isLoading || !data) {
     return (
@@ -383,21 +410,31 @@ export default function ShopPage() {
                     <span className="text-sm tabular-nums whitespace-nowrap">
                       ×{entry.qty}
                     </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={busy || entry.qty < 1}
-                      onClick={() =>
-                        startUsing(
-                          using === entry.itemId && mode === "use"
-                            ? null
-                            : entry.itemId,
-                          "use",
-                        )
-                      }
-                    >
-                      {entry.consumable ? "사용" : "꺼내 보이기"}
-                    </Button>
+                    {entry.randomBox ? (
+                      <Button
+                        size="sm"
+                        disabled={busy || entry.qty < 1}
+                        onClick={() => openBox.mutate(entry)}
+                      >
+                        열기
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={busy || entry.qty < 1}
+                        onClick={() =>
+                          startUsing(
+                            using === entry.itemId && mode === "use"
+                              ? null
+                              : entry.itemId,
+                            "use",
+                          )
+                        }
+                      >
+                        {entry.consumable ? "사용" : "꺼내 보이기"}
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="outline"
@@ -520,6 +557,7 @@ export default function ShopPage() {
           </Card>
         </section>
       )}
+      <BoxRevealDialog draw={draw} onClose={() => setDraw(null)} />
     </div>
   );
 }

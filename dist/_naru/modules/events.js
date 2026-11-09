@@ -11,6 +11,8 @@ export const GIFT_COINS = 5;
 /** A moment's Korean date, "YYYY-MM-DD". */
 export const kstDay = (ms) => new Date(ms + KST).toISOString().slice(0, 10);
 /** Whether it is before noon in Korea: the check-in's hours. */
+/** When the KST day `ms` falls on began. */
+export const kstDayStart = (ms) => Date.parse(`${kstDay(ms)}T00:00:00Z`) - KST;
 export const isMorning = (ms) => new Date(ms + KST).getUTCHours() < 12;
 /** The Monday (Korean date) of the week `ms` falls in. */
 export function weekOf(ms) {

@@ -59,6 +59,7 @@ interface Item {
   currencyName: string;
   consumable: boolean;
   isUnique: boolean;
+  randomBox?: boolean;
 }
 interface Transaction {
   id: string;
@@ -223,6 +224,8 @@ function ItemDialog({
   );
   const [consumable, setConsumable] = useState(item?.consumable ?? false);
   const [isUnique, setIsUnique] = useState(item?.isUnique ?? false);
+  const [randomBox, setRandomBox] = useState(item?.randomBox ?? false);
+  const randomBoxId = useId();
   const queryClient = useQueryClient();
   const nameId = useId();
   const descriptionId = useId();
@@ -246,6 +249,7 @@ function ItemDialog({
         currency_id: currencyId,
         consumable,
         is_unique: isUnique,
+        random_box: randomBox,
       };
       await orFail(
         item
@@ -335,6 +339,17 @@ function ItemDialog({
             onChange={(e) => setIsUnique(e.target.checked)}
           />
           <Label htmlFor={uniqueId}>한 명당 하나만 구매 가능</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            id={randomBoxId}
+            type="checkbox"
+            checked={randomBox}
+            onChange={(e) => setRandomBox(e.target.checked)}
+          />
+          <Label htmlFor={randomBoxId}>
+            크리스마스 랜덤박스 (하루 한 번 구매, 열면 도감에 등록)
+          </Label>
         </div>
       </div>
       <DialogFooter>
@@ -441,7 +456,11 @@ function GrantDialog({
       let done = 0;
       for (const profile of selectedProfiles) {
         await orFail(
-          mutate("shop:adminRevoke", { profile_id: profile.id, ...what, ...why }),
+          mutate("shop:adminRevoke", {
+            profile_id: profile.id,
+            ...what,
+            ...why,
+          }),
           `@${profile.username}에게서 회수하지 못했습니다`,
         );
         done++;
@@ -804,6 +823,7 @@ function ItemCard({
               </Badge>
               {item.consumable && <Badge variant="outline">소모품</Badge>}
               {item.isUnique && <Badge variant="outline">유니크</Badge>}
+              {item.randomBox && <Badge variant="outline">랜덤박스</Badge>}
             </div>
             {item.description && (
               <p className="text-xs text-muted-foreground mt-1">

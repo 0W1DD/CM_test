@@ -77,6 +77,7 @@ interface ItemRow {
   currency_id: string;
   consumable: number;
   is_unique: number;
+  random_box: number;
   created_at: number;
   updated_at: number;
   deleted_at: number | null;
@@ -91,6 +92,7 @@ export const itemJson = (row: ItemRow) => ({
   currencyId: row.currency_id,
   consumable: bool(row.consumable),
   isUnique: bool(row.is_unique),
+  randomBox: bool(row.random_box),
   createdAt: iso(row.created_at),
   updatedAt: iso(row.updated_at),
   ...(row.currency_name === undefined
@@ -260,6 +262,8 @@ export interface ItemParams {
   currencyId?: string;
   consumable?: boolean;
   isUnique?: boolean;
+  /** The Christmas random box (modules/boxes.ts): once a day, opened. */
+  randomBox?: boolean;
 }
 
 export async function createItem(
@@ -277,9 +281,9 @@ export async function createItem(
   await validateCurrencyExists(ctx, params.currencyId);
   await itemNameFree(ctx, name, null);
   const { rows } = await ctx.sql<ItemRow>`
-    INSERT INTO shop_items (id, name, description, price_amount, currency_id, consumable, is_unique, created_at, updated_at)
+    INSERT INTO shop_items (id, name, description, price_amount, currency_id, consumable, is_unique, random_box, created_at, updated_at)
     VALUES (${uuidv7(ctx.now)}, ${name}, ${params.description ?? null}, ${amount}, ${params.currencyId},
-      ${params.consumable ?? false}, ${params.isUnique ?? false}, ${ctx.now}, ${ctx.now})
+      ${params.consumable ?? false}, ${params.isUnique ?? false}, ${params.randomBox ?? false}, ${ctx.now}, ${ctx.now})
     RETURNING *`;
   return itemJson(rows[0]);
 }
@@ -308,6 +312,7 @@ export async function updateItem(
       currency_id = ${params.currencyId ?? current.currencyId},
       consumable = ${params.consumable ?? current.consumable},
       is_unique = ${params.isUnique ?? current.isUnique},
+      random_box = ${params.randomBox ?? current.randomBox},
       updated_at = ${ctx.now}
     WHERE id = ${itemId} RETURNING *`;
   return itemJson(rows[0]);
@@ -362,6 +367,7 @@ export interface InventoryEntry {
   itemDescription: string | null;
   consumable: boolean;
   isUnique: boolean;
+  randomBox: boolean;
   qty: number;
   grantedAt: string | null;
   updatedAt: string | null;
@@ -378,12 +384,13 @@ export async function listInventory(
     item_description: string | null;
     consumable: number;
     is_unique: number;
+    random_box: number;
     qty: number;
     granted_at: number;
     updated_at: number;
   }>`
     SELECT v.id, v.item_id, i.name AS item_name, i.description AS item_description,
-      i.consumable, i.is_unique, v.qty, v.granted_at, v.updated_at
+      i.consumable, i.is_unique, i.random_box, v.qty, v.granted_at, v.updated_at
     FROM shop_inventory v JOIN shop_items i ON i.id = v.item_id
     WHERE v.profile_id = ${profileId} AND v.qty > 0 AND i.deleted_at IS NULL
     ORDER BY i.name`;
@@ -394,6 +401,7 @@ export async function listInventory(
     itemDescription: row.item_description,
     consumable: bool(row.consumable),
     isUnique: bool(row.is_unique),
+    randomBox: bool(row.random_box),
     qty: row.qty,
     grantedAt: iso(row.granted_at),
     updatedAt: iso(row.updated_at),

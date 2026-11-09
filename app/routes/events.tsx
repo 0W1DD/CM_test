@@ -13,6 +13,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
+import { BoxCollectionBook } from "~/components/box-collection";
 import { CheckInButton, GiftSignupButton } from "~/components/events-rail";
 import {
   ARRIVAL_STYLE,
@@ -287,6 +288,8 @@ export default function EventsPage() {
           </Link>
         )}
       </div>
+
+      <BoxCollectionBook />
 
       <section className="framed bg-card p-5 space-y-3">
         <h2 className="flex items-center gap-2 text-lg font-semibold">

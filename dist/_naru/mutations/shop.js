@@ -4,6 +4,7 @@
 import { actingProfile, requireOwner } from "../modules/access.js";
 import { argsOf, id, ids, invalid, notFound, } from "../modules/core.js";
 import { createCurrency, createItem, deleteCurrency, deleteItem, failShop, grantCurrency, grantItem, grantMany, MAX_AMOUNT, purchaseItem, revoke, updateCurrency, updateItem, } from "../modules/shop.js";
+import { kstDayStart } from "../modules/events.js";
 /** Buys one item for the acting profile (POST /shop/buy). */
 export async function buy(ctx, args) {
     const a = argsOf(args);
@@ -11,12 +12,24 @@ export async function buy(ctx, args) {
     if (profile.activated_at === null)
         notFound(ctx, "프로필을 찾을 수 없습니다.");
     const itemId = id(ctx, a.item_id, "item_id");
+    await onceADay(ctx, profile.id, itemId);
     const item = await failShop(ctx, () => purchaseItem(ctx, {
         profileId: profile.id,
         itemId,
         actor: profile.membership.member,
     }));
     return { item };
+}
+/** A random box is bought once a day (KST) per profile. */
+async function onceADay(ctx, profileId, itemId) {
+    const { rows } = await ctx.sql `
+    SELECT i.random_box,
+      (SELECT count(*) FROM shop_transactions t
+       WHERE t.profile_id = ${profileId} AND t.item_id = i.id
+         AND t.kind = 'item_purchase' AND t.created_at >= ${kstDayStart(ctx.now)}) AS bought
+    FROM shop_items i WHERE i.id = ${itemId}`;
+    if (rows[0]?.random_box === 1 && rows[0].bought > 0)
+        ctx.fail("CONFLICT", "랜덤박스는 하루에 한 번만 살 수 있습니다. 내일 다시 와 주세요.", { reason: "box_bought_today" });
 }
 // Argument checks as the console's schemas made them.
 function optionalString(ctx, value, field, max) {
@@ -94,6 +107,7 @@ function itemParams(ctx, a) {
             : id(ctx, a.currency_id, "currency_id"),
         consumable: optionalBoolean(ctx, a.consumable, "consumable"),
         isUnique: optionalBoolean(ctx, a.is_unique, "is_unique"),
+        randomBox: optionalBoolean(ctx, a.random_box, "random_box"),
     };
 }
 export async function adminCreateItem(ctx, args) {
