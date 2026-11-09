@@ -386,6 +386,11 @@ function FireLevels() {
   );
 }
 
+/** Puts the fire out if it burns (another player is about to play). */
+export function quietFire() {
+  if (lit) toggleFire();
+}
+
 function toggleFire() {
   if (lit) {
     stopFire?.();

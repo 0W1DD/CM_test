@@ -6,6 +6,7 @@ import {
   CalendarCheck,
   Gift,
   ImagePlus,
+  Music,
   PartyPopper,
   ShieldCheck,
   X,
@@ -14,6 +15,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
 import { toast } from "sonner";
 import { BoxCollectionBook } from "~/components/box-collection";
+import { quietFire } from "~/components/campfire";
+import { CarolPlayer } from "~/components/carol-player";
 import { CheckInButton, GiftSignupButton } from "~/components/events-rail";
 import {
   ARRIVAL_STYLE,
@@ -227,7 +230,7 @@ export default function EventsPage() {
   const { currentProfile } = useAuth();
   // Two tabs: the events, and the random box's book (#collection opens it).
   const { hash } = useLocation();
-  const [tab, setTab] = useState<"events" | "book">(
+  const [tab, setTab] = useState<"events" | "book" | "music">(
     hash === "#collection" ? "book" : "events",
   );
   useEffect(() => {
@@ -317,9 +320,32 @@ export default function EventsPage() {
         >
           도감
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "music"}
+          className={tab === "music" ? "is-open" : ""}
+          onClick={() => {
+            quietFire();
+            setTab("music");
+          }}
+        >
+          음악
+        </button>
       </div>
 
-      {tab === "book" ? (
+      {tab === "music" ? (
+        <section className="framed bg-card p-5 space-y-3">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <Music className="h-5 w-5 text-primary" />
+            크리스마스 캐럴
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            유튜브 재생목록입니다. 재생을 누르면 다음 곡이 이어서 나옵니다.
+          </p>
+          <CarolPlayer />
+        </section>
+      ) : tab === "book" ? (
         <BoxCollectionBook />
       ) : (
         <>
