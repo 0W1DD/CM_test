@@ -10,7 +10,7 @@ import { useSyncExternalStore } from "react";
 import { quietFire } from "~/components/campfire";
 import { Button } from "~/components/ui/button";
 
-const PLAYLIST = "PLzLmKWYW3AHd1uGgcDg98om9Bx48AtQEG";
+const PLAYLIST = "PLAKw47dg37ek";
 const SRC = `https://www.youtube-nocookie.com/embed/videoseries?list=${PLAYLIST}`;
 
 let state = { open: false, folded: false };
