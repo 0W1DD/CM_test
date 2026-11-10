@@ -46,7 +46,7 @@ test("an opened box gives an item to hold; any holder may register it in the sha
   assert.equal(got.registered, false);
   const inv = async (u) => (await site.query("shop:inventory", { username: u }, as("m-alice"))).items;
   const held = (await inv("alice")).find((e) => e.itemId === got.item_id);
-  assert.deepEqual([held.itemName, held.qty, held.boxEntry, held.registered], [got.entry, 1, true, false]);
+  assert.deepEqual([held.itemName, held.qty, held.boxEntry, held.registered, held.consumable], [got.entry, 1, true, false, true]);
   // Not sold in the shop.
   const shop = await site.query("shop:summary", { profile_id: profiles.alice }, as("m-alice"));
   assert.equal(shop.items.some((i) => i.id === got.item_id), false);

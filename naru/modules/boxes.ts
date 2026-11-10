@@ -850,8 +850,9 @@ export const categoryOf = (entry: string) =>
 
 /**
  * Draws one entry, one the book lacks while any is left, and puts it in
- * `profileId`'s inventory as an item (priced, never sold, in the box's own
- * currency; an item of the same name the staff made is used as it is).
+ * `profileId`'s inventory as an item (a consumable, priced but never sold,
+ * in the box's own currency; an item of the same name the staff made is
+ * used as it is).
  * Answers it, its item, and whether the book has it already.
  */
 export async function giveBox(
@@ -876,7 +877,7 @@ export async function giveBox(
       INSERT INTO shop_items (id, name, description, price_amount, currency_id,
         consumable, is_unique, random_box, box_entry, created_at, updated_at)
       VALUES (${itemId}, ${picked.entry}, ${`크리스마스 랜덤박스에서 나온 물건 (${picked.category})`},
-        1, ${currencyId}, 0, 0, 0, 1, ${ctx.now}, ${ctx.now})`;
+        1, ${currencyId}, 1, 0, 0, 1, ${ctx.now}, ${ctx.now})`;
   }
   await addToInventory(ctx, profileId, itemId, 1);
   return { ...picked, itemId, registered: inBook.has(picked.entry) };

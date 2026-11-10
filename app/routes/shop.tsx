@@ -437,9 +437,7 @@ export default function ShopPage() {
                           )
                         }
                       >
-                        {entry.consumable || entry.boxEntry
-                          ? "사용"
-                          : "꺼내 보이기"}
+                        {entry.consumable ? "사용" : "꺼내 보이기"}
                       </Button>
                     )}
                     {entry.boxEntry && !entry.registered && (
