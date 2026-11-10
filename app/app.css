@@ -1641,3 +1641,47 @@ h2 .profile-badge {
 .name-color-swatch.is-on {
   outline-color: var(--foreground);
 }
+
+/* An achievement reached (achievements.tsx): a dark card as on Steam,
+   sliding up above the fireplace, staying a few seconds, sliding away. */
+.achievement-pop {
+  position: fixed;
+  right: 1rem;
+  bottom: 6.5rem;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: min(19rem, calc(100vw - 2rem));
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 4px;
+  background: linear-gradient(135deg, #2a475e, #1b2838);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
+  animation: achievement-pop 5.2s ease-in-out forwards;
+}
+.achievement-pop-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #e2b33c, #9a6a12);
+  font-size: 1.6rem;
+}
+@keyframes achievement-pop {
+  0% { transform: translateY(calc(100% + 7rem)); opacity: 0; }
+  8%, 90% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(calc(100% + 7rem)); opacity: 0; }
+}
+@media (max-width: 767px) {
+  .achievement-pop {
+    bottom: 5rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .achievement-pop {
+    animation: none;
+  }
+}

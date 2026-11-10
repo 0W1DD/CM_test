@@ -1,10 +1,10 @@
 // Achievements (naru/modules/achievements.ts): the watcher that, after the
-// acting profile does something, asks what it newly reached and shows a
-// card for it, and the list on the events page's tab.
+// acting profile does something, asks what it newly reached and shows each
+// as a card sliding up in the corner, one after another as on Steam, and
+// the list on the events page's tab.
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trophy } from "lucide-react";
-import { useEffect, useRef } from "react";
-import { toast } from "sonner";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "~/hooks/useAuth";
 import { MUTATED, mutate, query } from "~/lib/naru";
 
@@ -42,6 +42,9 @@ export function AchievementWatcher() {
   const queryClient = useQueryClient();
   const profileId = currentProfile?.id ?? null;
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The cards still to show; the first is on screen.
+  const [queue, setQueue] = useState<Reached[]>([]);
+  const next = useCallback(() => setQueue((q) => q.slice(1)), []);
 
   useEffect(() => {
     if (!profileId) return;
@@ -56,23 +59,7 @@ export function AchievementWatcher() {
         return; // not signed in, or the profile not active yet
       }
       if (!reached.length) return;
-      for (const r of reached)
-        toast(
-          <div className="flex items-start gap-3">
-            <Trophy className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" />
-            <div>
-              <div className="font-semibold">
-                업적 달성! {r.name} {TIER[r.tier - 1]}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {r.coins > 0 && `코인 ${r.coins}개를 받았어요.`}
-                {r.badge &&
-                  ` 칭호 「${r.badge.emoji} ${r.badge.name}」도 받았어요.`}
-              </div>
-            </div>
-          </div>,
-          { duration: 6000 },
-        );
+      setQueue((q) => [...q, ...reached]);
       queryClient.invalidateQueries({ queryKey: ["achievements"] });
       queryClient.invalidateQueries({ queryKey: ["badges"] });
       queryClient.invalidateQueries({ queryKey: ["shop-summary"] });
@@ -88,7 +75,54 @@ export function AchievementWatcher() {
       if (timer.current) clearTimeout(timer.current);
     };
   }, [profileId, queryClient]);
-  return null;
+
+  const shown = queue[0];
+  return shown ? (
+    <AchievementCard
+      key={`${shown.key}:${shown.tier}`}
+      reached={shown}
+      onDone={next}
+    />
+  ) : null;
+}
+
+const CARD_MS = 5200;
+
+/** A reached tier, sliding up above the fireplace and away again. */
+function AchievementCard({
+  reached: r,
+  onDone,
+}: {
+  reached: Reached;
+  onDone: () => void;
+}) {
+  useEffect(() => {
+    const t = setTimeout(onDone, CARD_MS);
+    return () => clearTimeout(t);
+  }, [onDone]);
+  return (
+    <button
+      type="button"
+      className="achievement-pop"
+      onClick={onDone}
+      aria-live="polite"
+      title="닫기"
+    >
+      <span className="achievement-pop-icon" aria-hidden>
+        {r.badge?.emoji ?? "🏆"}
+      </span>
+      <span className="min-w-0 text-left">
+        <span className="block text-[11px] text-[#8f98a0]">업적 달성!</span>
+        <span className="block truncate font-semibold text-white">
+          {r.name} {TIER[r.tier - 1]}
+        </span>
+        <span className="block text-xs text-[#acb2b8]">
+          {r.coins > 0 && `코인 +${r.coins}`}
+          {r.badge && ` · 칭호 「${r.badge.name}」`}
+        </span>
+      </span>
+    </button>
+  );
 }
 
 /** The events page's tab: every achievement, and how far along it is. */
@@ -181,6 +215,9 @@ export function AchievementsTab() {
           );
         })}
       </ul>
+      <p className="text-center text-sm text-muted-foreground">
+        새로운 업적은 추후 업데이트 예정입니다.
+      </p>
     </section>
   );
 }
