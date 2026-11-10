@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
 import { toast } from "sonner";
 import { BoxCollectionBook } from "~/components/box-collection";
+import { AchievementsTab } from "~/components/achievements";
 import { CarolTab } from "~/components/carol-player";
 import { CheckInButton, GiftSignupButton } from "~/components/events-rail";
 import {
@@ -228,7 +229,7 @@ export default function EventsPage() {
   const { currentProfile } = useAuth();
   // Two tabs: the events, and the random box's book (#collection opens it).
   const { hash } = useLocation();
-  const [tab, setTab] = useState<"events" | "book" | "music">(
+  const [tab, setTab] = useState<"events" | "book" | "achievements" | "music">(
     hash === "#collection" ? "book" : "events",
   );
   useEffect(() => {
@@ -321,6 +322,15 @@ export default function EventsPage() {
         <button
           type="button"
           role="tab"
+          aria-selected={tab === "achievements"}
+          className={tab === "achievements" ? "is-open" : ""}
+          onClick={() => setTab("achievements")}
+        >
+          업적
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={tab === "music"}
           className={tab === "music" ? "is-open" : ""}
           onClick={() => setTab("music")}
@@ -331,6 +341,8 @@ export default function EventsPage() {
 
       {tab === "music" ? (
         <CarolTab />
+      ) : tab === "achievements" ? (
+        <AchievementsTab />
       ) : tab === "book" ? (
         <BoxCollectionBook />
       ) : (

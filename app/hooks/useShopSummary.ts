@@ -19,6 +19,7 @@ export interface ShopItem {
   consumable: boolean;
   isUnique: boolean;
   randomBox?: boolean;
+  nameColor?: boolean;
 }
 
 export interface ShopBalance {
@@ -34,6 +35,7 @@ export interface ShopInventoryEntry {
   qty: number;
   consumable: boolean;
   randomBox?: boolean;
+  nameColor?: boolean;
   boxEntry?: boolean;
   registered?: boolean;
 }

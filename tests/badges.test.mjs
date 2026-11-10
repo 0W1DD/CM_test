@@ -7,7 +7,9 @@ const FIRST_WEEK = "01900000-0000-7000-8000-000000000001";
 test("the first badge is there; the staff give badges, and the first one is featured", async () => {
   const { site, profiles } = await community();
   const admin = await site.query("badges:admin", null, as("m-owner"));
-  assert.deepEqual(admin.badges.map((b) => [b.name, b.emoji]), [["첫 주를 함께한", "🎄"]]);
+  // The first badge, and the achievements' titles (0023), are there.
+  assert.equal(admin.badges.find((b) => b.id === FIRST_WEEK).emoji, "🎄");
+  assert.equal(admin.badges.length, 9);
   assert.equal(await refusal(site.query("badges:admin", null, as("m-alice"))), "not_moderator");
   assert.equal(
     await refusal(site.mutate("badges:setHolders", { badge_id: FIRST_WEEK, profile_ids: [profiles.alice] }, as("m-alice"))),
@@ -46,5 +48,6 @@ test("the first badge is there; the staff give badges, and the first one is feat
   await site.mutate("badges:remove", { badge_id: star.id }, as("m-owner"));
   featured = await site.query("badges:featured", null, as("m-bob"));
   assert.deepEqual(Object.keys(featured), []);
-  assert.equal((await site.query("badges:admin", null, as("m-owner"))).badges[0].holders, 1);
+  const after = await site.query("badges:admin", null, as("m-owner"));
+  assert.equal(after.badges.find((b) => b.id === FIRST_WEEK).holders, 1);
 });

@@ -155,6 +155,7 @@ function itemParams(ctx: Ctx, a: Record<string, unknown>): ItemParams {
     consumable: optionalBoolean(ctx, a.consumable, "consumable"),
     isUnique: optionalBoolean(ctx, a.is_unique, "is_unique"),
     randomBox: optionalBoolean(ctx, a.random_box, "random_box"),
+    nameColor: optionalBoolean(ctx, a.name_color, "name_color"),
   };
 }
 

@@ -53,6 +53,7 @@ export const itemJson = (row) => ({
     consumable: bool(row.consumable),
     isUnique: bool(row.is_unique),
     randomBox: bool(row.random_box),
+    nameColor: bool(row.name_color),
     createdAt: iso(row.created_at),
     updatedAt: iso(row.updated_at),
     ...(row.currency_name === undefined
@@ -186,9 +187,9 @@ export async function createItem(ctx, params) {
     await validateCurrencyExists(ctx, params.currencyId);
     await itemNameFree(ctx, name, null);
     const { rows } = await ctx.sql `
-    INSERT INTO shop_items (id, name, description, price_amount, currency_id, consumable, is_unique, random_box, created_at, updated_at)
+    INSERT INTO shop_items (id, name, description, price_amount, currency_id, consumable, is_unique, random_box, name_color, created_at, updated_at)
     VALUES (${uuidv7(ctx.now)}, ${name}, ${params.description ?? null}, ${amount}, ${params.currencyId},
-      ${params.consumable ?? false}, ${params.isUnique ?? false}, ${params.randomBox ?? false}, ${ctx.now}, ${ctx.now})
+      ${params.consumable ?? false}, ${params.isUnique ?? false}, ${params.randomBox ?? false}, ${params.nameColor ?? false}, ${ctx.now}, ${ctx.now})
     RETURNING *`;
     return itemJson(rows[0]);
 }
@@ -212,6 +213,7 @@ export async function updateItem(ctx, itemId, params) {
       consumable = ${params.consumable ?? current.consumable},
       is_unique = ${params.isUnique ?? current.isUnique},
       random_box = ${params.randomBox ?? current.randomBox},
+      name_color = ${params.nameColor ?? current.nameColor},
       updated_at = ${ctx.now}
     WHERE id = ${itemId} RETURNING *`;
     return itemJson(rows[0]);
@@ -238,7 +240,7 @@ export async function listBalances(ctx, profileId) {
 export async function listInventory(ctx, profileId) {
     const { rows } = await ctx.sql `
     SELECT v.id, v.item_id, i.name AS item_name, i.description AS item_description,
-      i.consumable, i.is_unique, i.random_box, i.box_entry,
+      i.consumable, i.is_unique, i.random_box, i.name_color, i.box_entry,
       EXISTS (SELECT 1 FROM box_registry r WHERE r.entry = i.name) AS registered,
       v.qty, v.granted_at, v.updated_at
     FROM shop_inventory v JOIN shop_items i ON i.id = v.item_id
@@ -252,6 +254,7 @@ export async function listInventory(ctx, profileId) {
         consumable: bool(row.consumable),
         isUnique: bool(row.is_unique),
         randomBox: bool(row.random_box),
+        nameColor: bool(row.name_color),
         boxEntry: bool(row.box_entry),
         registered: bool(row.registered),
         qty: row.qty,

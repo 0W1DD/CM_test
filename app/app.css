@@ -1595,3 +1595,49 @@ h2 .profile-badge {
     border-bottom: 1.5px solid var(--frame);
   }
 }
+
+/* Achievements (achievements.tsx): a tier's chip, filled once reached. */
+.achievement-tier {
+  padding: 0.05rem 0.45rem;
+  border: 1px dashed var(--frame);
+  border-radius: 999px;
+  color: var(--muted-foreground);
+}
+.achievement-tier.is-reached {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* Nickname colours (name-color.tsx): a deeper shade on light pages, a
+   paler one on dark, both easy to read. `is-light`/`is-dark` fix one for
+   the dialog's two previews. */
+.name-color-red { --name: #c62828; --name-dark: #ff8a80; }
+.name-color-green { --name: #2e7d32; --name-dark: #81c784; }
+.name-color-gold { --name: #9a6200; --name-dark: #ffd54f; }
+.name-color-blue { --name: #1565c0; --name-dark: #90caf9; }
+.name-color-pink { --name: #c2185b; --name-dark: #f48fb1; }
+.name-color-purple { --name: #6a1b9a; --name-dark: #ce93d8; }
+.name-color,
+.name-color-red.is-light, .name-color-green.is-light, .name-color-gold.is-light,
+.name-color-blue.is-light, .name-color-pink.is-light, .name-color-purple.is-light {
+  color: var(--name) !important;
+}
+.dark .name-color,
+.name-color-red.is-dark, .name-color-green.is-dark, .name-color-gold.is-dark,
+.name-color-blue.is-dark, .name-color-pink.is-dark, .name-color-purple.is-dark {
+  color: var(--name-dark) !important;
+}
+.name-color-swatch {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: var(--name);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+.name-color-swatch.is-on {
+  outline-color: var(--foreground);
+}

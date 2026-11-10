@@ -10,6 +10,7 @@ import {
 } from "react-router";
 import { AppLayout } from "~/components/app-layout";
 import { Campfire } from "~/components/campfire";
+import { AchievementWatcher } from "~/components/achievements";
 import { CarolDock } from "~/components/carol-player";
 import {
   CommunityOwnerLook,
@@ -100,6 +101,7 @@ export default function App() {
       <CommunityThemeInjector />
       <CommunityOwnerLook />
       <CurrentProfileProvider>
+        <AchievementWatcher />
         <AppLayout>
           <Outlet />
         </AppLayout>

@@ -15,6 +15,7 @@ import {
   BoxRevealDialog,
   useRegisterBox,
 } from "~/components/box-collection";
+import { NameColorDialog } from "~/components/name-color";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
@@ -221,6 +222,8 @@ export default function ShopPage() {
     onError: (e: Error) => toast.error(e.message),
   });
   const [draw, setDraw] = useState<BoxDraw | null>(null);
+  // A nickname colour pass is used from its own dialog, at once.
+  const [colorPass, setColorPass] = useState<ShopInventoryEntry | null>(null);
   const openBox = useMutation({
     mutationFn: async (entry: ShopInventoryEntry) => {
       if (!currentProfile) throw new Error("프로필을 선택하세요");
@@ -429,12 +432,14 @@ export default function ShopPage() {
                         variant="outline"
                         disabled={busy || entry.qty < 1}
                         onClick={() =>
-                          startUsing(
-                            using === entry.itemId && mode === "use"
-                              ? null
-                              : entry.itemId,
-                            "use",
-                          )
+                          entry.nameColor
+                            ? setColorPass(entry)
+                            : startUsing(
+                                using === entry.itemId && mode === "use"
+                                  ? null
+                                  : entry.itemId,
+                                "use",
+                              )
                         }
                       >
                         {entry.consumable ? "사용" : "꺼내 보이기"}
@@ -572,6 +577,15 @@ export default function ShopPage() {
         </section>
       )}
       <BoxRevealDialog draw={draw} onClose={() => setDraw(null)} />
+      {colorPass && currentProfile && (
+        <NameColorDialog
+          open
+          onClose={() => setColorPass(null)}
+          profileId={currentProfile.id}
+          itemId={colorPass.itemId}
+          name={currentProfile.name}
+        />
+      )}
     </div>
   );
 }

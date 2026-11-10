@@ -1,6 +1,7 @@
 import { Edit, Flag, Megaphone, Pin, Shield, Trash2 } from "lucide-react";
 import { Link } from "react-router";
 import { FeaturedBadge } from "~/components/badges";
+import { useNameColorClass } from "~/components/name-color";
 import { ProfileAvatar } from "~/components/profile-avatar";
 import {
   AlertDialog,
@@ -80,6 +81,7 @@ export function PostCardHeader({
   const canDelete =
     (currentProfileId && author.id === currentProfileId) || isModerator;
   const isOwnPost = currentProfileId && author.id === currentProfileId;
+  const nameColor = useNameColorClass(author.id);
   // Allow editing own posts. Announcements: only the owner and moderators.
   const canEdit =
     isOwnPost && (!isAnnouncement || isOwner || isModerator) && onEdit;
@@ -109,7 +111,7 @@ export function PostCardHeader({
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <Link to={`/@${author.username}`} className="hover:underline">
               <span
-                className={`${isReply ? "text-[13px]" : "text-sm"} whitespace-nowrap font-semibold text-foreground`}
+                className={`${isReply ? "text-[13px]" : "text-sm"} whitespace-nowrap font-semibold text-foreground ${nameColor}`}
               >
                 {author.name}
               </span>

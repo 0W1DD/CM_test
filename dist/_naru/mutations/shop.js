@@ -108,6 +108,7 @@ function itemParams(ctx, a) {
         consumable: optionalBoolean(ctx, a.consumable, "consumable"),
         isUnique: optionalBoolean(ctx, a.is_unique, "is_unique"),
         randomBox: optionalBoolean(ctx, a.random_box, "random_box"),
+        nameColor: optionalBoolean(ctx, a.name_color, "name_color"),
     };
 }
 export async function adminCreateItem(ctx, args) {

@@ -105,8 +105,15 @@ export async function mutate<R>(name: string, args?: object): Promise<R> {
     await signIn();
     throw new Error("로그인이 필요합니다");
   }
-  return member.mutate<R>(name, json(args));
+  const result = await member.mutate<R>(name, json(args));
+  // Something was done: achievements.tsx checks what it newly reached.
+  if (!name.startsWith("achievements:") && typeof window !== "undefined")
+    window.dispatchEvent(new Event(MUTATED));
+  return result;
 }
+
+/** Fired on the window after each mutation (but achievements' own). */
+export const MUTATED = "commung:mutated";
 
 /**
  * Keeps a query's answer current: `onResult` with each new answer, until the

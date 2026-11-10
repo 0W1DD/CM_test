@@ -60,6 +60,7 @@ interface Item {
   consumable: boolean;
   isUnique: boolean;
   randomBox?: boolean;
+  nameColor?: boolean;
 }
 interface Transaction {
   id: string;
@@ -226,6 +227,8 @@ function ItemDialog({
   const [isUnique, setIsUnique] = useState(item?.isUnique ?? false);
   const [randomBox, setRandomBox] = useState(item?.randomBox ?? false);
   const randomBoxId = useId();
+  const [nameColor, setNameColor] = useState(item?.nameColor ?? false);
+  const nameColorId = useId();
   const queryClient = useQueryClient();
   const nameId = useId();
   const descriptionId = useId();
@@ -250,6 +253,7 @@ function ItemDialog({
         consumable,
         is_unique: isUnique,
         random_box: randomBox,
+        name_color: nameColor,
       };
       await orFail(
         item
@@ -349,6 +353,17 @@ function ItemDialog({
           />
           <Label htmlFor={randomBoxId}>
             크리스마스 랜덤박스 (하루 한 번 구매, 열면 도감에 등록)
+          </Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            id={nameColorId}
+            type="checkbox"
+            checked={nameColor}
+            onChange={(e) => setNameColor(e.target.checked)}
+          />
+          <Label htmlFor={nameColorId}>
+            닉네임 색 변경권 (사용하면 고른 색으로 7일, 소모품으로 두세요)
           </Label>
         </div>
       </div>
@@ -824,6 +839,7 @@ function ItemCard({
               {item.consumable && <Badge variant="outline">소모품</Badge>}
               {item.isUnique && <Badge variant="outline">유니크</Badge>}
               {item.randomBox && <Badge variant="outline">랜덤박스</Badge>}
+              {item.nameColor && <Badge variant="outline">닉네임 색</Badge>}
             </div>
             {item.description && (
               <p className="text-xs text-muted-foreground mt-1">
