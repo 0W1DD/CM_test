@@ -298,7 +298,7 @@ export default function EventsPage() {
         )}
       </div>
 
-      <div className="events-tabs" role="tablist">
+      <div className="events-tabs" role="tablist" data-tour="events-tabs">
         <button
           type="button"
           role="tab"

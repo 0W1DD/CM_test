@@ -99,13 +99,18 @@ export function EventsRail() {
   const { gift, received } = data;
   return (
     <div className="framed mt-4 p-4 space-y-4">
-      <CheckInButton />
+      <div data-tour="rail-check-in">
+        <CheckInButton />
+      </div>
       <div className="border-t border-border pt-3 space-y-2">
         <p className="text-sm font-semibold text-foreground">이벤트 신청</p>
         <p className="text-xs text-muted-foreground">
           현재 신청 받고 있는 이벤트입니다.
         </p>
-        <div className="space-y-2 border border-border p-3">
+        <div
+          className="space-y-2 border border-border p-3"
+          data-tour="rail-gift"
+        >
           <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
             <Gift className="h-4 w-4 text-primary" />
             주간 선물 교환식

@@ -87,6 +87,7 @@ export function CarolRail() {
     <button
       type="button"
       onClick={openCarols}
+      data-tour="rail-carol"
       className="framed mt-4 flex w-full items-center gap-1.5 p-4 text-sm font-semibold text-foreground hover:text-primary"
     >
       <Music className="h-4 w-4 text-primary" />

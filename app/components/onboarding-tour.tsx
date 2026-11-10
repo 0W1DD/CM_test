@@ -35,6 +35,8 @@ interface Step {
   page?: string;
   /** The page's example entries shown for this stop (lib/tour-demo.ts). */
   demo?: TourDemo;
+  /** Only where the right rail is not shown (phones and narrow screens). */
+  narrowOnly?: boolean;
 }
 
 /** Stops whose element, on phones, is inside the side menu. */
@@ -240,6 +242,29 @@ const STEPS: Step[] = [
     title: "커뮤 속 시간",
     body: "커뮤 안의 날짜는 항상 12월 25일입니다. 시간만 흘러갑니다.",
   },
+  // The right rail's stops, on wide screens only (passed over elsewhere).
+  {
+    target: "rail-check-in",
+    title: "출석체크",
+    body: "매일 오전 0시부터 12시 사이에 출석체크를 하면 코인 1개를 받습니다.",
+  },
+  {
+    target: "rail-gift",
+    title: "주간 선물 교환식",
+    body: "월요일부터 토요일까지 신청을 받습니다. 신청이 마감되면 받을 사람이 랜덤으로 정해지고, 일요일 밤 11시 30분까지 선물을 써 두면 월요일 오전 8시에 열어볼 수 있습니다. 받을 사람은 공개되지 않으며, 참여하면 코인 5개를 받습니다.",
+  },
+  {
+    target: "rail-carol",
+    title: "크리스마스 캐럴",
+    body: "누르면 크리스마스 캐럴이 작은 창으로 열립니다. 다른 페이지로 옮겨도 계속 나오고, 접으면 화면 아래에 숨긴 채로 들을 수 있습니다.",
+  },
+  {
+    page: "/events",
+    target: "events-tabs",
+    narrowOnly: true,
+    title: "이벤트",
+    body: "이벤트 페이지에는 탭이 세 개 있습니다. '이벤트'에서는 출석체크(매일 오전 0시~12시, 코인 1개)와 주간 선물 교환식 신청을, '도감'에서는 크리스마스 도감을, '음악'에서는 크리스마스 캐럴을 들을 수 있습니다. 캐럴은 작은 창으로 열려서 다른 페이지로 옮겨도 계속 나옵니다.",
+  },
   {
     page: "/events",
     target: "box-book",
@@ -280,13 +305,16 @@ interface Stop extends Step {
 
 /**
  * The stops for this screen. A stop in the side menu is kept on phones (the
- * menu opens for it), and one with examples always is; either is passed
- * over then if its element is not there after all.
+ * menu opens for it), and one with examples or on another page always is;
+ * any is passed over then if its element is not there after all. A
+ * narrowOnly stop is left out where the right rail shows.
  */
 function stopsHere(): Stop[] {
   const phoneMenu = !!findTarget("menu");
+  const wide = !!findTarget("rail-check-in");
   return STEPS.flatMap((step): Stop[] => {
-    if (!step.target || step.demo) return [step];
+    if (step.narrowOnly && wide) return [];
+    if (!step.target || step.demo || step.page) return [step];
     if (phoneMenu && MENU_TARGETS.has(step.target))
       return [{ ...step, inMenu: true }];
     return findTarget(step.target) ? [step] : [];
@@ -427,7 +455,12 @@ export function OnboardingTour() {
         }
         return;
       }
-      el?.scrollIntoView({ block: "nearest", inline: "nearest" });
+      // Into the middle of the screen, so the card beside it fits too; once
+      // more after the page settles (examples drawn, menus slid in).
+      const center = () =>
+        el?.scrollIntoView({ block: "center", inline: "nearest" });
+      center();
+      timer = setTimeout(center, 350);
       // Follow it for a moment, while the menu slides in or the page settles.
       const until = performance.now() + 900;
       const follow = () => {

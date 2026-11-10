@@ -400,10 +400,10 @@ export default function ShopPage() {
               )}
               {data.inventory.map((entry) => (
                 <div key={entry.itemId} className="border-b last:border-b-0">
-                  <div className="flex items-center justify-between gap-3 py-2">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5 py-2">
+                    <div className="flex items-center gap-2 min-w-[10rem] flex-1">
                       <Package className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <span className="font-medium truncate">
+                      <span className="font-medium break-words">
                         {entry.itemName}
                       </span>
                       {entry.consumable && (
@@ -437,7 +437,9 @@ export default function ShopPage() {
                           )
                         }
                       >
-                        {entry.consumable ? "사용" : "꺼내 보이기"}
+                        {entry.consumable || entry.boxEntry
+                          ? "사용"
+                          : "꺼내 보이기"}
                       </Button>
                     )}
                     {entry.boxEntry && !entry.registered && (
