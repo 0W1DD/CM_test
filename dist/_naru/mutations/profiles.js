@@ -130,6 +130,31 @@ export async function setPicture(ctx, args) {
     WHERE id = ${profile.id}`;
     return { ...imageJson(image), image_id: image.id };
 }
+/**
+ * Sets a profile's big picture (the tall one on its page) to an image the
+ * caller registered, or takes it away (`image_id` null): its owner or a
+ * member it is shared with.
+ */
+export async function setPortrait(ctx, args) {
+    const a = argsOf(args);
+    const profile = await actingProfile(ctx, a.profile_id);
+    if (profile.activated_at === null)
+        ctx.fail("NOT_FOUND", "프로필을 찾을 수 없거나 귀하의 소유가 아닙니다", {
+            reason: "not_found",
+        });
+    if (a.image_id === null) {
+        await ctx.sql `
+      UPDATE profiles SET portrait_id = NULL, updated_at = ${ctx.now}
+      WHERE id = ${profile.id}`;
+        return { url: null, image_id: null };
+    }
+    const imageId = text(ctx, a.image_id, "image_id", { max: 200 });
+    const [image] = await ownImages(ctx, [imageId]);
+    await ctx.sql `
+    UPDATE profiles SET portrait_id = ${image.id}, updated_at = ${ctx.now}
+    WHERE id = ${profile.id}`;
+    return { ...imageJson(image), image_id: image.id };
+}
 /** Deletes a profile the caller owns, but not their primary or only one. */
 async function deleteProfile(ctx, args) {
     const profile = await ownedProfile(ctx, argsOf(args).profile_id, "프로필을 찾을 수 없거나 관리 권한이 없습니다");

@@ -1,4 +1,4 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AtSign,
   Camera,
@@ -14,6 +14,7 @@ import {
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
+import { ImageCropper } from "~/components/image-cropper";
 import { ProfileAvatar } from "~/components/profile-avatar";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -21,7 +22,7 @@ import { Spinner } from "~/components/ui/spinner";
 import { Textarea } from "~/components/ui/textarea";
 import { useAuth } from "~/hooks/useAuth";
 import { SESSION_KEY } from "~/hooks/useSession";
-import { errorMessage, mutate } from "~/lib/naru";
+import { errorMessage, mutate, query } from "~/lib/naru";
 import {
   ALLOWED_IMAGE_TYPES,
   MAX_IMAGE_FILE_SIZE,
@@ -54,6 +55,20 @@ export default function ProfileSettings() {
   >(null);
   const [usernameError, setUsernameError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // A picked picture waits in the cropper: the round one or the big one.
+  const [crop, setCrop] = useState<{
+    file: File;
+    kind: "picture" | "portrait";
+  } | null>(null);
+  const portraitInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingPortrait, setIsUploadingPortrait] = useState(false);
+  const { data: page, refetch: refetchPage } = useQuery({
+    queryKey: ["profile-page", currentProfile?.username],
+    queryFn: () =>
+      query<Profile>("profiles:get", { username: currentProfile?.username }),
+    enabled: !!currentProfile?.username,
+  });
+  const portraitUrl = page?.portrait_url ?? null;
 
   // Username validation function
   const validateUsername = useCallback(
@@ -121,17 +136,14 @@ export default function ProfileSettings() {
       return;
     }
 
-    // Show preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result;
-      if (typeof result === "string") {
-        setProfilePicturePreview(result);
-      }
-    };
-    reader.readAsDataURL(file);
+    e.target.value = "";
+    // A moving GIF would stop once cropped: it goes up as it is.
+    if (file.type === "image/gif") await uploadPicture(file);
+    else setCrop({ file, kind: "picture" });
+  };
 
-    // Upload image
+  const uploadPicture = async (file: File) => {
+    setProfilePicturePreview(URL.createObjectURL(file));
     setIsUploadingProfilePicture(true);
     try {
       if (!currentProfile) {
@@ -156,6 +168,41 @@ export default function ProfileSettings() {
       setProfilePicturePreview(profile?.profile_picture_url || null);
     } finally {
       setIsUploadingProfilePicture(false);
+    }
+  };
+
+  const handlePortraitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      toast.error("이미지 파일만 업로드 가능합니다 (JPG, PNG, GIF, WebP)");
+      return;
+    }
+    if (file.size > MAX_IMAGE_FILE_SIZE) {
+      toast.error("이미지 크기는 25MB 이하여야 합니다");
+      return;
+    }
+    if (file.type === "image/gif") void uploadPortrait(file);
+    else setCrop({ file, kind: "portrait" });
+  };
+
+  const uploadPortrait = async (file: File | null) => {
+    if (!currentProfile) return;
+    setIsUploadingPortrait(true);
+    try {
+      const image = file ? await uploadImage(file) : null;
+      await mutate("profiles:setPortrait", {
+        profile_id: currentProfile.id,
+        image_id: image?.id ?? null,
+      });
+      await refetchPage();
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      toast.success(file ? "큰 이미지를 올렸습니다" : "큰 이미지를 지웠습니다");
+    } catch (error) {
+      toast.error(errorMessage(error, "큰 이미지를 바꾸지 못했습니다"));
+    } finally {
+      setIsUploadingPortrait(false);
     }
   };
 
@@ -358,6 +405,86 @@ export default function ProfileSettings() {
                   className="hidden"
                 />
               </div>
+
+              {/* The big picture: tall, on the left of the profile's page. */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Camera className="h-4 w-4 text-muted-foreground" />
+                  프로필 큰 이미지
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="relative h-32 w-24 flex-none overflow-hidden rounded-md border-2 border-border bg-muted">
+                    {portraitUrl ? (
+                      <img
+                        src={portraitUrl}
+                        alt="프로필 큰 이미지"
+                        className="h-full w-full object-cover object-top"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                        없음
+                      </div>
+                    )}
+                    {isUploadingPortrait && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                        <Spinner className="h-5 w-5 text-white" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => portraitInputRef.current?.click()}
+                      disabled={isUploadingPortrait || isSaving}
+                      className="text-sm"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />큰 이미지 올리기
+                    </Button>
+                    {portraitUrl && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => uploadPortrait(null)}
+                        disabled={isUploadingPortrait || isSaving}
+                        className="text-sm"
+                      >
+                        지우기
+                      </Button>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      내 프로필 페이지 왼쪽에 세로로 크게 보여요. 올리면 작은
+                      동그란 사진 대신 이 이미지가 나와요.
+                    </p>
+                  </div>
+                </div>
+                <input
+                  ref={portraitInputRef}
+                  type="file"
+                  accept={ALLOWED_IMAGE_TYPES.join(",")}
+                  onChange={handlePortraitChange}
+                  className="hidden"
+                />
+              </div>
+              {crop && (
+                <ImageCropper
+                  file={crop.file}
+                  aspect={crop.kind === "picture" ? 1 : 3 / 4}
+                  round={crop.kind === "picture"}
+                  outputWidth={crop.kind === "picture" ? 512 : 900}
+                  title={
+                    crop.kind === "picture"
+                      ? "프로필 사진 자르기"
+                      : "프로필 큰 이미지 자르기"
+                  }
+                  onCancel={() => setCrop(null)}
+                  onDone={(file) => {
+                    setCrop(null);
+                    if (crop.kind === "picture") void uploadPicture(file);
+                    else void uploadPortrait(file);
+                  }}
+                />
+              )}
 
               {/* Display Name */}
               <div className="space-y-3">

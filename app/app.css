@@ -1685,3 +1685,52 @@ h2 .profile-badge {
     animation: none;
   }
 }
+
+/* The cropper (image-cropper.tsx): the picture behind its frame, and a
+   round guide darkening what a round picture will not show. */
+.cropper-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #111;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.cropper-frame:active {
+  cursor: grabbing;
+}
+.cropper-frame img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  pointer-events: none;
+}
+.cropper-round {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  box-shadow: 0 0 0 999px rgb(0 0 0 / 0.55);
+  outline: 2px solid rgb(255 255 255 / 0.8);
+  pointer-events: none;
+}
+
+/* A profile's big picture (portrait) in its page's header: tall on the
+   left, across the top on phones. */
+.profile-portrait {
+  flex: none;
+  width: 100%;
+  height: 20rem;
+  object-fit: cover;
+  object-position: top;
+}
+@media (min-width: 640px) {
+  .profile-portrait {
+    width: 38%;
+    height: auto;
+    min-height: 100%;
+    aspect-ratio: 3 / 4;
+    align-self: stretch;
+  }
+}

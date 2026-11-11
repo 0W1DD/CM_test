@@ -5,6 +5,8 @@ export interface Profile {
   username: string;
   bio: string | null;
   profile_picture_url: string | null;
+  /** The big picture on the profile's page (profiles:get only). */
+  portrait_url?: string | null;
   created_at: string;
   updated_at: string;
   active?: string | null;

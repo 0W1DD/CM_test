@@ -35,7 +35,7 @@ test("a profile is read by username, by anyone, with its post count", async () =
   );
   const alice = await site.query("profiles:get", { username: "ALICE" }, VISITOR);
   assert.deepEqual(Object.keys(alice).sort(), [
-    "bio", "created_at", "id", "name", "post_count", "profile_picture_url", "updated_at", "username",
+    "bio", "created_at", "id", "name", "portrait_url", "post_count", "profile_picture_url", "updated_at", "username",
   ]);
   assert.equal(alice.post_count, 1);
   assert.equal(await refusal(site.query("profiles:get", { username: "nobody" })), "not_found");
@@ -100,6 +100,18 @@ test("owners update their profile and picture; admins cannot update", async () =
   );
   const set = await site.mutate("profiles:setPicture", { profile_id: profiles.alice, image_id: picture }, as("m-alice"));
   assert.equal(set.image_id, picture);
+
+  // The big picture: set, shown on the page, taken away.
+  assert.equal(
+    await refusal(site.mutate("profiles:setPortrait", { profile_id: profiles.alice, image_id: bobs }, as("m-alice"))),
+    "invalid_image",
+  );
+  await site.mutate("profiles:setPortrait", { profile_id: profiles.alice, image_id: picture }, as("m-alice"));
+  let page = await site.query("profiles:get", { username: "alice_b" }, as("m-bob"));
+  assert.match(page.portrait_url, /p\.png/);
+  await site.mutate("profiles:setPortrait", { profile_id: profiles.alice, image_id: null }, as("m-alice"));
+  page = await site.query("profiles:get", { username: "alice_b" }, as("m-bob"));
+  assert.equal(page.portrait_url, null);
 });
 
 test("primary and only profiles are kept; others are deleted", async () => {

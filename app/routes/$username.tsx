@@ -1,10 +1,5 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import {
-  ArrowLeft,
-  Calendar,
-  MessageCircle,
-  User,
-} from "lucide-react";
+import { ArrowLeft, Calendar, MessageCircle, User } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { FeaturedBadge, ProfileBadges } from "~/components/badges";
@@ -233,17 +228,30 @@ export default function ProfileProfile() {
               className={`bg-gradient-to-r ${getGradientForUser(
                 profile.username,
                 profile.name,
-              )} px-6 py-8`}
+              )} ${profile.portrait_url ? "flex flex-col sm:flex-row" : "px-6 py-8"}`}
             >
-              <div className="flex items-center gap-4">
-                <ProfileAvatar
-                  profilePictureUrl={profile.profile_picture_url || undefined}
-                  name={profile.name}
-                  username={profile.username}
-                  size="xl"
-                  className="bg-white/20 backdrop-blur"
+              {/* With a big picture, it fills the left (the top on phones)
+                  in place of the round one. */}
+              {profile.portrait_url && (
+                <img
+                  src={profile.portrait_url}
+                  alt={`${profile.name}의 프로필 이미지`}
+                  className="profile-portrait"
                 />
-                <div className="text-white">
+              )}
+              <div
+                className={`flex items-center gap-4 ${profile.portrait_url ? "min-w-0 flex-1 px-6 py-8" : ""}`}
+              >
+                {!profile.portrait_url && (
+                  <ProfileAvatar
+                    profilePictureUrl={profile.profile_picture_url || undefined}
+                    name={profile.name}
+                    username={profile.username}
+                    size="xl"
+                    className="bg-white/20 backdrop-blur"
+                  />
+                )}
+                <div className="text-white min-w-0">
                   <h2 className="flex flex-wrap items-center gap-2 text-2xl font-bold">
                     {profile.name}
                     <FeaturedBadge profileId={profile.id} />
