@@ -15,6 +15,8 @@ export interface Achievement {
   condition: string;
   unit: string;
   goals: readonly [number, number, number];
+  /** Not shown at all until its first tier is reached. */
+  hidden?: boolean;
 }
 
 export const ACHIEVEMENTS: readonly Achievement[] = [
@@ -73,6 +75,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     condition: "쿠키·과자 상품 사기",
     unit: "번",
     goals: [3, 10, 30],
+    hidden: true,
   },
 ];
 
@@ -229,26 +232,44 @@ export async function listFor(ctx: Ctx, profileId: string) {
     emoji: string;
   }>`SELECT achievement, name, emoji FROM badges WHERE achievement IS NOT NULL`;
   const badges = new Map(rows.map((r) => [r.achievement, r]));
-  return ACHIEVEMENTS.map((a) => ({
-    key: a.key,
-    name: a.name,
-    condition: a.condition,
-    unit: a.unit,
-    progress: progress[a.key] ?? 0,
-    tiers: a.goals.map((goal, i) => {
-      const at = reached.get(`${a.key}:${i + 1}`);
+  // Only the name shows, and the next tier's goal: a later tier's goal, the
+  // title, and a hidden achievement whole, stay secret until reached.
+  return ACHIEVEMENTS.map((a, n) => {
+    const at = a.goals.map((_, i) => reached.get(`${a.key}:${i + 1}`));
+    if (a.hidden && at[0] === undefined)
       return {
-        tier: i + 1,
-        goal,
-        coins: TIER_COINS[i],
-        reached_at: at === undefined ? null : new Date(at).toISOString(),
+        key: `hidden-${n}`,
+        name: null,
+        hidden: true,
+        unit: "",
+        progress: 0,
+        tiers: a.goals.map((_, i) => ({
+          tier: i + 1,
+          goal: null,
+          coins: TIER_COINS[i],
+          reached_at: null,
+        })),
+        badge: null,
       };
-    }),
-    badge: badges.has(a.key)
-      ? {
-          name: badges.get(a.key)?.name ?? "",
-          emoji: badges.get(a.key)?.emoji ?? "",
-        }
-      : null,
-  }));
+    const next = at.findIndex((t) => t === undefined);
+    const badge = badges.get(a.key);
+    return {
+      key: a.key,
+      name: a.name,
+      hidden: false,
+      unit: a.unit,
+      progress: progress[a.key] ?? 0,
+      tiers: a.goals.map((goal, i) => ({
+        tier: i + 1,
+        goal: next === -1 || i <= next ? goal : null,
+        coins: TIER_COINS[i],
+        reached_at:
+          at[i] === undefined ? null : new Date(at[i] as number).toISOString(),
+      })),
+      badge:
+        badge && at[2] !== undefined
+          ? { name: badge.name, emoji: badge.emoji }
+          : null,
+    };
+  });
 }

@@ -38,6 +38,12 @@ test("tiers are reached from what is recorded, once, with coins and the third ti
   assert.ok(earned.tiers[0].reached_at);
   assert.equal(earned.tiers[1].reached_at, null);
   assert.equal(list.find((a) => a.key === "streak").progress, 30);
+  // Later tiers' goals and titles stay secret; the cookie one is hidden.
+  assert.deepEqual(earned.tiers.map((t) => t.goal), [50, 200, null]);
+  assert.equal(earned.badge, null);
+  assert.equal(list.find((a) => a.key === "streak").badge.name, "개근상");
+  assert.ok(!list.some((a) => a.key === "cookies"));
+  assert.equal(list.filter((a) => a.hidden).length, 1);
 
   // The title is hers and shows by her name.
   const featured = await site.query("badges:featured", null, as("m-bob"));

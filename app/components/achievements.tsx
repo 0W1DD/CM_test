@@ -3,7 +3,7 @@
 // as a card sliding up in the corner, one after another as on Steam, and
 // the list on the events page's tab.
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Trophy } from "lucide-react";
+import { Lock, Trophy } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "~/hooks/useAuth";
 import { MUTATED, mutate, query } from "~/lib/naru";
@@ -20,13 +20,15 @@ interface Reached {
 
 export interface AchievementRow {
   key: string;
-  name: string;
-  condition: string;
+  /** Null for a hidden achievement not yet found. */
+  name: string | null;
+  hidden: boolean;
   unit: string;
   progress: number;
   tiers: {
     tier: number;
-    goal: number;
+    /** Null until it is the next tier to reach. */
+    goal: number | null;
     coins: number;
     reached_at: string | null;
   }[];
@@ -152,27 +154,32 @@ export function AchievementsTab() {
           업적
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          단계마다 코인 2 · 5 · 10개를 받고, 마지막 단계에서는 칭호도 받아요.
-          칭호는 내 프로필에서 눌러 이름 옆에 달 수 있어요.
+          업적을 달성하면 보상을 받을 수 있습니다.
         </p>
       </div>
       <ul className="space-y-3">
         {data.map((a) => {
-          const done = a.tiers.filter((t) => t.reached_at).length;
+          if (a.hidden)
+            return (
+              <li
+                key={a.key}
+                className="flex items-center gap-2 border-[1.5px] border-dashed border-[var(--frame)] bg-background p-3 text-muted-foreground"
+              >
+                <Lock className="h-4 w-4" />
+                <span className="font-semibold">숨겨진 업적</span>
+              </li>
+            );
           const next = a.tiers.find((t) => !t.reached_at);
-          const goal = next?.goal ?? a.tiers[a.tiers.length - 1]?.goal ?? 1;
-          const pct = Math.min(100, Math.round((a.progress / goal) * 100));
+          const goal = next?.goal ?? 1;
+          const pct = next
+            ? Math.min(100, Math.round((a.progress / goal) * 100))
+            : 100;
           return (
             <li
               key={a.key}
               className="border-[1.5px] border-[var(--frame)] bg-background p-3"
             >
-              <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                <span className="font-semibold">{a.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  {a.condition}
-                </span>
-              </div>
+              <span className="font-semibold">{a.name}</span>
               <div className="mt-2 flex items-center gap-2">
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
                   <div
@@ -197,18 +204,19 @@ export function AchievementsTab() {
                         : undefined
                     }
                   >
-                    {TIER[t.tier - 1]} {t.goal.toLocaleString()}
-                    {a.unit} · 코인 {t.coins}
+                    {TIER[t.tier - 1]}{" "}
+                    {t.goal === null
+                      ? "???"
+                      : `${t.goal.toLocaleString()}${a.unit}`}
                   </span>
                 ))}
-                {a.badge && (
-                  <span
-                    className={`profile-badge ${done === 3 ? "" : "opacity-50"}`}
-                    title="Ⅲ단계 칭호"
-                  >
+                {a.badge ? (
+                  <span className="profile-badge" title="칭호">
                     <span aria-hidden>{a.badge.emoji}</span>
                     <span>{a.badge.name}</span>
                   </span>
+                ) : (
+                  <span className="achievement-tier">칭호 ???</span>
                 )}
               </div>
             </li>
