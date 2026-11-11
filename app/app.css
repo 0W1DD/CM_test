@@ -1737,7 +1737,9 @@ h2 .profile-badge {
 
 /* A profile's header background (cover) behind the top of its page, under
    a veil that keeps the white name and badges readable whatever the
-   picture. On phones with a big picture it starts below that picture. */
+   picture. With a big picture it spreads behind that too, so a see-through
+   picture stands in the scene: on phones the veil darkens only below it,
+   where the name is. */
 .profile-cover {
   position: absolute;
   inset: 0;
@@ -1755,13 +1757,15 @@ h2 .profile-badge {
   inset: 0;
   background: linear-gradient(to bottom, rgb(0 0 0 / 0.2), rgb(0 0 0 / 0.55));
 }
-.profile-cover.has-portrait {
-  top: 20rem;
+.profile-cover.has-portrait::after {
+  background: linear-gradient(
+    to bottom,
+    rgb(0 0 0 / 0.05),
+    rgb(0 0 0 / 0.1) 14rem,
+    rgb(0 0 0 / 0.6) 22rem
+  );
 }
 @media (min-width: 640px) {
-  .profile-cover.has-portrait {
-    top: 0;
-  }
   .profile-cover.has-portrait::after {
     background: linear-gradient(
       to right,
