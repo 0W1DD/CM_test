@@ -1734,3 +1734,42 @@ h2 .profile-badge {
     align-self: stretch;
   }
 }
+
+/* A profile's header background (cover) behind the top of its page, under
+   a veil that keeps the white name and badges readable whatever the
+   picture. On phones with a big picture it starts below that picture. */
+.profile-cover {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+}
+.profile-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.profile-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgb(0 0 0 / 0.2), rgb(0 0 0 / 0.55));
+}
+.profile-cover.has-portrait {
+  top: 20rem;
+}
+@media (min-width: 640px) {
+  .profile-cover.has-portrait {
+    top: 0;
+  }
+  .profile-cover.has-portrait::after {
+    background: linear-gradient(
+      to right,
+      rgb(0 0 0 / 0.15),
+      rgb(0 0 0 / 0.6) 45%
+    );
+  }
+}
+.profile-on-cover {
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
+}

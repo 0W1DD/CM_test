@@ -177,29 +177,48 @@ export async function setPicture(ctx: MutationCtx, args: unknown) {
 }
 
 /**
- * Sets a profile's big picture (the tall one on its page) to an image the
- * caller registered, or takes it away (`image_id` null): its owner or a
- * member it is shared with.
+ * Sets one of a profile's images on its page to an image the caller
+ * registered, or takes it away (`image_id` null): its owner or a member it
+ * is shared with.
  */
-export async function setPortrait(ctx: MutationCtx, args: unknown) {
+async function setPageImage(
+  ctx: MutationCtx,
+  args: unknown,
+  column: "portrait_id" | "cover_id",
+) {
   const a = argsOf(args);
   const profile = await actingProfile(ctx, a.profile_id);
   if (profile.activated_at === null)
     ctx.fail("NOT_FOUND", "프로필을 찾을 수 없거나 귀하의 소유가 아닙니다", {
       reason: "not_found",
     });
-  if (a.image_id === null) {
-    await ctx.sql`
-      UPDATE profiles SET portrait_id = NULL, updated_at = ${ctx.now}
-      WHERE id = ${profile.id}`;
-    return { url: null, image_id: null };
+  let image: Awaited<ReturnType<typeof ownImages>>[number] | null = null;
+  if (a.image_id !== null) {
+    const imageId = text(ctx, a.image_id, "image_id", { max: 200 });
+    [image] = await ownImages(ctx, [imageId]);
   }
-  const imageId = text(ctx, a.image_id, "image_id", { max: 200 });
-  const [image] = await ownImages(ctx, [imageId]);
-  await ctx.sql`
-    UPDATE profiles SET portrait_id = ${image.id}, updated_at = ${ctx.now}
-    WHERE id = ${profile.id}`;
-  return { ...imageJson(image), image_id: image.id };
+  const id = image?.id ?? null;
+  if (column === "portrait_id")
+    await ctx.sql`
+      UPDATE profiles SET portrait_id = ${id}, updated_at = ${ctx.now}
+      WHERE id = ${profile.id}`;
+  else
+    await ctx.sql`
+      UPDATE profiles SET cover_id = ${id}, updated_at = ${ctx.now}
+      WHERE id = ${profile.id}`;
+  return image
+    ? { ...imageJson(image), image_id: image.id }
+    : { url: null, image_id: null };
+}
+
+/** A profile's big picture: the tall one on the left of its page. */
+export async function setPortrait(ctx: MutationCtx, args: unknown) {
+  return setPageImage(ctx, args, "portrait_id");
+}
+
+/** A profile's header background: the wide one behind the top of its page. */
+export async function setCover(ctx: MutationCtx, args: unknown) {
+  return setPageImage(ctx, args, "cover_id");
 }
 
 /** Deletes a profile the caller owns, but not their primary or only one. */

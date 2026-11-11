@@ -228,19 +228,29 @@ export default function ProfileProfile() {
               className={`bg-gradient-to-r ${getGradientForUser(
                 profile.username,
                 profile.name,
-              )} ${profile.portrait_url ? "flex flex-col sm:flex-row" : "px-6 py-8"}`}
+              )} relative isolate ${profile.portrait_url ? "flex flex-col sm:flex-row" : "px-6 py-8"}`}
             >
+              {/* The header background, under a veil that keeps the white
+                  text readable (below the big picture on phones). */}
+              {profile.cover_url && (
+                <div
+                  className={`profile-cover ${profile.portrait_url ? "has-portrait" : ""}`}
+                  aria-hidden
+                >
+                  <img src={profile.cover_url} alt="" />
+                </div>
+              )}
               {/* With a big picture, it fills the left (the top on phones)
                   in place of the round one. */}
               {profile.portrait_url && (
                 <img
                   src={profile.portrait_url}
                   alt={`${profile.name}의 프로필 이미지`}
-                  className="profile-portrait"
+                  className="profile-portrait relative"
                 />
               )}
               <div
-                className={`flex items-center gap-4 ${profile.portrait_url ? "min-w-0 flex-1 px-6 py-8" : ""}`}
+                className={`relative flex items-center gap-4 ${profile.portrait_url ? "min-w-0 flex-1 px-6 py-8" : ""} ${profile.cover_url ? "profile-on-cover" : ""}`}
               >
                 {!profile.portrait_url && (
                   <ProfileAvatar

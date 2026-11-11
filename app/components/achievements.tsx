@@ -120,7 +120,7 @@ function AchievementCard({
         </span>
         <span className="block text-xs text-[#acb2b8]">
           {r.coins > 0 && `코인 +${r.coins}`}
-          {r.badge && ` · 칭호 「${r.badge.name}」`}
+          {r.badge && ` · 뱃지 「${r.badge.name}」`}
         </span>
       </span>
     </button>
@@ -211,12 +211,12 @@ export function AchievementsTab() {
                   </span>
                 ))}
                 {a.badge ? (
-                  <span className="profile-badge" title="칭호">
+                  <span className="profile-badge" title="뱃지">
                     <span aria-hidden>{a.badge.emoji}</span>
                     <span>{a.badge.name}</span>
                   </span>
                 ) : (
-                  <span className="achievement-tier">칭호 ???</span>
+                  <span className="achievement-tier">뱃지 ???</span>
                 )}
               </div>
             </li>

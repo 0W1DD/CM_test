@@ -86,16 +86,19 @@ export async function get(ctx: QueryCtx, args: unknown) {
     ctx.fail("NOT_FOUND", "프로필을 찾을 수 없습니다", { reason: "not_found" });
   const { rows } = await ctx.sql<{ url: string }>`
     SELECT url FROM images WHERE id = ${profile.picture_id}`;
-  const portrait = await ctx.sql<{ url: string }>`
-    SELECT i.url FROM profiles p JOIN images i ON i.id = p.portrait_id
-    WHERE p.id = ${profile.id}`;
+  const page = await ctx.sql<{ portrait: string | null; cover: string | null }>`
+    SELECT
+      (SELECT url FROM images WHERE id = p.portrait_id) AS portrait,
+      (SELECT url FROM images WHERE id = p.cover_id) AS cover
+    FROM profiles p WHERE p.id = ${profile.id}`;
   return {
     id: profile.id,
     username: profile.username,
     name: profile.name,
     bio: profile.bio,
     profile_picture_url: rows[0]?.url ?? null,
-    portrait_url: portrait.rows[0]?.url ?? null,
+    portrait_url: page.rows[0]?.portrait ?? null,
+    cover_url: page.rows[0]?.cover ?? null,
     created_at: iso(profile.created_at),
     updated_at: iso(profile.updated_at),
     post_count: await postCountOf(ctx, profile.id),

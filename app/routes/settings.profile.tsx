@@ -32,6 +32,13 @@ import { getGradientForUser } from "~/lib/gradient-utils";
 
 import type { Profile } from "~/types/profile";
 
+/** How each picture is cropped: its shape, saved width and dialog title. */
+const CROP = {
+  picture: { aspect: 1, width: 512, title: "프로필 사진 자르기" },
+  portrait: { aspect: 3 / 4, width: 900, title: "프로필 큰 이미지 자르기" },
+  cover: { aspect: 2, width: 1500, title: "프로필 헤더 배경 자르기" },
+} as const;
+
 export default function ProfileSettings() {
   const { user, isLoading: authLoading, currentProfile } = useAuth();
   const queryClient = useQueryClient();
@@ -58,10 +65,16 @@ export default function ProfileSettings() {
   // A picked picture waits in the cropper: the round one or the big one.
   const [crop, setCrop] = useState<{
     file: File;
-    kind: "picture" | "portrait";
+    kind: "picture" | "portrait" | "cover";
   } | null>(null);
   const portraitInputRef = useRef<HTMLInputElement>(null);
-  const [isUploadingPortrait, setIsUploadingPortrait] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  // Which of the page's images is going up, if one is.
+  const [uploadingPage, setUploadingPage] = useState<
+    "portrait" | "cover" | null
+  >(null);
+  const isUploadingPortrait = uploadingPage === "portrait";
+  const isUploadingCover = uploadingPage === "cover";
   const { data: page, refetch: refetchPage } = useQuery({
     queryKey: ["profile-page", currentProfile?.username],
     queryFn: () =>
@@ -69,6 +82,7 @@ export default function ProfileSettings() {
     enabled: !!currentProfile?.username,
   });
   const portraitUrl = page?.portrait_url ?? null;
+  const coverUrl = page?.cover_url ?? null;
 
   // Username validation function
   const validateUsername = useCallback(
@@ -171,38 +185,47 @@ export default function ProfileSettings() {
     }
   };
 
-  const handlePortraitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      toast.error("이미지 파일만 업로드 가능합니다 (JPG, PNG, GIF, WebP)");
-      return;
-    }
-    if (file.size > MAX_IMAGE_FILE_SIZE) {
-      toast.error("이미지 크기는 25MB 이하여야 합니다");
-      return;
-    }
-    if (file.type === "image/gif") void uploadPortrait(file);
-    else setCrop({ file, kind: "portrait" });
-  };
+  const pickPageImage =
+    (kind: "portrait" | "cover") =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      e.target.value = "";
+      if (!file) return;
+      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        toast.error("이미지 파일만 업로드 가능합니다 (JPG, PNG, GIF, WebP)");
+        return;
+      }
+      if (file.size > MAX_IMAGE_FILE_SIZE) {
+        toast.error("이미지 크기는 25MB 이하여야 합니다");
+        return;
+      }
+      if (file.type === "image/gif") void uploadPageImage(kind, file);
+      else setCrop({ file, kind });
+    };
 
-  const uploadPortrait = async (file: File | null) => {
+  const uploadPageImage = async (
+    kind: "portrait" | "cover",
+    file: File | null,
+  ) => {
     if (!currentProfile) return;
-    setIsUploadingPortrait(true);
+    const label = kind === "portrait" ? "큰 이미지" : "헤더 배경";
+    setUploadingPage(kind);
     try {
       const image = file ? await uploadImage(file) : null;
-      await mutate("profiles:setPortrait", {
-        profile_id: currentProfile.id,
-        image_id: image?.id ?? null,
-      });
+      await mutate(
+        kind === "portrait" ? "profiles:setPortrait" : "profiles:setCover",
+        {
+          profile_id: currentProfile.id,
+          image_id: image?.id ?? null,
+        },
+      );
       await refetchPage();
       queryClient.invalidateQueries({ queryKey: ["profile"] });
-      toast.success(file ? "큰 이미지를 올렸습니다" : "큰 이미지를 지웠습니다");
+      toast.success(file ? `${label}을 올렸습니다` : `${label}을 지웠습니다`);
     } catch (error) {
-      toast.error(errorMessage(error, "큰 이미지를 바꾸지 못했습니다"));
+      toast.error(errorMessage(error, `${label}을 바꾸지 못했습니다`));
     } finally {
-      setIsUploadingPortrait(false);
+      setUploadingPage(null);
     }
   };
 
@@ -445,7 +468,7 @@ export default function ProfileSettings() {
                       <Button
                         type="button"
                         variant="ghost"
-                        onClick={() => uploadPortrait(null)}
+                        onClick={() => uploadPageImage("portrait", null)}
                         disabled={isUploadingPortrait || isSaving}
                         className="text-sm"
                       >
@@ -462,26 +485,82 @@ export default function ProfileSettings() {
                   ref={portraitInputRef}
                   type="file"
                   accept={ALLOWED_IMAGE_TYPES.join(",")}
-                  onChange={handlePortraitChange}
+                  onChange={pickPageImage("portrait")}
+                  className="hidden"
+                />
+              </div>
+
+              {/* The header background: wide, behind the top of the page. */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Camera className="h-4 w-4 text-muted-foreground" />
+                  프로필 헤더 배경
+                </div>
+                <div className="relative aspect-[2/1] w-full max-w-sm overflow-hidden rounded-md border-2 border-border bg-muted">
+                  {coverUrl ? (
+                    <img
+                      src={coverUrl}
+                      alt="프로필 헤더 배경"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                      없음
+                    </div>
+                  )}
+                  {isUploadingCover && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                      <Spinner className="h-5 w-5 text-white" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => coverInputRef.current?.click()}
+                    disabled={isUploadingCover || isSaving}
+                    className="text-sm"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    헤더 배경 올리기
+                  </Button>
+                  {coverUrl && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => uploadPageImage("cover", null)}
+                      disabled={isUploadingCover || isSaving}
+                      className="text-sm"
+                    >
+                      지우기
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  내 프로필 페이지 위쪽 배경에 깔려요. 글씨가 잘 보이도록 살짝
+                  어둡게 보여요.
+                </p>
+                <input
+                  ref={coverInputRef}
+                  type="file"
+                  accept={ALLOWED_IMAGE_TYPES.join(",")}
+                  onChange={pickPageImage("cover")}
                   className="hidden"
                 />
               </div>
               {crop && (
                 <ImageCropper
                   file={crop.file}
-                  aspect={crop.kind === "picture" ? 1 : 3 / 4}
+                  aspect={CROP[crop.kind].aspect}
                   round={crop.kind === "picture"}
-                  outputWidth={crop.kind === "picture" ? 512 : 900}
-                  title={
-                    crop.kind === "picture"
-                      ? "프로필 사진 자르기"
-                      : "프로필 큰 이미지 자르기"
-                  }
+                  outputWidth={CROP[crop.kind].width}
+                  title={CROP[crop.kind].title}
                   onCancel={() => setCrop(null)}
                   onDone={(file) => {
                     setCrop(null);
                     if (crop.kind === "picture") void uploadPicture(file);
-                    else void uploadPortrait(file);
+                    else void uploadPageImage(crop.kind, file);
                   }}
                 />
               )}

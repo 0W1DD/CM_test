@@ -35,7 +35,7 @@ test("a profile is read by username, by anyone, with its post count", async () =
   );
   const alice = await site.query("profiles:get", { username: "ALICE" }, VISITOR);
   assert.deepEqual(Object.keys(alice).sort(), [
-    "bio", "created_at", "id", "name", "portrait_url", "post_count", "profile_picture_url", "updated_at", "username",
+    "bio", "cover_url", "created_at", "id", "name", "portrait_url", "post_count", "profile_picture_url", "updated_at", "username",
   ]);
   assert.equal(alice.post_count, 1);
   assert.equal(await refusal(site.query("profiles:get", { username: "nobody" })), "not_found");
@@ -112,6 +112,15 @@ test("owners update their profile and picture; admins cannot update", async () =
   await site.mutate("profiles:setPortrait", { profile_id: profiles.alice, image_id: null }, as("m-alice"));
   page = await site.query("profiles:get", { username: "alice_b" }, as("m-bob"));
   assert.equal(page.portrait_url, null);
+
+  // The header background, the same way, apart from the big picture.
+  await site.mutate("profiles:setCover", { profile_id: profiles.alice, image_id: picture }, as("m-alice"));
+  page = await site.query("profiles:get", { username: "alice_b" }, as("m-bob"));
+  assert.match(page.cover_url, /p\.png/);
+  assert.equal(page.portrait_url, null);
+  await site.mutate("profiles:setCover", { profile_id: profiles.alice, image_id: null }, as("m-alice"));
+  page = await site.query("profiles:get", { username: "alice_b" }, as("m-bob"));
+  assert.equal(page.cover_url, null);
 });
 
 test("primary and only profiles are kept; others are deleted", async () => {
