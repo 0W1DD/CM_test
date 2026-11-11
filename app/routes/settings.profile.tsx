@@ -476,8 +476,7 @@ export default function ProfileSettings() {
                       </Button>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      내 프로필 페이지 왼쪽에 세로로 크게 보여요. 올리면 작은
-                      동그란 사진 대신 이 이미지가 나와요.
+                      프로필 화면에서 보이는 이미지입니다. 
                     </p>
                   </div>
                 </div>
@@ -538,8 +537,7 @@ export default function ProfileSettings() {
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  내 프로필 페이지 위쪽 배경에 깔려요. 글씨가 잘 보이도록 살짝
-                  어둡게 보여요.
+                  프로필 배경 이미지입니다.
                 </p>
                 <input
                   ref={coverInputRef}
