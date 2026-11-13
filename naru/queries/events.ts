@@ -5,6 +5,7 @@ import { argsOf, type QueryCtx } from "../modules/core.js";
 import {
   CHECK_IN_COINS,
   coinCurrency,
+  EVENTS_START,
   type EntryRow,
   entriesJson,
   GIFT_COINS,
@@ -57,6 +58,8 @@ export async function status(ctx: QueryCtx, args: unknown) {
   const [mineJson] = mine ? await entriesJson(ctx, [mine]) : [];
   const receivedJson = lastOpen ? await entriesJson(ctx, received) : [];
   return {
+    started: ctx.now >= EVENTS_START,
+    starts_at: isoOf(EVENTS_START),
     check_in: {
       day: today,
       checked_in: (checks[0]?.n ?? 0) > 0,

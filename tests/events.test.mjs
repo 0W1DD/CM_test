@@ -4,8 +4,8 @@ import { as, community, refusal } from "./helpers.mjs";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
-// Monday 2 November 2026, 10:00 in Korea.
-const MONDAY_10 = Date.parse("2026-11-02T01:00:00Z");
+// Monday 16 November 2026 (the day the events open), 10:00 in Korea.
+const MONDAY_10 = Date.parse("2026-11-16T01:00:00Z");
 
 /** A community on Monday morning with a default currency, 코인. */
 async function setup(members = ["alice", "bob", "carol"]) {
@@ -22,14 +22,28 @@ async function setup(members = ["alice", "bob", "carol"]) {
   return { ...c, coins, call, status };
 }
 
+test("nobody takes part before the events open on Monday", async () => {
+  const { site, profiles, call, status } = await setup();
+  site.now = MONDAY_10 - 10 * HOUR - 1; // Sunday 23:59:59.999 in Korea
+  const before = await status("m-alice", profiles.alice);
+  assert.equal(before.started, false);
+  assert.equal(await refusal(call("checkIn", "m-alice", profiles.alice)), "not_started");
+  assert.equal(await refusal(call("giftSignup", "m-alice", profiles.alice)), "not_started");
+  assert.equal(await refusal(call("giftSave", "m-alice", profiles.alice, { content: "선물" })), "not_started");
+  site.now = MONDAY_10 - 10 * HOUR; // Monday 00:00
+  assert.equal((await status("m-alice", profiles.alice)).started, true);
+  await call("checkIn", "m-alice", profiles.alice);
+  await call("giftSignup", "m-alice", profiles.alice);
+});
+
 test("a morning check-in gives a coin, once a day per profile", async () => {
   const { site, profiles, coins, call, status } = await setup();
   const before = await status("m-alice", profiles.alice);
   assert.deepEqual(
     [before.check_in.day, before.check_in.checked_in, before.check_in.open, before.currency],
-    ["2026-11-02", false, true, "코인"],
+    ["2026-11-16", false, true, "코인"],
   );
-  assert.deepEqual(await call("checkIn", "m-alice", profiles.alice), { day: "2026-11-02", coins: 1, currency: "코인" });
+  assert.deepEqual(await call("checkIn", "m-alice", profiles.alice), { day: "2026-11-16", coins: 1, currency: "코인" });
   assert.equal(coins(profiles.alice), 1);
   assert.equal(await refusal(call("checkIn", "m-alice", profiles.alice)), "already_checked_in");
   assert.equal((await status("m-alice", profiles.alice)).check_in.checked_in, true);
@@ -114,7 +128,7 @@ test("the gift exchange: sign up, draw after Saturday, write, open on Monday 08:
   assert.equal(coins(profiles.alice), 5);
   // A new week's sign-up is open.
   const next = await status("m-alice", profiles.alice);
-  assert.deepEqual([next.gift.week, next.gift.phase, next.gift.signed_up], ["2026-11-09", "signup", false]);
+  assert.deepEqual([next.gift.week, next.gift.phase, next.gift.signed_up], ["2026-11-23", "signup", false]);
 });
 
 test("the staff see every gift; members see only their own and what they were given", async () => {

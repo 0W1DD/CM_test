@@ -3,7 +3,7 @@
 // pay once the gifts have opened.
 import { actingProfile, requireStaff } from "../modules/access.js";
 import { argsOf, id, ids, invalid, list, notFound, optionalText, } from "../modules/core.js";
-import { CHECK_IN_COINS, coinCurrency, isMorning, kstDay, settleGifts, weekOf, weekTimes, } from "../modules/events.js";
+import { CHECK_IN_COINS, coinCurrency, EVENTS_NOT_STARTED, EVENTS_START, isMorning, kstDay, settleGifts, weekOf, weekTimes, } from "../modules/events.js";
 import { ownImages } from "../modules/images.js";
 import { failShop, grantCurrency } from "../modules/shop.js";
 /** A profile the calling member acts as, active in the community. */
@@ -12,6 +12,11 @@ async function activeProfile(ctx, profileId) {
     if (profile.activated_at === null)
         notFound(ctx, "프로필을 찾을 수 없습니다.");
     return profile;
+}
+/** Refuses taking part before the events open (EVENTS_START). */
+function requireStarted(ctx) {
+    if (ctx.now < EVENTS_START)
+        invalid(ctx, EVENTS_NOT_STARTED, "not_started");
 }
 /** Runs what is due (pages call it as they open). */
 export async function settle(ctx) {
@@ -25,6 +30,7 @@ export async function settle(ctx) {
 export async function checkIn(ctx, args) {
     const profile = await activeProfile(ctx, argsOf(args).profile_id);
     await settleGifts(ctx);
+    requireStarted(ctx);
     if (!isMorning(ctx.now))
         invalid(ctx, "출석체크는 오전(0시~12시)에만 할 수 있습니다.", "not_morning");
     const coin = await coinCurrency(ctx);
@@ -50,6 +56,7 @@ export async function checkIn(ctx, args) {
 export async function giftSignup(ctx, args) {
     const profile = await activeProfile(ctx, argsOf(args).profile_id);
     await settleGifts(ctx);
+    requireStarted(ctx);
     const week = weekOf(ctx.now);
     if (ctx.now >= weekTimes(week).signupEnds)
         invalid(ctx, "이번 주 신청은 마감되었습니다.", "signup_closed");
@@ -85,6 +92,7 @@ export async function giftSave(ctx, args) {
     const a = argsOf(args);
     const profile = await activeProfile(ctx, a.profile_id);
     await settleGifts(ctx);
+    requireStarted(ctx);
     const week = weekOf(ctx.now);
     if (ctx.now >= weekTimes(week).giftsClose)
         invalid(ctx, "선물 입력 시간이 지났습니다.", "gifts_closed");

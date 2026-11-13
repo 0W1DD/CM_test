@@ -30,6 +30,16 @@ export function CheckInButton({ className = "" }: { className?: string }) {
   });
   if (!data) return null;
   const { check_in: c, currency } = data;
+  if (!data.started)
+    return (
+      <Button
+        className={`w-full h-auto min-h-9 whitespace-normal py-2 ${className}`}
+        disabled
+      >
+        <CalendarCheck className="h-4 w-4" />
+        월요일부터 참여 가능합니다.
+      </Button>
+    );
   return (
     <Button
       className={`w-full h-auto min-h-9 whitespace-normal py-2 ${className}`}
@@ -65,6 +75,12 @@ export function GiftSignupButton() {
   });
   if (!data) return null;
   const { gift } = data;
+  if (!data.started)
+    return (
+      <p className="text-sm text-muted-foreground">
+        월요일부터 참여 가능합니다.
+      </p>
+    );
   if (gift.signed_up)
     return (
       <p className="text-sm font-semibold text-primary">

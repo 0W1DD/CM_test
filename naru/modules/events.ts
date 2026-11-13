@@ -17,6 +17,13 @@ const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 const KST = 9 * HOUR;
 
+/**
+ * When the events open: Monday 2026-11-16, 00:00 in Korea. Before then the
+ * check-in and the gift exchange refuse to take part.
+ */
+export const EVENTS_START = Date.parse("2026-11-16T00:00:00+09:00");
+export const EVENTS_NOT_STARTED = "월요일부터 참여 가능합니다.";
+
 /** Coins for a morning check-in, and for each gift sent in a week. */
 export const CHECK_IN_COINS = 1;
 export const GIFT_COINS = 5;

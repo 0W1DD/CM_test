@@ -2,7 +2,7 @@
 // staff see them (mutations/events.ts writes them).
 import { actingProfile, requireStaff } from "../modules/access.js";
 import { argsOf } from "../modules/core.js";
-import { CHECK_IN_COINS, coinCurrency, entriesJson, GIFT_COINS, isMorning, kstDay, weekBefore, weekOf, weekTimes, } from "../modules/events.js";
+import { CHECK_IN_COINS, coinCurrency, EVENTS_START, entriesJson, GIFT_COINS, isMorning, kstDay, weekBefore, weekOf, weekTimes, } from "../modules/events.js";
 const isoOf = (ms) => new Date(ms).toISOString();
 function timesJson(week) {
     const t = weekTimes(week);
@@ -41,6 +41,8 @@ export async function status(ctx, args) {
     const [mineJson] = mine ? await entriesJson(ctx, [mine]) : [];
     const receivedJson = lastOpen ? await entriesJson(ctx, received) : [];
     return {
+        started: ctx.now >= EVENTS_START,
+        starts_at: isoOf(EVENTS_START),
         check_in: {
             day: today,
             checked_in: (checks[0]?.n ?? 0) > 0,

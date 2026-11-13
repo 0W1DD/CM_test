@@ -15,6 +15,8 @@ import {
 import {
   CHECK_IN_COINS,
   coinCurrency,
+  EVENTS_NOT_STARTED,
+  EVENTS_START,
   isMorning,
   kstDay,
   settleGifts,
@@ -32,6 +34,12 @@ async function activeProfile(ctx: MutationCtx, profileId: unknown) {
   return profile;
 }
 
+/** Refuses taking part before the events open (EVENTS_START). */
+function requireStarted(ctx: MutationCtx) {
+  if (ctx.now < EVENTS_START)
+    invalid(ctx, EVENTS_NOT_STARTED, "not_started");
+}
+
 /** Runs what is due (pages call it as they open). */
 export async function settle(ctx: MutationCtx) {
   await settleGifts(ctx);
@@ -45,6 +53,7 @@ export async function settle(ctx: MutationCtx) {
 export async function checkIn(ctx: MutationCtx, args: unknown) {
   const profile = await activeProfile(ctx, argsOf(args).profile_id);
   await settleGifts(ctx);
+  requireStarted(ctx);
   if (!isMorning(ctx.now))
     invalid(
       ctx,
@@ -80,6 +89,7 @@ export async function checkIn(ctx: MutationCtx, args: unknown) {
 export async function giftSignup(ctx: MutationCtx, args: unknown) {
   const profile = await activeProfile(ctx, argsOf(args).profile_id);
   await settleGifts(ctx);
+  requireStarted(ctx);
   const week = weekOf(ctx.now);
   if (ctx.now >= weekTimes(week).signupEnds)
     invalid(ctx, "이번 주 신청은 마감되었습니다.", "signup_closed");
@@ -117,6 +127,7 @@ export async function giftSave(ctx: MutationCtx, args: unknown) {
   const a = argsOf(args);
   const profile = await activeProfile(ctx, a.profile_id);
   await settleGifts(ctx);
+  requireStarted(ctx);
   const week = weekOf(ctx.now);
   if (ctx.now >= weekTimes(week).giftsClose)
     invalid(ctx, "선물 입력 시간이 지났습니다.", "gifts_closed");
