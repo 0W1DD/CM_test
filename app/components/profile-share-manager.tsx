@@ -53,10 +53,13 @@ export function ProfileShareManager({
   const { profiles: communityProfiles, loading: profilesLoading } =
     useCommunityProfiles();
 
-  // Filter out already shared profiles, current profile, and only show moderator/owner profiles
+  // Filter out already shared profiles, current profile, and only show
+  // owner/co-owner/moderator profiles
   const availableProfiles = communityProfiles.filter(
     (p) =>
-      (p.user_role === "owner" || p.user_role === "moderator") &&
+      (p.user_role === "owner" ||
+        p.user_role === "co_owner" ||
+        p.user_role === "moderator") &&
       p.username !== profile.username &&
       !sharedUsers.some((u) =>
         u.profiles.some((up) => up.username === p.username),
@@ -430,8 +433,8 @@ export function ProfileShareManager({
                     </div>
                   ) : availableProfiles.length === 0 ? (
                     <div className="text-sm text-muted-foreground py-2">
-                      공유 가능한 사용자가 없습니다. 소유자 또는 관리자 권한을
-                      가진 사용자에게만 공유할 수 있습니다.
+                      공유 가능한 사용자가 없습니다. 소유자, 부소유자 또는
+                      관리자 권한을 가진 사용자에게만 공유할 수 있습니다.
                     </div>
                   ) : (
                     <Select
