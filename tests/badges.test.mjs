@@ -7,9 +7,13 @@ const FIRST_WEEK = "01900000-0000-7000-8000-000000000001";
 test("the first badge is there; the staff give badges, and the first one is featured", async () => {
   const { site, profiles } = await community();
   const admin = await site.query("badges:admin", null, as("m-owner"));
-  // The first badge, and the achievements' titles (0023), are there.
+  // The first badge, the achievements' titles (0023) and the 72 HTTP status
+  // code badges (0026) are there.
   assert.equal(admin.badges.find((b) => b.id === FIRST_WEEK).emoji, "🎄");
-  assert.equal(admin.badges.length, 9);
+  assert.equal(admin.badges.length, 81);
+  const teapot = admin.badges.find((b) => b.emoji === "[418]");
+  assert.equal(teapot.name, "I'm a teapot");
+  assert.equal(teapot.description, "418호 방에 살고 있습니다.");
   assert.equal(await refusal(site.query("badges:admin", null, as("m-alice"))), "not_moderator");
   assert.equal(
     await refusal(site.mutate("badges:setHolders", { badge_id: FIRST_WEEK, profile_ids: [profiles.alice] }, as("m-alice"))),
