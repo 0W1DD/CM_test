@@ -2,6 +2,7 @@ import { MessageSquare, Trash2 } from "lucide-react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 import { errorMessage, mutate } from "~/lib/naru";
+import { shortTime } from "./post/PostCardHeader";
 import { ProfileAvatar } from "./profile-avatar";
 import { Button } from "./ui/button";
 
@@ -104,15 +105,22 @@ export function BoardPostCard({
           size="sm"
         />
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-medium text-foreground">
-              {post.author.name}
-            </span>
-            <span className="text-muted-foreground text-sm">
-              @{post.author.username}
-            </span>
-            <span className="text-muted-foreground text-sm">
-              {new Date(post.created_at).toLocaleString()}
+          {/* Name and @id wrap as whole words, and the time sits on its own
+              line, so a narrow screen never breaks a name in the middle. */}
+          <div className="mb-1">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <span className="whitespace-nowrap font-medium text-foreground">
+                {post.author.name}
+              </span>
+              <span className="whitespace-nowrap text-muted-foreground text-sm">
+                @{post.author.username}
+              </span>
+            </div>
+            <span
+              className="text-muted-foreground text-xs"
+              title={new Date(post.created_at).toLocaleString("ko-KR")}
+            >
+              {shortTime(post.created_at)}
             </span>
           </div>
 

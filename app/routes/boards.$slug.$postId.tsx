@@ -8,6 +8,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
+import { shortTime } from "~/components/post/PostCardHeader";
 import { ProfileAvatar } from "~/components/profile-avatar";
 import { Button } from "~/components/ui/button";
 import { Spinner } from "~/components/ui/spinner";
@@ -267,17 +268,20 @@ export default function BoardPostDetail() {
               size="sm"
             />
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-foreground">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                <span className="whitespace-nowrap font-medium text-foreground">
                   {reply.author.name}
                 </span>
-                <span className="text-muted-foreground text-sm">
+                <span className="whitespace-nowrap text-muted-foreground text-sm">
                   @{reply.author.username}
                 </span>
-                <span className="text-muted-foreground text-sm">
-                  {new Date(reply.created_at).toLocaleString()}
-                </span>
               </div>
+              <span
+                className="text-muted-foreground text-xs"
+                title={new Date(reply.created_at).toLocaleString("ko-KR")}
+              >
+                {shortTime(reply.created_at)}
+              </span>
               <p className="text-foreground mt-1 whitespace-pre-wrap">
                 {reply.content}
               </p>
@@ -340,13 +344,20 @@ export default function BoardPostDetail() {
                 profileId={post.author.id}
                 size="md"
               />
-              <div>
+              <div className="min-w-0">
                 <div className="font-medium text-foreground">
                   {post.author.name}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  @{post.author.username} ·{" "}
-                  {new Date(post.created_at).toLocaleString()}
+                <div className="flex flex-wrap gap-x-2 text-sm text-muted-foreground">
+                  <span className="whitespace-nowrap">
+                    @{post.author.username}
+                  </span>
+                  <span
+                    className="whitespace-nowrap"
+                    title={new Date(post.created_at).toLocaleString("ko-KR")}
+                  >
+                    {shortTime(post.created_at)}
+                  </span>
                 </div>
               </div>
             </div>

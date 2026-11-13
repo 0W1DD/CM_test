@@ -19,6 +19,7 @@ import {
 import { Snowfall } from "~/components/snowfall";
 import { SparkleCursor } from "~/components/sparkle-cursor";
 import { Toaster } from "~/components/ui/sonner";
+import { UpdateNotifier } from "~/components/update-notifier";
 import { CurrentProfileProvider } from "~/providers/CurrentProfileProvider";
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -102,6 +103,7 @@ export default function App() {
       <CommunityOwnerLook />
       <CurrentProfileProvider>
         <AchievementWatcher />
+        <UpdateNotifier />
         <AppLayout>
           <Outlet />
         </AppLayout>
