@@ -2,12 +2,14 @@ import {
   ArrowLeft,
   LayoutList,
   MessageSquare,
+  Pencil,
   Send,
   Trash2,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
+import { BoardPostForm } from "~/components/board-post-form";
 import { shortTime } from "~/components/post/PostCardHeader";
 import { ProfileAvatar } from "~/components/profile-avatar";
 import { Button } from "~/components/ui/button";
@@ -80,6 +82,7 @@ export default function BoardPostDetail() {
   const [replyContent, setReplyContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [replyToId, setReplyToId] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const md = useMemo(() => getReadOnlyMarkdownInstance(), []);
 
   const fetchPost = useCallback(async () => {
@@ -334,55 +337,91 @@ export default function BoardPostDetail() {
         </div>
 
         {/* Post Content */}
-        <article className="bg-card rounded-2xl shadow-marsh border border-border p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <ProfileAvatar
-                profilePictureUrl={post.author.profile_picture?.url}
-                name={post.author.name}
-                username={post.author.username}
-                profileId={post.author.id}
-                size="md"
-              />
-              <div className="min-w-0">
-                <div className="font-medium text-foreground">
-                  {post.author.name}
-                </div>
-                <div className="flex flex-wrap gap-x-2 text-sm text-muted-foreground">
-                  <span className="whitespace-nowrap">
-                    @{post.author.username}
-                  </span>
-                  <span
-                    className="whitespace-nowrap"
-                    title={new Date(post.created_at).toLocaleString("ko-KR")}
-                  >
-                    {shortTime(post.created_at)}
-                  </span>
+        {isEditing && slug ? (
+          <BoardPostForm
+            boardSlug={slug}
+            editing={{
+              postId: post.id,
+              title: post.title,
+              content: post.content,
+              imageId: post.image?.id ?? null,
+            }}
+            onSuccess={() => {
+              setIsEditing(false);
+              fetchPost();
+            }}
+            onCancel={() => setIsEditing(false)}
+          />
+        ) : (
+          <article className="bg-card rounded-2xl shadow-marsh border border-border p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <ProfileAvatar
+                  profilePictureUrl={post.author.profile_picture?.url}
+                  name={post.author.name}
+                  username={post.author.username}
+                  profileId={post.author.id}
+                  size="md"
+                />
+                <div className="min-w-0">
+                  <div className="font-medium text-foreground">
+                    {post.author.name}
+                  </div>
+                  <div className="flex flex-wrap gap-x-2 text-sm text-muted-foreground">
+                    <span className="whitespace-nowrap">
+                      @{post.author.username}
+                    </span>
+                    <span
+                      className="whitespace-nowrap"
+                      title={new Date(post.created_at).toLocaleString("ko-KR")}
+                    >
+                      {shortTime(post.created_at)}
+                    </span>
+                    {post.updated_at !== post.created_at && (
+                      <span
+                        className="whitespace-nowrap"
+                        title={`수정: ${new Date(post.updated_at).toLocaleString("ko-KR")}`}
+                      >
+                        (수정됨)
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
+              {isAuthor && (
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsEditing(true)}
+                    title="수정"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDeletePost}
+                    title="삭제"
+                    className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
-            {isAuthor && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleDeletePost}
-                className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
 
-          <h1 className="text-xl font-bold text-foreground mb-4">
-            {post.title}
-          </h1>
+            <h1 className="text-xl font-bold text-foreground mb-4">
+              {post.title}
+            </h1>
 
-          <div
-            className="prose dark:prose-invert prose-sm max-w-none text-foreground"
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized by markdown-it
-            dangerouslySetInnerHTML={{ __html: md.render(post.content) }}
-          />
-        </article>
+            <div
+              className="prose dark:prose-invert prose-sm max-w-none text-foreground"
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized by markdown-it
+              dangerouslySetInnerHTML={{ __html: md.render(post.content) }}
+            />
+          </article>
+        )}
 
         {/* Replies Section */}
         {post.board.allow_comments && (

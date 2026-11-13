@@ -20,16 +20,24 @@ interface BoardPostFormProps {
   boardSlug: string;
   onSuccess: () => void;
   onCancel: () => void;
+  /** When given, the form edits this post instead of writing a new one. */
+  editing?: {
+    postId: string;
+    title: string;
+    content: string;
+    imageId: string | null;
+  };
 }
 
 export function BoardPostForm({
   boardSlug,
   onSuccess,
   onCancel,
+  editing,
 }: BoardPostFormProps) {
   const { currentProfile } = useAuth();
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  const [title, setTitle] = useState(editing?.title ?? "");
+  const [content, setContent] = useState(editing?.content ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -68,7 +76,6 @@ export function BoardPostForm({
   };
 
   const uploadAndInsert = async (file: File) => {
-
     // Validate file type
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
       toast.error("이미지 파일만 업로드 가능합니다 (JPG, PNG, GIF, WebP)");
@@ -105,17 +112,34 @@ export function BoardPostForm({
 
     try {
       setIsSubmitting(true);
-      await mutate("boards:createPost", {
-        slug: boardSlug,
-        profile_id: currentProfile.id,
-        title: title.trim(),
-        content: content.trim(),
-      });
-      toast.success("게시글이 등록되었습니다");
+      if (editing) {
+        await mutate("boards:updatePost", {
+          slug: boardSlug,
+          post_id: editing.postId,
+          profile_id: currentProfile.id,
+          title: title.trim(),
+          content: content.trim(),
+          image_id: editing.imageId,
+        });
+        toast.success("게시글이 수정되었습니다");
+      } else {
+        await mutate("boards:createPost", {
+          slug: boardSlug,
+          profile_id: currentProfile.id,
+          title: title.trim(),
+          content: content.trim(),
+        });
+        toast.success("게시글이 등록되었습니다");
+      }
       onSuccess();
     } catch (err) {
-      console.error("Failed to create post:", err);
-      toast.error(errorMessage(err, "게시글 등록에 실패했습니다"));
+      console.error("Failed to save post:", err);
+      toast.error(
+        errorMessage(
+          err,
+          editing ? "게시글 수정에 실패했습니다" : "게시글 등록에 실패했습니다",
+        ),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -127,7 +151,7 @@ export function BoardPostForm({
       className="bg-card rounded-2xl shadow-sm border border-border p-6"
     >
       <h3 className="text-lg font-semibold text-foreground mb-4">
-        새 게시글 작성
+        {editing ? "게시글 수정" : "새 게시글 작성"}
       </h3>
 
       <div className="space-y-4">
@@ -226,7 +250,7 @@ export function BoardPostForm({
             ) : (
               <Send className="h-4 w-4 mr-2" />
             )}
-            등록
+            {editing ? "저장" : "등록"}
           </Button>
         </div>
       </div>
