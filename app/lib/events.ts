@@ -21,7 +21,7 @@ export interface GiftImage {
 }
 
 export interface EventsStatus {
-  /** Whether the events have opened; before then nobody may take part. */
+  /** Whether the gift exchange has opened (the check-in is always open). */
   started: boolean;
   starts_at: string;
   check_in: { day: string; checked_in: boolean; open: boolean; coins: number };

@@ -53,7 +53,6 @@ export async function settle(ctx: MutationCtx) {
 export async function checkIn(ctx: MutationCtx, args: unknown) {
   const profile = await activeProfile(ctx, argsOf(args).profile_id);
   await settleGifts(ctx);
-  requireStarted(ctx);
   if (!isMorning(ctx.now))
     invalid(
       ctx,

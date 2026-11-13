@@ -22,17 +22,17 @@ async function setup(members = ["alice", "bob", "carol"]) {
   return { ...c, coins, call, status };
 }
 
-test("nobody takes part before the events open on Monday", async () => {
+test("the gift exchange opens on Monday; the check-in is open before it", async () => {
   const { site, profiles, call, status } = await setup();
-  site.now = MONDAY_10 - 10 * HOUR - 1; // Sunday 23:59:59.999 in Korea
+  site.now = MONDAY_10 - DAY; // Sunday 10:00 in Korea: the check-in is open
+  await call("checkIn", "m-alice", profiles.alice);
+  site.now = MONDAY_10 - 10 * HOUR - 1; // Sunday 23:59:59.999
   const before = await status("m-alice", profiles.alice);
   assert.equal(before.started, false);
-  assert.equal(await refusal(call("checkIn", "m-alice", profiles.alice)), "not_started");
   assert.equal(await refusal(call("giftSignup", "m-alice", profiles.alice)), "not_started");
   assert.equal(await refusal(call("giftSave", "m-alice", profiles.alice, { content: "선물" })), "not_started");
   site.now = MONDAY_10 - 10 * HOUR; // Monday 00:00
   assert.equal((await status("m-alice", profiles.alice)).started, true);
-  await call("checkIn", "m-alice", profiles.alice);
   await call("giftSignup", "m-alice", profiles.alice);
 });
 

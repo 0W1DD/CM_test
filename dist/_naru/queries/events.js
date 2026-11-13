@@ -41,6 +41,7 @@ export async function status(ctx, args) {
     const [mineJson] = mine ? await entriesJson(ctx, [mine]) : [];
     const receivedJson = lastOpen ? await entriesJson(ctx, received) : [];
     return {
+        // Whether the gift exchange has opened (the check-in is always open).
         started: ctx.now >= EVENTS_START,
         starts_at: isoOf(EVENTS_START),
         check_in: {

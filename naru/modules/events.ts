@@ -18,8 +18,8 @@ const DAY = 24 * HOUR;
 const KST = 9 * HOUR;
 
 /**
- * When the events open: Monday 2026-11-16, 00:00 in Korea. Before then the
- * check-in and the gift exchange refuse to take part.
+ * When the gift exchange opens: Monday 2026-11-16, 00:00 in Korea. Before
+ * then it refuses to take part (the check-in is open all along).
  */
 export const EVENTS_START = Date.parse("2026-11-16T00:00:00+09:00");
 export const EVENTS_NOT_STARTED = "월요일부터 참여 가능합니다.";

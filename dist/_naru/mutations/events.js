@@ -30,7 +30,6 @@ export async function settle(ctx) {
 export async function checkIn(ctx, args) {
     const profile = await activeProfile(ctx, argsOf(args).profile_id);
     await settleGifts(ctx);
-    requireStarted(ctx);
     if (!isMorning(ctx.now))
         invalid(ctx, "출석체크는 오전(0시~12시)에만 할 수 있습니다.", "not_morning");
     const coin = await coinCurrency(ctx);
