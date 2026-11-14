@@ -2,6 +2,7 @@
 // communities.$slug.bots), for the owner.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bot, Copy, Eye, EyeOff, Key, Plus, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router";
 import { useId, useState } from "react";
 import { Button } from "~/components/ui/button";
 import {
@@ -499,6 +500,12 @@ const BOT_CALLS = [
 ];
 
 function CommunityBots() {
+  const navigate = useNavigate();
+  const weatherPost = useMutation({
+    mutationFn: () => mutate<{ path: string }>("bots:pinWeatherPost", {}),
+    onSuccess: ({ path }) => navigate(path),
+    onError: (error) => toast.error(errorMessage(error, "날씨 글을 고정하지 못했어요.")),
+  });
   const { instanceSlug: slug } = useCurrentInstance();
   const queryClient = useQueryClient();
 
@@ -527,6 +534,15 @@ function CommunityBots() {
           description="API로 자동화할 수 있는 봇 토큰을 관리해요"
           tone="lilac"
         />
+
+        <Card>
+          <CardContent className="pt-6 space-y-3">
+            <p>커뮤니티 봇의 프로필에 오전·오후 날씨 카드를 고정합니다. 매일 오전 9시(한국 시간)에 바뀌어요.</p>
+            <Button onClick={() => weatherPost.mutate()} disabled={weatherPost.isPending}>
+              {weatherPost.isPending ? "날씨 글 여는 중…" : "날씨 글 고정하기"}
+            </Button>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardContent className="pt-6">

@@ -1,5 +1,7 @@
 // Making and managing bots and their tokens (the console's community bots,
 // owner only). A token is shown once, when it is made.
+import { botProfileId } from "../modules/commands.js";
+import { createPost, postPath } from "../modules/posts.js";
 import { requireOwner } from "../modules/access.js";
 import {
   type BotRow,
@@ -121,4 +123,29 @@ export async function adminRevokeToken(ctx: MutationCtx, args: unknown) {
     UPDATE bot_tokens SET revoked_at = ${ctx.now}
     WHERE id = ${tokenId} AND bot_id = ${bot.id} AND revoked_at IS NULL`;
   return null;
+}
+
+/** Reuse one root post on the community bot's profile. Mutations run in a transaction. */
+export async function pinWeatherPost(ctx: MutationCtx) {
+  const owner = await requireOwner(ctx);
+  const bot = await botProfileId(ctx);
+  const content = "[오늘의 날씨](/weather)";
+  const { rows } = await ctx.sql<{ id: string; pinned_at: number | null }>`
+    SELECT id, pinned_at FROM posts WHERE author_id = ${bot} AND content = ${content}
+    AND deleted_at IS NULL AND in_reply_to_id IS NULL AND published_at IS NOT NULL
+    ORDER BY pinned_at IS NULL, id LIMIT 1`;
+  const existing = rows[0];
+  if (existing?.pinned_at == null) {
+    const { rows: pins } = await ctx.sql<{ n: number }>`
+      SELECT COUNT(*) AS n FROM posts WHERE author_id = ${bot} AND deleted_at IS NULL
+      AND pinned_at IS NOT NULL`;
+    if (pins[0].n >= 3) invalid(ctx, "봇 프로필에는 게시물을 세 개까지 고정할 수 있어요.", "too_many_pinned");
+  }
+  const post = existing?.id ?? await createPost(ctx, {
+    authorProfileId: bot, actorMember: owner.member, content,
+  });
+  if (existing?.pinned_at == null)
+    await ctx.sql`UPDATE posts SET pinned_at = ${ctx.now} WHERE id = ${post}`;
+  const { rows: profiles } = await ctx.sql<{ username: string }>`SELECT username FROM profiles WHERE id = ${bot}`;
+  return { path: postPath(profiles[0].username, post) };
 }

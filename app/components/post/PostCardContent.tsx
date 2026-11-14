@@ -1,6 +1,7 @@
 import { AlertTriangle, Eye } from "lucide-react";
 import type MarkdownIt from "markdown-it";
 import { type MouseEvent, useState } from "react";
+import { WeatherCard } from "~/components/weather-card";
 import { useNavigate } from "react-router";
 
 interface PostCardContentProps {
@@ -76,6 +77,10 @@ export function PostCardContent({
         </button>
       </div>
     );
+  }
+
+  if (content.trim() === "[오늘의 날씨](/weather)") {
+    return <WeatherCard linked />;
   }
 
   return (

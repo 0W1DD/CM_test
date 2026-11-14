@@ -1,0 +1,1 @@
+import{w as e,j as t}from"./jsx-runtime-5zZsqf1J.js";import{W as r}from"./weather-card-BLMqhdAk.js";function s(){return[{title:"오늘의 날씨"}]}const m=e(function(){return t.jsx("main",{className:"mx-auto max-w-2xl p-4",children:t.jsx(r,{})})});export{m as default,s as meta};

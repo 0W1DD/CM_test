@@ -11,6 +11,7 @@ export default [
   ),
   route("/settings/account", "routes/settings.account.tsx"),
   route("/settings/community", "routes/settings.community.tsx"),
+  route("/weather", "routes/weather.tsx"),
   route("/announcements", "routes/announcements.tsx"),
   route("/profiles", "routes/profiles.tsx"),
   route("/notifications", "routes/notifications.tsx"),

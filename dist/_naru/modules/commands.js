@@ -69,7 +69,7 @@ const BOT_USERNAME = "bot";
  * the settings name, or a new one (@bot, or @bot_<n> when a member has
  * @bot) that no member owns.
  */
-async function botProfileId(ctx) {
+export async function botProfileId(ctx) {
     const { rows } = await ctx.sql `
     SELECT p.id FROM settings s JOIN profiles p ON p.id = s.command_bot_profile_id
     WHERE s.id = 1 AND p.deleted_at IS NULL`;

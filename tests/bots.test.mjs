@@ -317,3 +317,17 @@ test("bot:mentions: posts that mention the bot, reply to it, or hold a command f
     [{ name: "weather", args: "부산" }, { name: "roll", args: "1d6" }, null],
   );
 });
+
+test("only an owner can pin the weather card, and retries reuse the original bot post", async () => {
+  const { site } = await community();
+  const pin = (member) => site.mutate("bots:pinWeatherPost", {}, as(member));
+  assert.equal(await refusal(pin("m-alice")), "not_owner");
+  const first = await pin("m-owner");
+  assert.match(first.path, /^\/@bot\//);
+  site.now += 86400000;
+  assert.deepEqual(await pin("m-owner"), first);
+  const posts = site.rows("SELECT id, pinned_at FROM posts WHERE content = ?", "[오늘의 날씨](/weather)");
+  assert.equal(posts.length, 1);
+  assert.ok(posts[0].pinned_at);
+  assert.ok(first.path.endsWith("/" + posts[0].id));
+});

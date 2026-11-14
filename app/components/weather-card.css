@@ -1,0 +1,349 @@
+.daily-weather {
+  --ink: #293f39;
+  --paper: #f5efdf;
+  max-width: 800px;
+  width: 100%;
+  margin: auto;
+  padding: clamp(15px, 3.6vw, 30px);
+  border-radius: 12px;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: "Malgun Gothic", system-ui, sans-serif;
+  isolation: isolate;
+}
+.daily-weather * {
+  box-sizing: border-box;
+}
+.daily-weather .headline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.daily-weather .postdate {
+  font-size: 14px;
+  font-weight: 650;
+  color: #655d50;
+}
+.daily-weather .headline {
+  margin: 0 0 14px;
+  flex-wrap: wrap;
+}
+
+.daily-weather .pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(8px, 2vw, 16px);
+}
+.daily-weather .postcard {
+  min-width: 0;
+  border: 1px solid #c6bfa8;
+  background: #fffaec;
+  padding: 5px;
+  box-shadow: 0 2px 2px #47382715;
+}
+.daily-weather .scene {
+  aspect-ratio: 1.4;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  container-type: inline-size;
+  background: linear-gradient(var(--sky), var(--horizon) 77%);
+  --sky: #83afbb;
+  --horizon: #f3dcaf;
+  --roof: #994937;
+  --snow: #fff3d9;
+  --shade: #c4cdc1;
+  --pine: #365c50;
+  --far: #8fa99b;
+  --light: #ffd389;
+  --veil: transparent;
+}
+.daily-weather .postcard.pm .scene {
+  --sky: #bf8e91;
+  --horizon: #f3c99b;
+  --shade: #d4c5b6;
+}
+.daily-weather .scene[data-w="frost"] {
+  --sky: #91abc5;
+  --horizon: #e7e4df;
+  --shade: #bdcdd4;
+}
+.daily-weather .scene[data-w="snow"] {
+  --sky: #879aab;
+  --horizon: #d6dcd6;
+  --snow: #f7f3e3;
+  --shade: #bfcbc9;
+}
+.daily-weather .scene[data-w="fog"] {
+  --sky: #b0b0ae;
+  --horizon: #dedbc9;
+  --far: #b9c1b5;
+  --veil: #dbe0cf5e;
+}
+.daily-weather .scene[data-w="storm"] {
+  --sky: #51657a;
+  --horizon: #a3b4bc;
+  --snow: #ebece1;
+  --shade: #a6b4b9;
+  --pine: #38504e;
+  --veil: #c5d2d82a;
+}
+.daily-weather .scene[data-w="pink"] {
+  --sky: #ad909f;
+  --horizon: #f5c5a3;
+  --shade: #d8c4bc;
+}
+.daily-weather .scene[data-w="gold"] {
+  --sky: #dfad7f;
+  --horizon: #fbe0a9;
+  --snow: #fff2d6;
+  --shade: #d1c4aa;
+}
+.daily-weather .sun {
+  position: absolute;
+  left: 22%;
+  top: 16%;
+  width: 12%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #fff2bf;
+  box-shadow: 0 0 7cqw #ffe4a4a8;
+}
+.daily-weather .pm .sun {
+  left: 63%;
+  top: 30%;
+}
+.daily-weather
+  .scene:is([data-w="fog"], [data-w="snow"], [data-w="storm"])
+  .sun {
+  opacity: 0.12;
+  filter: blur(1cqw);
+}
+.daily-weather .ridge {
+  position: absolute;
+  inset: 32% -2% 15%;
+  background: var(--far);
+  clip-path: polygon(
+    0 41%,
+    16% 17%,
+    25% 37%,
+    44% 7%,
+    55% 26%,
+    67% 0,
+    81% 34%,
+    92% 16%,
+    100% 29%,
+    100% 100%,
+    0 100%
+  );
+}
+.daily-weather .trees {
+  position: absolute;
+  inset: 34% 0 17%;
+}
+.daily-weather .trees i,
+.daily-weather .fir .needles {
+  position: absolute;
+  bottom: 0;
+  background: var(--pine);
+  clip-path: polygon(
+    50% 0,
+    68% 32%,
+    60% 30%,
+    80% 57%,
+    68% 54%,
+    96% 87%,
+    64% 84%,
+    64% 91%,
+    29% 92%,
+    32% 85%,
+    4% 90%,
+    31% 52%,
+    20% 57%,
+    41% 27%,
+    33% 33%
+  );
+}
+.daily-weather .bank {
+  position: absolute;
+  inset: 66% -10% -7%;
+  border-radius: 55% 50% 0 0;
+  background: var(--snow);
+  transform: rotate(-4deg);
+}
+.daily-weather .path {
+  position: absolute;
+  inset: 72% -5% -1%;
+  background: var(--shade);
+  clip-path: polygon(
+    56% 0,
+    62% 0,
+    52% 19%,
+    71% 38%,
+    67% 54%,
+    44% 100%,
+    13% 100%,
+    57% 51%,
+    59% 40%,
+    44% 22%
+  );
+}
+.daily-weather .fir {
+  position: absolute;
+  left: 13%;
+  bottom: 11%;
+  width: 24%;
+  height: 55%;
+}
+.daily-weather .fir:before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 43%;
+  height: 18%;
+  width: 14%;
+  background: #71543f;
+}
+.daily-weather .fir .needles {
+  inset: 0 0 0;
+  background: repeating-linear-gradient(
+    170deg,
+    #37574b 0 12%,
+    #577765 13% 18%,
+    #e7e8d5 19% 20%,
+    #3a5b4c 21% 30%
+  );
+}
+.daily-weather .fir .star {
+  position: absolute;
+  top: -6%;
+  left: 39%;
+  width: 23%;
+  aspect-ratio: 1;
+  background: #f2bd62;
+  clip-path: polygon(
+    50% 0,
+    62% 34%,
+    99% 38%,
+    71% 60%,
+    80% 97%,
+    50% 77%,
+    19% 97%,
+    28% 60%,
+    0 38%,
+    38% 34%
+  );
+}
+.daily-weather .bulb {
+  position: absolute;
+  border-radius: 50%;
+  width: 5%;
+  aspect-ratio: 1;
+}
+.daily-weather .lamp {
+  position: absolute;
+  bottom: 10%;
+  left: 79%;
+  width: 1%;
+  height: 16%;
+  background: #3b4841;
+}
+.daily-weather .lamp:before {
+  content: "";
+  position: absolute;
+  bottom: 98%;
+  left: -110%;
+  width: 320%;
+  height: 35%;
+  background: #ffd78c;
+  border: 0.5cqw solid #495149;
+  clip-path: polygon(50% 0, 100% 23%, 84% 100%, 15% 100%, 0 23%);
+}
+.daily-weather .air {
+  position: absolute;
+  inset: 0;
+  background: var(--veil);
+  pointer-events: none;
+}
+.daily-weather [data-w="fog"] .air {
+  background: linear-gradient(
+    175deg,
+    transparent 20%,
+    #ebe9d5a8 48%,
+    transparent 60%,
+    #e6e9d5ac 84%,
+    transparent
+  );
+}
+.daily-weather .flake {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff9eb;
+  opacity: 0.87;
+  animation: yp-drift 3s linear infinite;
+}
+.daily-weather [data-w="storm"] .flake {
+  border-radius: 2px;
+  transform: rotate(35deg);
+  animation-name: yp-gust;
+}
+@keyframes yp-drift {
+  from {
+    translate: 0 -3cqw;
+  }
+  to {
+    translate: -3cqw 9cqw;
+  }
+}
+@keyframes yp-gust {
+  from {
+    translate: 7cqw -5cqw;
+  }
+  to {
+    translate: -9cqw 8cqw;
+  }
+}
+.daily-weather .caption {
+  padding: 11px 7px 9px;
+}
+.daily-weather .caption b {
+  display: block;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #493e33;
+}
+.daily-weather .caption em {
+  font: 700 11px / 1.2 system-ui;
+  color: #8b493c;
+  border-bottom: 1px solid #c99d7d;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.daily-weather .caption p {
+  margin: 5px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #615c50;
+  word-break: keep-all;
+}
+
+@media (max-width: 440px) {
+  .daily-weather .scene {
+    aspect-ratio: 1.05;
+  }
+  .daily-weather .caption {
+    padding: 8px 3px;
+  }
+  .daily-weather .caption b {
+    font-size: 14px;
+  }
+  .daily-weather .headline {
+    margin: 0 0 11px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .daily-weather .flake {
+    animation: none;
+  }
+}
