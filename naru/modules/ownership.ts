@@ -6,7 +6,7 @@ import {
   requireMembership,
 } from "./access.js";
 import type { ErrorCode } from "@naru-pub/sdk/functions";
-import { type Ctx, id, invalid } from "./core.js";
+import { type Ctx, type MutationCtx, id, invalid } from "./core.js";
 
 /** A username as commung's usernameSchema took it: 1–50 of [a-zA-Z0-9_], lowercased. */
 export function usernameOf(ctx: Ctx, value: unknown): string {
@@ -67,4 +67,21 @@ export async function ownerOf(ctx: Ctx, profileId: string) {
     SELECT member FROM profile_owners
     WHERE profile_id = ${profileId} AND role = 'owner'`;
   return rows[0]?.member ?? null;
+}
+
+/** Give the saved community bot to the current owner, including after a handover. */
+export async function syncCommunityBotOwner(ctx: MutationCtx) {
+  await ctx.sql`
+    DELETE FROM profile_owners
+    WHERE profile_id = (SELECT command_bot_profile_id FROM settings WHERE id = 1)
+      AND role = 'owner' AND member NOT IN (SELECT member FROM members WHERE role = 'owner')`;
+  await ctx.sql`
+    INSERT INTO profile_owners (profile_id, member, role, created_at, created_by)
+    SELECT p.id, m.member, 'owner', ${ctx.now}, m.member
+    FROM settings s
+    JOIN profiles p ON p.id = s.command_bot_profile_id AND p.deleted_at IS NULL
+    JOIN members m ON m.role = 'owner'
+    WHERE s.id = 1
+    ON CONFLICT (profile_id, member) DO UPDATE SET role = 'owner'
+      WHERE profile_owners.role <> 'owner'`;
 }

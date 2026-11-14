@@ -1,6 +1,7 @@
 // What only the site's owner does, signed in as the owner (`admin` handle):
 // opening the community and claiming its owner membership. Everything else
 // the community's owner does as a member whose role is `owner`.
+import { syncCommunityBotOwner } from "../modules/ownership.js";
 import { requireSiteOwner } from "../modules/access.js";
 import { settingsValuesOf, writeSettings } from "../modules/admin.js";
 import { settingsJson, settingsOf } from "../modules/community.js";
@@ -61,6 +62,7 @@ export async function claim(ctx: MutationCtx, args: unknown) {
       SELECT p.id FROM profile_owners o JOIN profiles p ON p.id = o.profile_id
       WHERE o.member = ${member} AND o.role = 'owner'
         AND p.deleted_at IS NULL AND p.activated_at IS NOT NULL
+        AND p.id IS NOT (SELECT command_bot_profile_id FROM settings WHERE id = 1)
       LIMIT 1`;
     profileId = rows[0]?.id ?? null;
     if (!profileId) {
@@ -82,5 +84,6 @@ export async function claim(ctx: MutationCtx, args: unknown) {
         VALUES (${profileId}, ${member}, 'owner', ${ctx.now}, ${member})`;
     }
   }
+  await syncCommunityBotOwner(ctx);
   return { member, role: "owner", profile_id: profileId };
 }

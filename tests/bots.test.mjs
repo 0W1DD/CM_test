@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { addProfile, as, community, refusal, VISITOR } from "./helpers.mjs";
+import { addProfile, as, community, OWNER_SITE, refusal, VISITOR } from "./helpers.mjs";
 
 /** Posts as a member's profile and answers the reply a command left, or null. */
 async function post(site, member, profile, content) {
@@ -72,11 +72,28 @@ test("one bot profile replies to every command, made when first needed", async (
   assert.equal(first.username, "bot_2");
   assert.equal(second.username, "bot_2");
   const [bot] = site.rows(
-    "SELECT p.id, p.name FROM settings s JOIN profiles p ON p.id = s.command_bot_profile_id",
+    "SELECT p.id, p.name, p.username FROM settings s JOIN profiles p ON p.id = s.command_bot_profile_id",
   );
   assert.equal(bot.name, "봇");
-  // No member owns it, so no one can act as it.
-  assert.deepEqual(site.rows("SELECT * FROM profile_owners WHERE profile_id = ?", bot.id), []);
+  const owners = () => site.rows("SELECT member FROM profile_owners WHERE profile_id = ? AND role = 'owner'", bot.id);
+  assert.deepEqual(owners(), [{ member: "m-owner" }]);
+  const rename = (member) => site.mutate("profiles:update", {
+    profile_id: bot.id, name: "겨울지기", username: bot.username,
+  }, as(member));
+  assert.ok(await refusal(rename("m-alice")));
+  await rename("m-owner");
+  const pin = await site.mutate("bots:pinWeatherPost", {}, as("m-owner"));
+  assert.ok(pin.path.startsWith("/@bot_2/"));
+  const ownerSession = await site.query("me:session", null, as("m-owner"));
+  assert.ok(ownerSession.profiles.some(p => p.id === bot.id && p.name === "겨울지기" && p.role === "owner"));
+  await site.mutate("members:setRole", {membership_id: "m-bob", role: "owner"}, as("m-owner"));
+  assert.deepEqual(owners(), [{ member: "m-bob" }]);
+  assert.ok(await refusal(rename("m-owner")));
+  await rename("m-bob");
+  await site.mutate("owner:claim", {member: "m-alice"}, OWNER_SITE);
+  assert.deepEqual(owners(), [{ member: "m-alice" }]);
+  assert.ok(await refusal(rename("m-bob")));
+  await rename("m-alice");
 });
 
 test("slash commands reply as the bot, inside the posting mutation", async () => {
@@ -330,4 +347,19 @@ test("only an owner can pin the weather card, and retries reuse the original bot
   assert.equal(posts.length, 1);
   assert.ok(posts[0].pinned_at);
   assert.ok(first.path.endsWith("/" + posts[0].id));
+});
+
+
+test("upgrading assigns an existing pinned bot to the owner without recreating its profile or post", async () => {
+  const { site, profiles } = await community({ pending: "0028" });
+  addProfile(site, "m-bob", "bot", { primary: false });
+  const pin = await site.mutate("bots:pinWeatherPost", {}, as("m-owner"));
+  const [{id}] = site.rows("SELECT command_bot_profile_id AS id FROM settings");
+  site.run("DELETE FROM profile_owners WHERE profile_id = ?", id); // pre-upgrade state
+  site.migrate();
+  const session = await site.query("me:session", null, as("m-owner"));
+  assert.ok(session.profiles.some(p => p.id === id && p.role === "owner"));
+  assert.deepEqual(await site.mutate("bots:pinWeatherPost", {}, as("m-owner")), pin);
+  assert.equal((await post(site, "m-alice", profiles.alice, "/coin")).username, "bot_2");
+  assert.equal(site.rows("SELECT member FROM profile_owners JOIN profiles ON id = profile_id WHERE username = 'bot'")[0].member, "m-bob");
 });

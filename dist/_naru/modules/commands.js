@@ -7,6 +7,7 @@
 //
 // Each command is a file in commands/ (see command-kit.ts and
 // docs/commands.md); to add one, write its file and list it here.
+import { syncCommunityBotOwner } from "./ownership.js";
 import balance from "./commands/balance.js";
 import buy from "./commands/buy.js";
 import choose from "./commands/choose.js";
@@ -67,7 +68,7 @@ const BOT_USERNAME = "bot";
 /**
  * The community's bot profile, which posts every command's reply: the one
  * the settings name, or a new one (@bot, or @bot_<n> when a member has
- * @bot) that no member owns.
+ * @bot), owned by the community owner.
  */
 export async function botProfileId(ctx) {
     const { rows } = await ctx.sql `
@@ -88,6 +89,7 @@ export async function botProfileId(ctx) {
     INSERT INTO profiles (id, name, username, is_primary, activated_at, created_at, updated_at)
     VALUES (${id}, ${BOT_NAME}, ${username}, 0, ${ctx.now}, ${ctx.now}, ${ctx.now})`;
     await ctx.sql `UPDATE settings SET command_bot_profile_id = ${id} WHERE id = 1`;
+    await syncCommunityBotOwner(ctx);
     return id;
 }
 /**

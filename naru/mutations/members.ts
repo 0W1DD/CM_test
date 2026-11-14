@@ -1,5 +1,6 @@
 // Members' roles and leaving (commung's membership.service updateMemberRole,
 // removeMember and leaveCommunity).
+import { syncCommunityBotOwner } from "../modules/ownership.js";
 import { requireMembership } from "../modules/access.js";
 import {
   endMembership,
@@ -58,6 +59,7 @@ export async function setRole(ctx: MutationCtx, args: unknown) {
       UPDATE members SET role = 'moderator', updated_at = ${ctx.now} WHERE member = ${me.member}`;
     await ctx.sql`
       UPDATE members SET role = 'owner', updated_at = ${ctx.now} WHERE member = ${t.member}`;
+    await syncCommunityBotOwner(ctx);
     return {
       membership_id: t.member,
       role,
