@@ -44,7 +44,8 @@ function TimelineTabs({
     <div
       role="tablist"
       aria-label="타임라인"
-      className="flex shrink-0 self-end gap-1 -mb-3"
+      // Down to the footer's bottom line, which the active tab covers.
+      className="flex shrink-0 self-end items-end gap-1 -mb-[14px]"
     >
       {tabs.map((tab) => {
         const active = tab.id === value;
@@ -55,10 +56,12 @@ function TimelineTabs({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(tab.id)}
-            className={`min-w-[3.75rem] px-3 pt-1.5 pb-2 text-xs font-semibold border border-b-0 transition-colors ${
+            // The active tab: outlined in the theme colour, open at the
+            // bottom into the timeline under it. The others sit on the line.
+            className={`relative min-w-[3.75rem] px-3 pt-1.5 text-xs font-semibold border-b-0 transition-colors ${
               active
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-card text-muted-foreground border-border hover:text-foreground"
+                ? "z-10 bg-card text-primary border-2 border-primary pb-[calc(0.5rem+2px)]"
+                : "bg-card text-muted-foreground border border-border pb-2 mb-[2px] hover:text-foreground"
             }`}
           >
             {tab.label}
@@ -188,7 +191,8 @@ export default function Home() {
         {/* Message Composer */}
         <div
           data-tour="composer"
-          className="timeline-item border-b border-border/70"
+          // No line of its own: the composer's footer draws one under its tabs.
+          className="timeline-item"
         >
           <MessageSender
             key={currentProfile?.id || "no-profile"}
