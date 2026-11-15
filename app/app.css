@@ -298,11 +298,11 @@ button:active,
 }
 
 /* The timeline's 홈/게시물 tabs, on the composer's bottom edge: a line in
-   the theme colour (in dark mode the yellow of the posts' times) runs under
-   them, and the active tab's outline rises out of it, open at the bottom
-   into the timeline. */
+   the deep green of the frames (in dark mode the yellow of the posts'
+   times) runs under them, and the active tab's outline rises out of it,
+   open at the bottom into the timeline. */
 :root {
-  --tab-line: var(--primary);
+  --tab-line: var(--theme, var(--primary));
   --tab-line-width: 2px;
 }
 .dark {
