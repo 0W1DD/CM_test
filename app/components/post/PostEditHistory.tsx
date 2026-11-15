@@ -118,6 +118,7 @@ export function PostEditHistory({ postId }: PostEditHistoryProps) {
                   content={entry.content}
                   contentWarning={entry.content_warning}
                   md={md}
+                  clamp={false}
                 />
 
                 {entry.images.length > 0 && (

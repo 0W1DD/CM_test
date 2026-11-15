@@ -3,6 +3,7 @@ import { ArrowLeft, CornerDownRight, MessageCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { PostCard } from "~/components/post-card";
+import { FullPostContext } from "~/components/post/PostCardContent";
 import { Spinner } from "~/components/ui/spinner";
 import { useAuth } from "~/hooks/useAuth";
 import { useCurrentInstance } from "~/hooks/useCurrentInstance";
@@ -218,117 +219,121 @@ export default function PostDetail() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
-          {/* Parent thread - show if this is a reply */}
-          {parentThread.length > 0 && (
-            <div className="mb-4 space-y-4">
-              <div className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
-                <CornerDownRight className="h-4 w-4" />
-                <span>답글 스레드 ({parentThread.length}개의 상위 게시물)</span>
+      {/* A post's own page shows every post in full. */}
+      <FullPostContext.Provider value={true}>
+        <main className="max-w-4xl mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto">
+            {/* Parent thread - show if this is a reply */}
+            {parentThread.length > 0 && (
+              <div className="mb-4 space-y-4">
+                <div className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
+                  <CornerDownRight className="h-4 w-4" />
+                  <span>
+                    답글 스레드 ({parentThread.length}개의 상위 게시물)
+                  </span>
+                </div>
+                <div className="space-y-4">
+                  {parentThread.map((parentPost) => (
+                    <PostCard
+                      key={parentPost.id}
+                      post={{
+                        ...parentPost,
+                        replies: [],
+                      }}
+                      currentProfileId={currentProfile?.id}
+                      onDelete={handleRefresh}
+                      onRefresh={handleRefresh}
+                      isCommunityOwner={isCommunityOwner}
+                      isModerator={isModerator}
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="space-y-4">
-                {parentThread.map((parentPost) => (
-                  <PostCard
-                    key={parentPost.id}
-                    post={{
-                      ...parentPost,
-                      replies: [],
-                    }}
-                    currentProfileId={currentProfile?.id}
-                    onDelete={handleRefresh}
-                    onRefresh={handleRefresh}
-                    isCommunityOwner={isCommunityOwner}
-                    isModerator={isModerator}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+            )}
 
-          <div className="md:framed overflow-hidden">
-            <PostCard
-              post={{
-                ...post,
-                replies: replyTree,
-                reply_count: totalReplyCount,
-                has_more_replies: false,
-              }}
-              currentProfileId={currentProfile?.id}
-              onDelete={handleMainPostDelete}
-              onRefresh={handleRefresh}
-              isCommunityOwner={isCommunityOwner}
-              isModerator={isModerator}
-              hideBorder
-              noFold
-            />
-            {(isRepliesLoading || isFetchingNextPage) && (
-              <div className="flex justify-center py-4">
-                <Spinner className="h-5 w-5" />
+            <div className="md:framed overflow-hidden">
+              <PostCard
+                post={{
+                  ...post,
+                  replies: replyTree,
+                  reply_count: totalReplyCount,
+                  has_more_replies: false,
+                }}
+                currentProfileId={currentProfile?.id}
+                onDelete={handleMainPostDelete}
+                onRefresh={handleRefresh}
+                isCommunityOwner={isCommunityOwner}
+                isModerator={isModerator}
+                hideBorder
+                noFold
+              />
+              {(isRepliesLoading || isFetchingNextPage) && (
+                <div className="flex justify-center py-4">
+                  <Spinner className="h-5 w-5" />
+                </div>
+              )}
+            </div>
+
+            {/* Detailed Reactions section */}
+            {post.reactions && post.reactions.length > 0 && (
+              <div className="mt-6 bg-card rounded-lg border border-border p-6">
+                <h3 className="text-lg font-semibold text-foreground mb-4">
+                  반응 ({post.reactions.length})
+                </h3>
+                <div className="space-y-3">
+                  {(() => {
+                    // Group reactions by emoji type
+                    const reactionGroups = post.reactions.reduce<
+                      Record<
+                        string,
+                        Array<{ id: string; username: string; name: string }>
+                      >
+                    >((acc, reaction) => {
+                      if (!acc[reaction.emoji]) {
+                        acc[reaction.emoji] = [];
+                      }
+                      if (reaction.user) {
+                        const group = acc[reaction.emoji];
+                        if (group) {
+                          group.push(reaction.user);
+                        }
+                      }
+                      return acc;
+                    }, {});
+
+                    return Object.entries(reactionGroups).map(
+                      ([emoji, users]) => (
+                        <div key={emoji} className="flex items-start gap-3">
+                          <div className="flex items-center justify-center w-10 h-10 bg-background rounded-full">
+                            <span className="text-xl">{emoji}</span>
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm text-muted-foreground mb-1">
+                              {users.length}명이 반응했습니다
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {users.map((user) => (
+                                <button
+                                  key={user.id}
+                                  type="button"
+                                  className="inline-flex items-center px-2 py-1 bg-primary/15 text-primary text-sm rounded-full hover:bg-primary/25 transition-colors cursor-pointer"
+                                  onClick={() => navigate(`/@${user.username}`)}
+                                >
+                                  {user.name} (@{user.username})
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ),
+                    );
+                  })()}
+                </div>
               </div>
             )}
           </div>
-
-          {/* Detailed Reactions section */}
-          {post.reactions && post.reactions.length > 0 && (
-            <div className="mt-6 bg-card rounded-lg border border-border p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4">
-                반응 ({post.reactions.length})
-              </h3>
-              <div className="space-y-3">
-                {(() => {
-                  // Group reactions by emoji type
-                  const reactionGroups = post.reactions.reduce<
-                    Record<
-                      string,
-                      Array<{ id: string; username: string; name: string }>
-                    >
-                  >((acc, reaction) => {
-                    if (!acc[reaction.emoji]) {
-                      acc[reaction.emoji] = [];
-                    }
-                    if (reaction.user) {
-                      const group = acc[reaction.emoji];
-                      if (group) {
-                        group.push(reaction.user);
-                      }
-                    }
-                    return acc;
-                  }, {});
-
-                  return Object.entries(reactionGroups).map(
-                    ([emoji, users]) => (
-                      <div key={emoji} className="flex items-start gap-3">
-                        <div className="flex items-center justify-center w-10 h-10 bg-background rounded-full">
-                          <span className="text-xl">{emoji}</span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-sm text-muted-foreground mb-1">
-                            {users.length}명이 반응했습니다
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {users.map((user) => (
-                              <button
-                                key={user.id}
-                                type="button"
-                                className="inline-flex items-center px-2 py-1 bg-primary/15 text-primary text-sm rounded-full hover:bg-primary/25 transition-colors cursor-pointer"
-                                onClick={() => navigate(`/@${user.username}`)}
-                              >
-                                {user.name} (@{user.username})
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    ),
-                  );
-                })()}
-              </div>
-            </div>
-          )}
-
-        </div>
-      </main>
+        </main>
+      </FullPostContext.Provider>
     </div>
   );
 }

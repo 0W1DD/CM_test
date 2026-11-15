@@ -13,8 +13,8 @@
     system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol", "Noto Color Emoji";
   --font-display:
-    "Gowun Batang", "Pretendard Variable", "Pretendard", "Noto Sans KR", ui-sans-serif,
-    system-ui, sans-serif;
+    "Gowun Batang", "Pretendard Variable", "Pretendard", "Noto Sans KR",
+    ui-sans-serif, system-ui, sans-serif;
 
   --shadow-marsh: 0 1px 2px oklch(0.6 0.02 255 / 0.08);
   --shadow-marsh-lg: 0 4px 16px -6px oklch(0.5 0.03 255 / 0.18);
@@ -222,7 +222,6 @@
        pushing boxes wider than the screen. */
     overflow-wrap: anywhere;
   }
-
 }
 
 @layer components {
@@ -296,6 +295,47 @@ button:active,
 .post-body p {
   margin-top: 0.35em;
   margin-bottom: 0.35em;
+}
+
+/* The timeline's 홈/게시물 tabs, on the composer's bottom edge: a line in
+   the deep green of the frames (in dark mode the yellow of the posts'
+   times) runs under them, and the active tab's outline rises out of it,
+   open at the bottom into the timeline. */
+:root {
+  --tab-line: var(--theme, var(--primary));
+  --tab-line-width: 2px;
+}
+.dark {
+  --tab-line: #f2c94c;
+}
+.composer-tabs-line {
+  border-bottom: var(--tab-line-width) solid var(--tab-line);
+}
+.timeline-tabs {
+  margin-bottom: calc(-0.75rem - var(--tab-line-width));
+}
+.timeline-tab {
+  margin-bottom: var(--tab-line-width);
+}
+.timeline-tab-active {
+  border: var(--tab-line-width) solid var(--tab-line);
+  border-bottom: 0;
+  padding-bottom: calc(0.5rem + var(--tab-line-width));
+}
+
+/* Long posts on the timeline: four lines (cut where the fourth line ends,
+   see PostCardContent), then "… 더보기" at the end of the fourth line, over
+   a fade into the post's own background. */
+.post-body-folded {
+  overflow: hidden;
+}
+.post-more {
+  padding-left: 2.5em;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--post-bg, var(--card)) 2em
+  );
 }
 
 /* ======================================================================
@@ -805,28 +845,34 @@ textarea,
       circle at 100% 100%,
       rgb(255 140 50 / 0.35),
       transparent 55%
-    ),
-    rgb(255 170 90 / 0.18);
+    ), rgb(255 170 90 / 0.18);
   transition: opacity 1.5s ease;
   opacity: 0.8;
 }
 .fire-lit .cozy-filter {
   opacity: 1;
   background:
-    radial-gradient(
-      circle at 100% 100%,
-      rgb(255 130 40 / 0.6),
-      transparent 65%
-    ),
+    radial-gradient(circle at 100% 100%, rgb(255 130 40 / 0.6), transparent 65%),
     rgb(255 160 80 / 0.25);
   animation: firelight 3s ease-in-out infinite;
 }
 @keyframes firelight {
-  0%, 100% { opacity: 1; }
-  20% { opacity: 0.88; }
-  35% { opacity: 0.97; }
-  60% { opacity: 0.85; }
-  80% { opacity: 0.95; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  20% {
+    opacity: 0.88;
+  }
+  35% {
+    opacity: 0.97;
+  }
+  60% {
+    opacity: 0.85;
+  }
+  80% {
+    opacity: 0.95;
+  }
 }
 
 .campfire {
@@ -846,20 +892,12 @@ textarea,
   }
   .cozy-filter {
     background:
-      radial-gradient(
-        circle at 0% 0%,
-        rgb(255 140 50 / 0.35),
-        transparent 55%
-      ),
+      radial-gradient(circle at 0% 0%, rgb(255 140 50 / 0.35), transparent 55%),
       rgb(255 170 90 / 0.18);
   }
   .fire-lit .cozy-filter {
     background:
-      radial-gradient(
-        circle at 0% 0%,
-        rgb(255 130 40 / 0.6),
-        transparent 65%
-      ),
+      radial-gradient(circle at 0% 0%, rgb(255 130 40 / 0.6), transparent 65%),
       rgb(255 160 80 / 0.25);
   }
 }
@@ -877,16 +915,29 @@ textarea,
   box-shadow: 0 0 0 9999px rgb(0 0 0 / 0.7);
   outline: 3px solid var(--primary);
   outline-offset: 2px;
-  transition: top 0.3s ease, left 0.3s ease, width 0.3s ease, height 0.3s ease;
+  transition:
+    top 0.3s ease,
+    left 0.3s ease,
+    width 0.3s ease,
+    height 0.3s ease;
   animation: tour-pulse 1.6s ease-in-out infinite;
   pointer-events: none;
 }
 @keyframes tour-pulse {
-  0%, 100% { outline-color: var(--primary); outline-offset: 2px; }
-  50% { outline-color: color-mix(in srgb, var(--primary) 40%, transparent); outline-offset: 6px; }
+  0%,
+  100% {
+    outline-color: var(--primary);
+    outline-offset: 2px;
+  }
+  50% {
+    outline-color: color-mix(in srgb, var(--primary) 40%, transparent);
+    outline-offset: 6px;
+  }
 }
 .tour-card {
-  transition: top 0.3s ease, left 0.3s ease;
+  transition:
+    top 0.3s ease,
+    left 0.3s ease;
   animation: timeline-in 0.3s ease-out backwards;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -934,9 +985,16 @@ textarea,
   animation: gift-bounce 1.6s ease-in-out infinite;
 }
 @keyframes gift-bounce {
-  0%, 100% { transform: translateY(0) rotate(0); }
-  20% { transform: translateY(-8px) rotate(-6deg); }
-  40% { transform: translateY(0) rotate(4deg); }
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  20% {
+    transform: translateY(-8px) rotate(-6deg);
+  }
+  40% {
+    transform: translateY(0) rotate(4deg);
+  }
 }
 /* After the box, letter or ornament opens: the gift card rises into view. */
 .gift-rise {
@@ -1015,10 +1073,20 @@ textarea,
   line-height: 1;
 }
 @keyframes gift-hop {
-  0%, 60%, 100% { transform: translateY(0) rotate(0); }
-  70% { transform: translateY(-14px) rotate(-4deg); }
-  80% { transform: translateY(0) rotate(3deg); }
-  90% { transform: translateY(-5px) rotate(0); }
+  0%,
+  60%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  70% {
+    transform: translateY(-14px) rotate(-4deg);
+  }
+  80% {
+    transform: translateY(0) rotate(3deg);
+  }
+  90% {
+    transform: translateY(-5px) rotate(0);
+  }
 }
 .gift-stage-box.is-opening .gift-box {
   animation: none;
@@ -1103,8 +1171,13 @@ textarea,
   }
 }
 @keyframes letter-float {
-  0%, 100% { transform: translateY(0) rotate(-2deg); }
-  50% { transform: translateY(-8px) rotate(2deg); }
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
 }
 .gift-stage-letter.is-opening .envelope {
   animation: none;
@@ -1151,15 +1224,22 @@ textarea,
   margin-top: -4px;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 32% 28%, rgb(255 255 255 / 0.75) 0 8%, transparent 22%),
-    radial-gradient(circle at 50% 50%, #ff5a6e, #c8102e 60%, #7a0f1f);
+    radial-gradient(
+      circle at 32% 28%,
+      rgb(255 255 255 / 0.75) 0 8%,
+      transparent 22%
+    ), radial-gradient(circle at 50% 50%, #ff5a6e, #c8102e 60%, #7a0f1f);
   box-shadow: 0 0 40px rgb(232 93 117 / 0.45);
   overflow: hidden;
 }
 .ornament-band {
   position: absolute;
   inset: 44% 0;
-  background: repeating-linear-gradient(90deg, #f2c94c 0 10px, #fbf7ea 10px 20px);
+  background: repeating-linear-gradient(
+    90deg,
+    #f2c94c 0 10px,
+    #fbf7ea 10px 20px
+  );
   opacity: 0.85;
 }
 @keyframes ornament-down {
@@ -1168,8 +1248,13 @@ textarea,
   }
 }
 @keyframes ornament-swing {
-  0%, 100% { transform: rotate(-6deg); }
-  50% { transform: rotate(6deg); }
+  0%,
+  100% {
+    transform: rotate(-6deg);
+  }
+  50% {
+    transform: rotate(6deg);
+  }
 }
 .gift-stage-ornament.is-opening .ornament {
   animation: none;
@@ -1213,7 +1298,9 @@ textarea,
   cursor: pointer;
   color: #fbf1dc;
   filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.45));
-  transition: transform 0.15s ease, filter 0.6s ease;
+  transition:
+    transform 0.15s ease,
+    filter 0.6s ease;
 }
 .campfire-button:hover {
   transform: translateY(-2px);
@@ -1238,8 +1325,12 @@ textarea,
   animation: campfire-flip 0.5s steps(1) infinite reverse;
 }
 @keyframes campfire-flip {
-  0% { opacity: 0; }
-  50% { opacity: 1; }
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 .campfire-track {
   font-family: var(--font-display);
@@ -1354,7 +1445,8 @@ textarea,
   overflow-wrap: anywhere;
   text-wrap: balance;
   color: var(--foreground);
-  background: linear-gradient(
+  background:
+    linear-gradient(
       100deg,
       var(--foreground) 42%,
       #f2c94c 50%,
@@ -1367,8 +1459,13 @@ textarea,
   animation: title-shimmer 7s ease-in-out infinite;
 }
 @keyframes title-shimmer {
-  0%, 55% { background-position: 100% 0; }
-  100% { background-position: 0 0; }
+  0%,
+  55% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .community-title {
@@ -1433,8 +1530,9 @@ h2 .profile-badge {
   bottom: 0.6rem;
   left: 0.45rem;
   width: 0.5rem;
-  background: radial-gradient(circle, #6b5a3a 0 0.18rem, transparent 0.2rem)
-    0 0 / 0.5rem 1.1rem repeat-y;
+  background:
+    radial-gradient(circle, #6b5a3a 0 0.18rem, transparent 0.2rem) 0 0 / 0.5rem
+    1.1rem repeat-y;
 }
 .box-notebook-head {
   color: inherit;
@@ -1614,20 +1712,46 @@ h2 .profile-badge {
 /* Nickname colours (name-color.tsx): a deeper shade on light pages, a
    paler one on dark, both easy to read. `is-light`/`is-dark` fix one for
    the dialog's two previews. */
-.name-color-red { --name: #c62828; --name-dark: #ff8a80; }
-.name-color-green { --name: #2e7d32; --name-dark: #81c784; }
-.name-color-gold { --name: #9a6200; --name-dark: #ffd54f; }
-.name-color-blue { --name: #1565c0; --name-dark: #90caf9; }
-.name-color-pink { --name: #c2185b; --name-dark: #f48fb1; }
-.name-color-purple { --name: #6a1b9a; --name-dark: #ce93d8; }
+.name-color-red {
+  --name: #c62828;
+  --name-dark: #ff8a80;
+}
+.name-color-green {
+  --name: #2e7d32;
+  --name-dark: #81c784;
+}
+.name-color-gold {
+  --name: #9a6200;
+  --name-dark: #ffd54f;
+}
+.name-color-blue {
+  --name: #1565c0;
+  --name-dark: #90caf9;
+}
+.name-color-pink {
+  --name: #c2185b;
+  --name-dark: #f48fb1;
+}
+.name-color-purple {
+  --name: #6a1b9a;
+  --name-dark: #ce93d8;
+}
 .name-color,
-.name-color-red.is-light, .name-color-green.is-light, .name-color-gold.is-light,
-.name-color-blue.is-light, .name-color-pink.is-light, .name-color-purple.is-light {
+.name-color-red.is-light,
+.name-color-green.is-light,
+.name-color-gold.is-light,
+.name-color-blue.is-light,
+.name-color-pink.is-light,
+.name-color-purple.is-light {
   color: var(--name) !important;
 }
 .dark .name-color,
-.name-color-red.is-dark, .name-color-green.is-dark, .name-color-gold.is-dark,
-.name-color-blue.is-dark, .name-color-pink.is-dark, .name-color-purple.is-dark {
+.name-color-red.is-dark,
+.name-color-green.is-dark,
+.name-color-gold.is-dark,
+.name-color-blue.is-dark,
+.name-color-pink.is-dark,
+.name-color-purple.is-dark {
   color: var(--name-dark) !important;
 }
 .name-color-swatch {
@@ -1671,9 +1795,19 @@ h2 .profile-badge {
   font-size: 1.6rem;
 }
 @keyframes achievement-pop {
-  0% { transform: translateY(calc(100% + 7rem)); opacity: 0; }
-  8%, 90% { transform: translateY(0); opacity: 1; }
-  100% { transform: translateY(calc(100% + 7rem)); opacity: 0; }
+  0% {
+    transform: translateY(calc(100% + 7rem));
+    opacity: 0;
+  }
+  8%,
+  90% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(calc(100% + 7rem));
+    opacity: 0;
+  }
 }
 @media (max-width: 767px) {
   .achievement-pop {

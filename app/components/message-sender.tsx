@@ -1,5 +1,5 @@
 import { AlertTriangle } from "lucide-react";
-import { useCallback } from "react";
+import { type ReactNode, useCallback } from "react";
 import { toast } from "sonner";
 import { useAuth } from "~/hooks/useAuth";
 import { useCurrentInstance } from "~/hooks/useCurrentInstance";
@@ -11,6 +11,8 @@ interface MessageSenderProps {
   replyToId?: string;
   placeholder?: string;
   initialValue?: string;
+  /** Shown at the right end of the composer's footer. */
+  footerEnd?: ReactNode;
 }
 
 export function MessageSender({
@@ -18,6 +20,7 @@ export function MessageSender({
   replyToId,
   placeholder = "무슨 일이 일어나고 있나요?",
   initialValue = "",
+  footerEnd,
 }: MessageSenderProps) {
   const { currentProfile } = useAuth();
   const { currentInstance, isOwner, isModerator } = useCurrentInstance();
@@ -92,6 +95,9 @@ export function MessageSender({
         <p className="text-muted-foreground">
           이 커뮤는 종료되어 더 이상 게시할 수 없습니다.
         </p>
+        {footerEnd && (
+          <div className="flex justify-end mt-4 -mb-6 -mr-2">{footerEnd}</div>
+        )}
       </div>
     );
   }
@@ -107,6 +113,9 @@ export function MessageSender({
         <p className="text-muted-foreground">
           커뮤가 시작되면 게시할 수 있습니다.
         </p>
+        {footerEnd && (
+          <div className="flex justify-end mt-4 -mb-6 -mr-2">{footerEnd}</div>
+        )}
       </div>
     );
   }
@@ -121,6 +130,7 @@ export function MessageSender({
       showScheduling={true}
       canBeAnnouncement={canBeAnnouncement}
       canSchedule={canSchedule}
+      footerEnd={footerEnd}
       schedulingConfig={{
         minDate: new Date(),
         maxDate: communityEndsAt,

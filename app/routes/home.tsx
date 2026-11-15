@@ -1,5 +1,5 @@
 import { Users } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
 import { AnnouncementTicker } from "~/components/announcement-ticker";
 import { FrontGate } from "~/components/front-gate";
@@ -17,6 +17,61 @@ import { useCurrentInstance } from "~/hooks/useCurrentInstance";
 import { subscribe } from "~/lib/naru";
 import { DEMO_POST, useTourDemo } from "~/lib/tour-demo";
 
+type TimelineTab = "home" | "posts";
+const TAB_KEY = "timeline-tab";
+
+function savedTab(): TimelineTab {
+  try {
+    return localStorage.getItem(TAB_KEY) === "posts" ? "posts" : "home";
+  } catch {
+    return "home";
+  }
+}
+
+/** 홈: posts and replies; 게시물: only posts. Tabs on the composer's bottom edge. */
+function TimelineTabs({
+  value,
+  onChange,
+}: {
+  value: TimelineTab;
+  onChange: (tab: TimelineTab) => void;
+}) {
+  const tabs: { id: TimelineTab; label: string }[] = [
+    { id: "home", label: "홈" },
+    { id: "posts", label: "게시물" },
+  ];
+  return (
+    <div
+      role="tablist"
+      aria-label="타임라인"
+      // Down to the footer's bottom line, which the active tab covers.
+      className="timeline-tabs flex shrink-0 self-end items-end gap-1"
+    >
+      {tabs.map((tab) => {
+        const active = tab.id === value;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(tab.id)}
+            // The active tab: outlined in the theme colour, open at the
+            // bottom into the timeline under it. The others sit on the line.
+            className={`relative min-w-[3.75rem] px-3 pt-1.5 text-xs font-semibold border-b-0 transition-colors ${
+              active
+                ? "timeline-tab-active z-10 bg-card text-foreground"
+                : "timeline-tab bg-card text-muted-foreground border border-border pb-2 hover:text-foreground"
+            }`}
+          >
+            {tab.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function Home() {
   const postListRef = useRef<PostListRef>(null);
   const scheduledPostsRef = useRef<ScheduledPostsListRef>(null);
@@ -30,6 +85,13 @@ export default function Home() {
   } = useAuth();
   const { currentInstance } = useCurrentInstance();
   const showDemo = useTourDemo("post");
+  const [tab, setTab] = useState<TimelineTab>(savedTab);
+  const changeTab = (next: TimelineTab) => {
+    setTab(next);
+    try {
+      localStorage.setItem(TAB_KEY, next);
+    } catch {}
+  };
 
   const handlePostSuccess = () => {
     postListRef.current?.refresh();
@@ -129,11 +191,13 @@ export default function Home() {
         {/* Message Composer */}
         <div
           data-tour="composer"
-          className="timeline-item border-b border-border/70"
+          // No line of its own: the composer's footer draws one under its tabs.
+          className="timeline-item"
         >
           <MessageSender
             key={currentProfile?.id || "no-profile"}
             onPostSuccess={handlePostSuccess}
+            footerEnd={<TimelineTabs value={tab} onChange={changeTab} />}
           />
         </div>
 
@@ -158,7 +222,7 @@ export default function Home() {
 
         {/* Posts Feed */}
         <div>
-          <PostList ref={postListRef} />
+          <PostList ref={postListRef} rootsOnly={tab === "posts"} />
         </div>
       </div>
     </main>
