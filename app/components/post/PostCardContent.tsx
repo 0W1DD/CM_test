@@ -11,6 +11,9 @@ import {
 import { WeatherCard } from "~/components/weather-card";
 import { useNavigate } from "react-router";
 
+/** How many lines a long post shows before "더보기". */
+const LINES = 4;
+
 /** Inside it (a post's own page), posts show in full instead of folding long text. */
 export const FullPostContext = createContext(false);
 
@@ -21,7 +24,7 @@ interface PostCardContentProps {
   isReply?: boolean;
   showContentWarningContent?: boolean;
   onToggleContentWarning?: (show: boolean) => void;
-  /** Fold text longer than five lines behind a "더보기" button. */
+  /** Fold text longer than four lines behind a "더보기" button. */
   clamp?: boolean;
 }
 
@@ -42,17 +45,6 @@ export function PostCardContent({
   const folded = clamp && !expanded;
   const html = md.render(content);
 
-  // Whether the text runs past five lines, so the button shows only then.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: measure again when the text changes
-  useLayoutEffect(() => {
-    const el = bodyRef.current;
-    if (!el || !folded) return;
-    const check = () => setOverflowing(el.scrollHeight > el.clientHeight + 1);
-    check();
-    const observer = new ResizeObserver(check);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [folded, html]);
   const [
     internalShowContentWarningContent,
     setInternalShowContentWarningContent,
@@ -78,6 +70,58 @@ export function PostCardContent({
     externalShowContentWarningContent ?? internalShowContentWarningContent;
   const setShowContentWarningContent =
     onToggleContentWarning ?? setInternalShowContentWarningContent;
+  const bodyShown = !contentWarning || showContentWarningContent;
+
+  // Folded, the text stops at the bottom of its fourth line (measured, so
+  // paragraphs, mentions and line breaks all count as they look), and the
+  // "더보기" button shows only when there is more below it.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: measure again when the text changes
+  useLayoutEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    if (!folded) {
+      el.style.maxHeight = "";
+      return;
+    }
+    let width = -1;
+    const measure = () => {
+      if (el.clientWidth === width) return;
+      width = el.clientWidth;
+      el.style.maxHeight = "";
+      const top = el.getBoundingClientRect().top;
+      const bottoms: number[] = [];
+      const add = (rect: DOMRect) => {
+        if (!rect.width || !rect.height) return;
+        const bottom = rect.bottom - top;
+        if (!bottoms.some((b) => Math.abs(b - bottom) < 6))
+          bottoms.push(bottom);
+      };
+      const walker = document.createTreeWalker(
+        el,
+        NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
+      );
+      const range = document.createRange();
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        if (node instanceof Element) {
+          if (node.matches("img, video, iframe, hr"))
+            add(node.getBoundingClientRect());
+          continue;
+        }
+        if (!node.textContent?.trim()) continue;
+        range.selectNodeContents(node);
+        for (const rect of range.getClientRects()) add(rect);
+      }
+      bottoms.sort((a, b) => a - b);
+      const fourth = bottoms[LINES - 1];
+      const more = bottoms.length > LINES && fourth !== undefined;
+      if (more) el.style.maxHeight = `${Math.ceil(fourth)}px`;
+      setOverflowing(more);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [folded, html, bodyShown]);
 
   // Content Warning handling
   if (contentWarning && !showContentWarningContent) {
