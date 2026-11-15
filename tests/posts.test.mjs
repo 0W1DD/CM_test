@@ -111,6 +111,26 @@ test("bump_on_reply puts each reply on the timeline with what it answers", async
   assert.deepEqual(plain.data.map((p) => p.content), ["new", "old"]);
 });
 
+test("roots_only lists only posts, without replies (the 게시물 tab)", async () => {
+  const { site, profiles } = await community();
+  site.run("UPDATE settings SET bump_on_reply = 1");
+  const old = await write(site, "m-alice", profiles.alice, "old");
+  site.now += 1000;
+  await write(site, "m-bob", profiles.bob, "reply", { in_reply_to_id: old.id });
+  site.now += 1000;
+  await write(site, "m-alice", profiles.alice, "new");
+  const all = await site.query("posts:list", {});
+  assert.deepEqual(all.data.map((p) => p.content), ["new", "reply", "old"]);
+  const roots = await site.query("posts:list", { roots_only: true });
+  assert.deepEqual(roots.data.map((p) => p.content), ["new", "old"]);
+  assert.deepEqual(roots.data[1].replies, []);
+  // Without bump_on_reply too: posts, not the replies under them.
+  site.run("UPDATE settings SET bump_on_reply = 0");
+  const plain = await site.query("posts:list", { roots_only: true });
+  assert.deepEqual(plain.data.map((p) => p.content), ["new", "old"]);
+  assert.deepEqual(plain.data[1].replies, []);
+});
+
 test("replies and mentions notify, in rows and in the Naru app, but never yourself", async () => {
   const { site, profiles } = await community({ members: ["alice", "bob", "carol"] });
   const root = await write(site, "m-alice", profiles.alice, "hello @bob");

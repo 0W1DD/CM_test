@@ -298,6 +298,24 @@ button:active,
   margin-bottom: 0.35em;
 }
 
+/* Long posts on the timeline: five lines, then "… 더보기" at the end of the
+   fifth line, over a fade into the post's own background. */
+.post-body-folded {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  overflow: hidden;
+}
+.post-more {
+  padding-left: 2.5em;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--post-bg, var(--card)) 2em
+  );
+}
+
 /* ======================================================================
    BLOCKS: three colours and framed blocks.
    Ground (cream), theme (deep green: text, frames) and one accent (red).

@@ -1,8 +1,18 @@
 import { AlertTriangle, Eye } from "lucide-react";
 import type MarkdownIt from "markdown-it";
-import { type MouseEvent, useState } from "react";
+import {
+  createContext,
+  type MouseEvent,
+  useContext,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { WeatherCard } from "~/components/weather-card";
 import { useNavigate } from "react-router";
+
+/** Inside it (a post's own page), posts show in full instead of folding long text. */
+export const FullPostContext = createContext(false);
 
 interface PostCardContentProps {
   content: string;
@@ -11,6 +21,8 @@ interface PostCardContentProps {
   isReply?: boolean;
   showContentWarningContent?: boolean;
   onToggleContentWarning?: (show: boolean) => void;
+  /** Fold text longer than five lines behind a "더보기" button. */
+  clamp?: boolean;
 }
 
 export function PostCardContent({
@@ -20,7 +32,27 @@ export function PostCardContent({
   isReply = false,
   showContentWarningContent: externalShowContentWarningContent,
   onToggleContentWarning,
+  clamp: clampProp = true,
 }: PostCardContentProps) {
+  const fullPost = useContext(FullPostContext);
+  const clamp = clampProp && !fullPost;
+  const [expanded, setExpanded] = useState(false);
+  const [overflowing, setOverflowing] = useState(false);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const folded = clamp && !expanded;
+  const html = md.render(content);
+
+  // Whether the text runs past five lines, so the button shows only then.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: measure again when the text changes
+  useLayoutEffect(() => {
+    const el = bodyRef.current;
+    if (!el || !folded) return;
+    const check = () => setOverflowing(el.scrollHeight > el.clientHeight + 1);
+    check();
+    const observer = new ResizeObserver(check);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [folded, html]);
   const [
     internalShowContentWarningContent,
     setInternalShowContentWarningContent,
@@ -32,7 +64,8 @@ export function PostCardContent({
   // reloading the page; others, and clicks with a modifier, as usual.
   const openInApp = (event: MouseEvent<HTMLDivElement>) => {
     if (event.defaultPrevented || event.button !== 0) return;
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+      return;
     const link =
       event.target instanceof Element ? event.target.closest("a") : null;
     const href = link?.getAttribute("href");
@@ -85,17 +118,31 @@ export function PostCardContent({
 
   return (
     <>
-      {/* Only catches clicks on the links inside, which keep their own keyboard use. */}
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: see above */}
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: see above */}
-      <div
-        className={`post-body prose dark:prose-invert ${
-          isReply ? "prose-sm text-[14px]" : "prose-sm text-[15px]"
-        } max-w-none text-foreground leading-relaxed ${isReply ? "my-1" : "my-2"}`}
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized html
-        dangerouslySetInnerHTML={{ __html: md.render(content) }}
-        onClick={openInApp}
-      />
+      <div className={`relative ${isReply ? "my-1" : "my-2"}`}>
+        {/* Only catches clicks on the links inside, which keep their own keyboard use. */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: see above */}
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: see above */}
+        <div
+          ref={bodyRef}
+          className={`post-body prose${folded ? " post-body-folded" : ""} dark:prose-invert ${
+            isReply ? "prose-sm text-[14px]" : "prose-sm text-[15px]"
+          } max-w-none text-foreground leading-relaxed`}
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized html
+          dangerouslySetInnerHTML={{ __html: html }}
+          onClick={openInApp}
+        />
+        {folded && overflowing && (
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className={`post-more absolute right-0 bottom-0 ${
+              isReply ? "text-[14px]" : "text-[15px]"
+            } leading-relaxed text-primary font-medium hover:underline`}
+          >
+            <span className="text-foreground">…</span> 더보기
+          </button>
+        )}
+      </div>
 
       {/* Show a small indicator if content warning was revealed */}
       {contentWarning && showContentWarningContent && (

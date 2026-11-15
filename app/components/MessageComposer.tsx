@@ -72,6 +72,8 @@ export interface MessageComposerProps {
     minDate: Date;
     maxDate?: Date;
   };
+  /** Shown at the right end of the footer (the timeline's tabs). */
+  footerEnd?: ReactNode;
 }
 
 export function MessageComposer({
@@ -90,6 +92,7 @@ export function MessageComposer({
   canBeAnnouncement = false,
   canSchedule = false,
   schedulingConfig,
+  footerEnd,
 }: MessageComposerProps) {
   const { currentProfile } = useAuth();
 
@@ -254,7 +257,9 @@ export function MessageComposer({
   const [slashPrefix, setSlashPrefix] = useState("");
   const checkForSlashCommand = (text: string, cursorPosition: number) => {
     const beforeCursor = text.slice(0, cursorPosition);
-    const match = beforeCursor.match(/^((?:@[A-Za-z0-9_]+\s+)*)\/([a-z0-9_-]*)$/i);
+    const match = beforeCursor.match(
+      /^((?:@[A-Za-z0-9_]+\s+)*)\/([a-z0-9_-]*)$/i,
+    );
     if (match) {
       setSlashPrefix(match[1] ?? "");
       setSlashQuery(match[2] ?? "");
@@ -289,9 +294,7 @@ export function MessageComposer({
   const [showTagDropdown, setShowTagDropdown] = useState(false);
   const [tagQuery, setTagQuery] = useState("");
   const [tagStart, setTagStart] = useState(0);
-  const [tagSuggestions, setTagSuggestions] = useState<HashtagSuggestion[]>(
-    [],
-  );
+  const [tagSuggestions, setTagSuggestions] = useState<HashtagSuggestion[]>([]);
   const [selectedTagIndex, setSelectedTagIndex] = useState(0);
 
   useEffect(() => {
@@ -1037,20 +1040,27 @@ export function MessageComposer({
             : "border-t border-border"
         }`}
       >
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-          <p className="text-xs text-muted-foreground">
-            <MarkdownHelpModal /> 문법을 사용할 수 있습니다.
-          </p>
+        <div className="flex items-center justify-between gap-2">
           <div
-            className={`text-xs ${
-              isOverLimit
-                ? "text-destructive font-semibold"
-                : "text-muted-foreground"
+            className={`flex flex-col sm:flex-row items-start sm:items-center gap-2 ${
+              footerEnd ? "sm:gap-4" : "flex-1 justify-between sm:gap-0"
             }`}
           >
-            {message.length > 0 &&
-              `${message.length} / ${MAX_MESSAGE_LENGTH}자`}
+            <p className="text-xs text-muted-foreground">
+              <MarkdownHelpModal /> 문법을 사용할 수 있습니다.
+            </p>
+            <div
+              className={`text-xs ${
+                isOverLimit
+                  ? "text-destructive font-semibold"
+                  : "text-muted-foreground"
+              }`}
+            >
+              {message.length > 0 &&
+                `${message.length} / ${MAX_MESSAGE_LENGTH}자`}
+            </div>
           </div>
+          {footerEnd}
         </div>
       </div>
 

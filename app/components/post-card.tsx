@@ -275,7 +275,7 @@ export const PostCard = memo(function PostCard({
     <div
       className={`${
         post.announcement
-          ? "bg-announce border-l-4 border-l-butter"
+          ? "bg-announce border-l-4 border-l-butter [--post-bg:var(--announce-to)]"
           : isReply
             ? ""
             : `bg-card ${!hideBorder ? "border-b border-border" : ""}`

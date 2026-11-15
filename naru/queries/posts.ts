@@ -63,7 +63,9 @@ export async function list(ctx: QueryCtx, args: unknown) {
   const cursor = cursorOf(a.cursor);
   const viewer = await viewerProfile(ctx, a.profile_id);
   const settings = await settingsOf(ctx);
-  const flat = settings?.bump_on_reply === 1;
+  // The "게시물" tab: only posts, without their replies.
+  const rootsOnly = a.roots_only === true;
+  const flat = settings?.bump_on_reply === 1 && !rootsOnly;
   const base = flat ? VISIBLE : `p.depth = 0 AND ${VISIBLE}`;
   let where = base;
   const values: SqlValue[] = [ctx.now];
@@ -79,11 +81,12 @@ export async function list(ctx: QueryCtx, args: unknown) {
   const { rows, hasMore } = firstOf(read, limit);
   const { posts } = await postsWithReplies(ctx, rows, {
     viewer,
-    replyLimit: flat
-      ? 0
-      : settings?.show_all_replies === 1
-        ? undefined
-        : TIMELINE_REPLY_LIMIT,
+    replyLimit:
+      flat || rootsOnly
+        ? 0
+        : settings?.show_all_replies === 1
+          ? undefined
+          : TIMELINE_REPLY_LIMIT,
   });
   const summaries = flat
     ? await parentSummaries(ctx, rows)
