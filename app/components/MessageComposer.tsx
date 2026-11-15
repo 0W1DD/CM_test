@@ -1040,8 +1040,8 @@ export function MessageComposer({
             : "border-t border-border"
         } ${
           // With tabs, a line in the theme colour runs under them; the
-          // active tab's outline rises out of it (see TimelineTabs).
-          footerEnd ? "border-b-2 border-b-primary" : ""
+          // active tab's outline rises out of it (see app.css).
+          footerEnd ? "composer-tabs-line" : ""
         }`}
       >
         <div className="flex items-center justify-between gap-2">

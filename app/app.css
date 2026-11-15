@@ -297,6 +297,32 @@ button:active,
   margin-bottom: 0.35em;
 }
 
+/* The timeline's 홈/게시물 tabs, on the composer's bottom edge: a line in
+   the theme colour (in dark mode the yellow of the posts' times) runs under
+   them, and the active tab's outline rises out of it, open at the bottom
+   into the timeline. */
+:root {
+  --tab-line: var(--primary);
+  --tab-line-width: 2px;
+}
+.dark {
+  --tab-line: #f2c94c;
+}
+.composer-tabs-line {
+  border-bottom: var(--tab-line-width) solid var(--tab-line);
+}
+.timeline-tabs {
+  margin-bottom: calc(-0.75rem - var(--tab-line-width));
+}
+.timeline-tab {
+  margin-bottom: var(--tab-line-width);
+}
+.timeline-tab-active {
+  border: var(--tab-line-width) solid var(--tab-line);
+  border-bottom: 0;
+  padding-bottom: calc(0.5rem + var(--tab-line-width));
+}
+
 /* Long posts on the timeline: four lines (cut where the fourth line ends,
    see PostCardContent), then "… 더보기" at the end of the fourth line, over
    a fade into the post's own background. */

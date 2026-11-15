@@ -45,7 +45,7 @@ function TimelineTabs({
       role="tablist"
       aria-label="타임라인"
       // Down to the footer's bottom line, which the active tab covers.
-      className="flex shrink-0 self-end items-end gap-1 -mb-[14px]"
+      className="timeline-tabs flex shrink-0 self-end items-end gap-1"
     >
       {tabs.map((tab) => {
         const active = tab.id === value;
@@ -60,8 +60,8 @@ function TimelineTabs({
             // bottom into the timeline under it. The others sit on the line.
             className={`relative min-w-[3.75rem] px-3 pt-1.5 text-xs font-semibold border-b-0 transition-colors ${
               active
-                ? "z-10 bg-card text-primary border-2 border-primary pb-[calc(0.5rem+2px)]"
-                : "bg-card text-muted-foreground border border-border pb-2 mb-[2px] hover:text-foreground"
+                ? "timeline-tab-active z-10 bg-card text-foreground"
+                : "timeline-tab bg-card text-muted-foreground border border-border pb-2 hover:text-foreground"
             }`}
           >
             {tab.label}
