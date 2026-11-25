@@ -1,4 +1,4 @@
-// The use log (item_uses): how a use or a transfer reads to the one looking,
+// The use log (item_uses): how a use, a transfer or a donation reads to the one looking,
 // with the comments under it. A secret entry keeps its item, note, receiver
 // and comments from everyone but the profiles in it and the staff.
 import { iso, list, msOf } from "./core.js";
@@ -33,7 +33,11 @@ export async function useJson(ctx, rows, viewer) {
         const hidden = hiddenFrom(row, viewer);
         return {
             id: row.id,
-            kind: row.kind === "transfer" ? "transfer" : "use",
+            kind: row.kind === "transfer"
+                ? "transfer"
+                : row.donated === 1
+                    ? "donate"
+                    : "use",
             profile: profiles.get(row.profile_id) ?? null,
             target: hidden || !row.target_profile_id
                 ? null
@@ -44,7 +48,12 @@ export async function useJson(ctx, rows, viewer) {
             secret: row.secret === 1,
             hidden,
             consumed: row.consumed === 1,
-            status: row.approved_at === null ? "pending" : "approved",
+            // "done": needed no one to confirm it (what a random box gave).
+            status: row.approved_at === null
+                ? "pending"
+                : row.approved_by === null
+                    ? "done"
+                    : "approved",
             approved_at: iso(row.approved_at),
             created_at: iso(row.created_at),
             comments: hidden

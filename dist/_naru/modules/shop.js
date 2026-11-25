@@ -54,6 +54,8 @@ export const itemJson = (row) => ({
     isUnique: bool(row.is_unique),
     randomBox: bool(row.random_box),
     nameColor: bool(row.name_color),
+    /** One of the random box's list (what a box gives). */
+    boxEntry: bool(row.box_entry),
     createdAt: iso(row.created_at),
     updatedAt: iso(row.updated_at),
     ...(row.currency_name === undefined
