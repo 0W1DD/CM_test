@@ -79,6 +79,7 @@ interface ItemRow {
   is_unique: number;
   random_box: number;
   name_color: number;
+  box_entry: number;
   created_at: number;
   updated_at: number;
   deleted_at: number | null;
@@ -95,6 +96,8 @@ export const itemJson = (row: ItemRow) => ({
   isUnique: bool(row.is_unique),
   randomBox: bool(row.random_box),
   nameColor: bool(row.name_color),
+  /** One of the random box's list (what a box gives). */
+  boxEntry: bool(row.box_entry),
   createdAt: iso(row.created_at),
   updatedAt: iso(row.updated_at),
   ...(row.currency_name === undefined

@@ -147,16 +147,17 @@ export default function ShopPage() {
 
   // Using an item, or handing it to someone, writes it to the use log, off
   // the timeline, where the staff confirm it; a secret entry shows to
-  // others only as a secret.
+  // others only as a secret. What a random box gave needs no one to confirm
+  // its use, and may be donated to the shared space (공용공간).
   const [using, setUsing] = useState<string | null>(null);
-  const [mode, setMode] = useState<"use" | "transfer">("use");
+  const [mode, setMode] = useState<"use" | "transfer" | "donate">("use");
   const [note, setNote] = useState("");
   const [secret, setSecret] = useState(false);
   const [to, setTo] = useState("");
   const [qty, setQty] = useState(1);
   const startUsing = (
     itemId: string | null,
-    nextMode: "use" | "transfer" = "use",
+    nextMode: "use" | "transfer" | "donate" = "use",
   ) => {
     setUsing(itemId);
     setMode(nextMode);
@@ -221,6 +222,30 @@ export default function ShopPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  const donate = useMutation({
+    mutationFn: async (entry: ShopInventoryEntry) => {
+      if (!currentProfile) throw new Error("프로필을 선택하세요");
+      try {
+        await mutate("uses:donate", {
+          profile_id: currentProfile.id,
+          item_id: entry.itemId,
+          qty,
+          note,
+        });
+      } catch (error) {
+        throw new Error(errorMessage(error, "기부하지 못했습니다"));
+      }
+      return entry.itemName;
+    },
+    onSuccess: (name) => {
+      toast.success(`${name}을(를) 공용공간에 기부했습니다.`);
+      startUsing(null);
+      queryClient.invalidateQueries({ queryKey: ["shop-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["item-uses"] });
+      refetch();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const [draw, setDraw] = useState<BoxDraw | null>(null);
   // A nickname colour pass is used from its own dialog, at once.
   const [colorPass, setColorPass] = useState<ShopInventoryEntry | null>(null);
@@ -245,7 +270,11 @@ export default function ShopPage() {
     onError: (e: Error) => toast.error(e.message),
   });
   const register = useRegisterBox(() => refetch());
-  const busy = use.isPending || transfer.isPending || openBox.isPending;
+  const busy =
+    use.isPending ||
+    transfer.isPending ||
+    donate.isPending ||
+    openBox.isPending;
 
   if (isLoading || !data) {
     return (
@@ -469,6 +498,23 @@ export default function ShopPage() {
                     >
                       양도
                     </Button>
+                    {entry.boxEntry && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={busy || entry.qty < 1}
+                        onClick={() =>
+                          startUsing(
+                            using === entry.itemId && mode === "donate"
+                              ? null
+                              : entry.itemId,
+                            "donate",
+                          )
+                        }
+                      >
+                        공용공간에 기부
+                      </Button>
+                    )}
                   </div>
                   {using === entry.itemId && (
                     <form
@@ -476,9 +522,32 @@ export default function ShopPage() {
                       onSubmit={(e) => {
                         e.preventDefault();
                         if (mode === "transfer") transfer.mutate(entry);
+                        else if (mode === "donate") donate.mutate(entry);
                         else use.mutate(entry);
                       }}
                     >
+                      {mode === "donate" && entry.qty > 1 && (
+                        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                          기부할 수량
+                          <input
+                            type="number"
+                            min={1}
+                            max={entry.qty}
+                            step={1}
+                            value={qty}
+                            onChange={(e) =>
+                              setQty(
+                                Math.min(
+                                  entry.qty,
+                                  Math.max(1, Number(e.target.value) || 1),
+                                ),
+                              )
+                            }
+                            className="w-20 border border-border bg-card px-2 h-9 text-sm text-foreground"
+                          />
+                          <span>/ {entry.qty}</span>
+                        </label>
+                      )}
                       {mode === "transfer" && (
                         <div className="flex gap-2">
                           <select
@@ -522,20 +591,28 @@ export default function ShopPage() {
                         placeholder={
                           mode === "transfer"
                             ? "양도하며 남길 말 (선택)"
-                            : "어떻게 사용하나요? (선택)"
+                            : mode === "donate"
+                              ? "기부하며 남길 말 (선택)"
+                              : "어떻게 사용하나요? (선택)"
                         }
                         className="w-full resize-none border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                       <div className="flex items-center justify-between gap-2">
-                        <label className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-                          <input
-                            type="checkbox"
-                            checked={secret}
-                            onChange={(e) => setSecret(e.target.checked)}
-                          />
-                          <Lock className="h-3.5 w-3.5" />
-                          {mode === "transfer" ? "비밀로 양도" : "비밀로 사용"}
-                        </label>
+                        {mode === "donate" ? (
+                          <span />
+                        ) : (
+                          <label className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <input
+                              type="checkbox"
+                              checked={secret}
+                              onChange={(e) => setSecret(e.target.checked)}
+                            />
+                            <Lock className="h-3.5 w-3.5" />
+                            {mode === "transfer"
+                              ? "비밀로 양도"
+                              : "비밀로 사용"}
+                          </label>
+                        )}
                         <div className="flex gap-2">
                           <Button
                             type="button"
@@ -552,22 +629,35 @@ export default function ShopPage() {
                           >
                             {mode === "transfer"
                               ? "양도하기"
-                              : entry.consumable
-                                ? "사용하기"
-                                : "꺼내 보이기"}
+                              : mode === "donate"
+                                ? "기부하기"
+                                : entry.consumable
+                                  ? "사용하기"
+                                  : "꺼내 보이기"}
                           </Button>
                         </div>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        타임라인에는 올라가지 않고 사용 로그에 기록되며,
-                        운영진이 확인하면 승인됩니다.
-                        {mode === "transfer" &&
-                          " 아이템은 바로 받는 사람에게 넘어갑니다."}
-                        {secret &&
-                          (mode === "transfer"
-                            ? " 비밀 양도는 주고받는 사람과 운영진에게만 내용이 보입니다."
-                            : " 비밀 사용은 나와 운영진에게만 내용이 보입니다.")}
-                      </p>
+                      {mode === "donate" ? (
+                        <p className="text-xs text-muted-foreground">
+                          기부한 물건은 보유 상품에서 사라지며 되돌릴 수
+                          없습니다. 사용 로그에 기부로 기록됩니다.
+                          {!entry.registered &&
+                            qty >= entry.qty &&
+                            " 아직 도감에 등록하지 않은 물건이에요. 모두 기부하면 등록할 수 없게 됩니다."}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          {mode === "use" && entry.boxEntry
+                            ? "타임라인에는 올라가지 않고 사용 로그에 바로 기록됩니다."
+                            : "타임라인에는 올라가지 않고 사용 로그에 기록되며, 운영진이 확인하면 승인됩니다."}
+                          {mode === "transfer" &&
+                            " 아이템은 바로 받는 사람에게 넘어갑니다."}
+                          {secret &&
+                            (mode === "transfer"
+                              ? " 비밀 양도는 주고받는 사람과 운영진에게만 내용이 보입니다."
+                              : " 비밀 사용은 나와 운영진에게만 내용이 보입니다.")}
+                        </p>
+                      )}
                     </form>
                   )}
                 </div>

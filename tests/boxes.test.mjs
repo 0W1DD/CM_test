@@ -81,3 +81,44 @@ test("an opened box gives an item to hold; any holder may register it in the sha
   assert.equal((await site.mutate("boxes:reset", null, as("m-owner"))).removed, 1);
   assert.equal((await site.query("boxes:collection", null, as("m-bob"))).registered, 0);
 });
+
+test("what a box gives is used without the staff, and may be donated to the shared space", async () => {
+  const { site, profiles, box, open } = await withBox();
+  await site.mutate("shop:adminGrant", { kind: "item", profile_id: profiles.alice, item_id: box.id }, as("m-owner"));
+  const got = await open("m-alice", profiles.alice);
+  await site.mutate("shop:adminGrant", { kind: "item", profile_id: profiles.alice, item_id: got.item_id, qty: 3 }, as("m-owner"));
+  const held = async () =>
+    (await site.query("shop:inventory", { username: "alice" }, as("m-alice"))).items.find((e) => e.itemId === got.item_id)?.qty ?? 0;
+  const requests = () => site.rows("SELECT id FROM notifications WHERE type = 'use_request'").length;
+  assert.equal(await held(), 4);
+
+  // Used: done at once, with nothing for the staff to confirm.
+  const used = await site.mutate("uses:use", { profile_id: profiles.alice, item_id: got.item_id, note: "먹었다" }, as("m-alice"));
+  assert.deepEqual([used.kind, used.status, used.consumed], ["use", "done", true]);
+  assert.equal(await held(), 3);
+  assert.equal(requests(), 0);
+
+  // Donated: gone from the inventory, kept in the log as a donation.
+  site.now += 1000;
+  const given = await site.mutate("uses:donate", { profile_id: profiles.alice, item_id: got.item_id, qty: 2, note: "나눠요" }, as("m-alice"));
+  assert.deepEqual([given.kind, given.status, given.qty, given.item_name, given.note], ["donate", "done", 2, got.entry, "나눠요"]);
+  assert.equal(await held(), 1);
+  assert.equal(requests(), 0);
+  assert.equal(await refusal(site.mutate("uses:donate", { profile_id: profiles.alice, item_id: got.item_id, qty: 2 }, as("m-alice"))), "insufficient_quantity");
+  assert.equal(await held(), 1);
+  const log = await site.query("uses:list", null, as("m-owner"));
+  assert.equal(log.pending_count, 0);
+  assert.deepEqual(log.data.slice(0, 2).map((u) => u.kind), ["donate", "use"]);
+
+  // Only what a box gives: not the box, not a shop item, which still waits for the staff.
+  await site.mutate("shop:adminGrant", { kind: "item", profile_id: profiles.alice, item_id: box.id }, as("m-owner"));
+  assert.equal(await refusal(site.mutate("uses:donate", { profile_id: profiles.alice, item_id: box.id }, as("m-alice"))), "not_box_entry");
+  const gold = (await site.query("shop:adminCurrencies", null, as("m-owner")))[0];
+  const cup = await site.mutate("shop:adminCreateItem", { name: "컵", price_amount: 1, currency_id: gold.id, consumable: true }, as("m-owner"));
+  await site.mutate("shop:adminGrant", { kind: "item", profile_id: profiles.alice, item_id: cup.id }, as("m-owner"));
+  const cupUse = await site.mutate("uses:use", { profile_id: profiles.alice, item_id: cup.id }, as("m-alice"));
+  assert.equal(cupUse.status, "pending");
+  assert.equal(requests() > 0, true);
+  const ok = await site.mutate("uses:approve", { use_id: cupUse.id }, as("m-owner"));
+  assert.equal(ok.status, "approved");
+});

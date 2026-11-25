@@ -1,6 +1,7 @@
 // The use log: a member uses an item from their inventory, kept off the
-// timeline, and the staff confirm it. Each call is one transaction: a
-// refused use takes nothing from the inventory.
+// timeline, and the staff confirm it; what a random box gives is used, or
+// donated to the shared space, without them. Each call is one transaction:
+// a refused use takes nothing from the inventory.
 import { actingProfile, isStaff, requireStaff, requireUnmuted, } from "../modules/access.js";
 import { argsOf, id, ids, invalid, list, notFound, optionalText, text, uuidv7, } from "../modules/core.js";
 import { hiddenFrom, useJson, usesPurgeWhere, viewerOf, } from "../modules/item-uses.js";
@@ -34,7 +35,8 @@ async function notifyStaff(ctx, entry, sender) {
 /**
  * Uses an item the acting profile holds: a consumable is spent, anything
  * else only shown. `note` says how it was used; `secret` hides the item and
- * the note from everyone but the profile's owner and the staff.
+ * the note from everyone but the profile's owner and the staff. What a
+ * random box gives is done at once: the staff need not confirm it.
  */
 export async function use(ctx, args) {
     const a = argsOf(args);
@@ -57,12 +59,14 @@ export async function use(ctx, args) {
             throw new ShopError("INVALID_REQUEST", `보유하고 있지 않습니다: ${found.name}`, "not_owned");
         return found;
     });
+    const done = item.boxEntry ? ctx.now : null;
     const { rows } = await ctx.sql `
-    INSERT INTO item_uses (id, profile_id, item_id, item_name, note, secret, consumed, created_at)
+    INSERT INTO item_uses (id, profile_id, item_id, item_name, note, secret, consumed,
+      approved_at, created_at)
     VALUES (${uuidv7(ctx.now)}, ${profile.id}, ${itemId}, ${item.name}, ${note},
-      ${secret ? 1 : 0}, ${item.consumable ? 1 : 0}, ${ctx.now})
+      ${secret ? 1 : 0}, ${item.consumable ? 1 : 0}, ${done}, ${ctx.now})
     RETURNING *`;
-    if (rows[0])
+    if (rows[0] && done === null)
         await notifyStaff(ctx, rows[0], {
             id: profile.id,
             name: profile.name,
@@ -177,6 +181,44 @@ export async function transfer(ctx, args) {
             member: profile.membership.member,
         });
     }
+    const viewer = await viewerOf(ctx, profile.membership.member, false);
+    return (await useJson(ctx, rows, viewer))[0];
+}
+/**
+ * Donates what a random box gave, `qty` of it (1 when absent), to the
+ * shared space (공용공간): it leaves the acting profile's inventory for
+ * good, and the use log keeps it as a donation, done without the staff.
+ * `note` is what the donor says with it.
+ */
+export async function donate(ctx, args) {
+    const a = argsOf(args);
+    const profile = await actingProfile(ctx, a.profile_id);
+    if (profile.activated_at === null)
+        notFound(ctx, "프로필을 찾을 수 없습니다.");
+    const itemId = id(ctx, a.item_id, "item_id");
+    const qty = a.qty === undefined ? 1 : Number(a.qty);
+    if (!Number.isInteger(qty) || qty < 1 || qty > 1000)
+        invalid(ctx, "수량은 1 이상 1000 이하의 정수여야 합니다.");
+    const note = optionalText(ctx, a.note, "기부 내용", { max: 500 });
+    const item = await failShop(ctx, async () => {
+        const found = await validateItemExists(ctx, itemId);
+        if (!found.boxEntry)
+            throw new ShopError("INVALID_REQUEST", "랜덤박스에서 나온 물건만 기부할 수 있습니다", "not_box_entry");
+        await consumeItem(ctx, {
+            profileId: profile.id,
+            itemId,
+            qty,
+            actor: profile.membership.member,
+            reason: "공용공간 기부",
+        });
+        return found;
+    });
+    const { rows } = await ctx.sql `
+    INSERT INTO item_uses (id, profile_id, item_id, item_name, note, secret, consumed,
+      donated, qty, approved_at, created_at)
+    VALUES (${uuidv7(ctx.now)}, ${profile.id}, ${itemId}, ${item.name}, ${note},
+      0, 1, 1, ${qty}, ${ctx.now}, ${ctx.now})
+    RETURNING *`;
     const viewer = await viewerOf(ctx, profile.membership.member, false);
     return (await useJson(ctx, rows, viewer))[0];
 }

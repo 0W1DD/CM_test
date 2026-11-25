@@ -45,7 +45,7 @@ interface UseComment {
 
 interface ItemUse {
   id: string;
-  kind: "use" | "transfer";
+  kind: "use" | "transfer" | "donate";
   profile: Brief | null;
   target: Brief | null;
   item_name: string | null;
@@ -55,7 +55,8 @@ interface ItemUse {
   secret: boolean;
   hidden: boolean;
   consumed: boolean;
-  status: "pending" | "approved";
+  /** "done": needed no one to confirm it (what a random box gave). */
+  status: "pending" | "approved" | "done";
   approved_at: string | null;
   created_at: string;
 }
@@ -216,7 +217,7 @@ export default function UsesPage() {
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             상점에서 사용한 아이템이 여기에 기록되고, 운영진이 확인하면
-            승인됩니다.
+            승인됩니다. 랜덤박스에서 나온 물건은 바로 완료됩니다.
           </p>
         </div>
         <Link
@@ -329,6 +330,12 @@ export default function UsesPage() {
                         <strong>{use.target?.name ?? "알 수 없음"}</strong>
                         <span>님에게 양도했습니다.</span>
                       </p>
+                    ) : use.kind === "donate" ? (
+                      <p className="mt-1 text-sm text-foreground">
+                        <strong>{use.item_name}</strong>
+                        {use.qty > 1 ? ` ${use.qty}개를` : "을(를)"} 공용공간에
+                        기부했습니다.
+                      </p>
                     ) : (
                       <p className="mt-1 text-sm text-foreground">
                         <strong>{use.item_name}</strong>을(를){" "}
@@ -349,6 +356,11 @@ export default function UsesPage() {
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
                     <Check className="h-3.5 w-3.5" />
                     승인됨
+                  </span>
+                ) : use.status === "done" ? (
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    <Check className="h-3.5 w-3.5" />
+                    완료
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
